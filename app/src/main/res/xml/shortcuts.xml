@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="start"
+        android:enabled="true"
+        android:icon="@drawable/ic_folder"
+        android:shortcutShortLabel="@string/shortcut_start"
+        android:shortcutLongLabel="@string/shortcut_start">
+        <intent
+            android:action="com.localshare.app.START"
+            android:targetPackage="com.localshare.app"
+            android:targetClass="com.localshare.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="stop"
+        android:enabled="true"
+        android:icon="@drawable/ic_block"
+        android:shortcutShortLabel="@string/shortcut_stop"
+        android:shortcutLongLabel="@string/shortcut_stop">
+        <intent
+            android:action="com.localshare.app.STOP_SHARE"
+            android:targetPackage="com.localshare.app"
+            android:targetClass="com.localshare.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="game"
+        android:enabled="true"
+        android:icon="@drawable/ic_gamepad"
+        android:shortcutShortLabel="@string/shortcut_game"
+        android:shortcutLongLabel="@string/shortcut_game">
+        <intent
+            android:action="com.localshare.app.GAME"
+            android:targetPackage="com.localshare.app"
+            android:targetClass="com.localshare.app.MainActivity" />
+    </shortcut>
+</shortcuts>

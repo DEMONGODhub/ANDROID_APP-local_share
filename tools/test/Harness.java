@@ -158,8 +158,13 @@ public class Harness {
             cfg.setPerms(ServerConfig.permKey("uitest1", "127.0.0.1"), ServerConfig.P_RENAME | ServerConfig.P_EDIT);
             cfg.setPerms(ServerConfig.permKey("uitest2", "127.0.0.1"), ServerConfig.P_GAME_ONLY);
             cfg.setPerms(ServerConfig.permKey("uitest3", "127.0.0.1"), ServerConfig.P_ALL & ~ServerConfig.P_GAME_ONLY);
+            if (System.getProperty("media") != null) { // extra real files for browser tests
+                File[] mf = new File(System.getProperty("media")).listFiles();
+                if (mf != null) for (File f : mf) Files.copy(f.toPath(), new File(fx[0], f.getName()).toPath());
+            }
             MiniServer s = new MiniServer(cfg, composite(fx[0], fx[1], false, null), assets());
             cfg.askToJoin = Boolean.getBoolean("ask");
+            if (Boolean.getBoolean("inv")) { cfg.password = "pw"; System.out.println("INVITE " + cfg.createInvite(3600000L, 2)); }
             s.start(18080);
             if (Boolean.getBoolean("live")) { // pretend the host is sharing a screen: a changing picture
                 final com.localshare.app.server.StreamHub hub = s.stream();
@@ -174,7 +179,14 @@ public class Harness {
                             java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
                             javax.imageio.ImageIO.write(im, "jpg", bo);
                             hub.pushFrame(bo.toByteArray());
-                            Thread.sleep(100);
+                            byte[] pcm = new byte[4800]; // 50 ms of a 440 Hz tone, 24000 Hz stereo, 16-bit
+                            for (int k = 0; k < 1200; k++) {
+                                short v = (short) (Math.sin(2 * Math.PI * 440 * (i * 1200 + k) / 24000.0) * 8000);
+                                pcm[k * 4] = pcm[k * 4 + 2] = (byte) (v & 255);
+                                pcm[k * 4 + 1] = pcm[k * 4 + 3] = (byte) ((v >> 8) & 255);
+                            }
+                            hub.pushAudio(pcm);
+                            Thread.sleep(50);
                         }
                     } catch (Exception e) { }
                 } }).start();
@@ -405,6 +417,13 @@ public class Harness {
         s.setManager(sid(s, "Mia"), true);
         check("manager can change game mode", req("POST", "/api/gamemode", m, "mode=1", "Origin", O).code == 200);
         req("POST", "/api/gamemode", m, "mode=0", "Origin", O);
+        check("manager can read and set the game rules", req("POST", "/api/gamerules", m, "k=bots&v=2", "Origin", O).text().contains("\"bots\":2") && c.gameBots == 2);
+        check("unknown rule is refused", req("POST", "/api/gamerules", m, "k=zzz&v=1", "Origin", O).code == 400);
+        c.setRule("bots", 1);
+        check("guest cannot change game rules", req("POST", "/api/gamerules", w, "k=bots&v=3", "Origin", O).code == 403 || c.gameBots == 1);
+        c.record("Zed", 50, 1, 0);
+        check("hall of fame lists players", req("GET", "/api/hall", m, null).text().contains("Zed"));
+        check("only the host clears the hall", req("POST", "/api/hall", m, "x=1", "Origin", O).code == 403 && req("POST", "/api/hall", host, "x=1", "Origin", O).code == 200 && req("GET", "/api/hall", m, null).text().equals("[]"));
         check("manager runs the game but is not the host", req("GET", "/api/ping", m, null).text().contains("\"mgr\":true") && req("GET", "/api/ping", m, null).text().contains("\"adm\":false") && req("GET", "/api/ping", m, null).text().contains("\"del\":false"));
         check("manager cannot let people in or stop the screen", req("GET", "/api/requests", m, null).code == 403 && req("POST", "/api/approve", m, "id=x", "Origin", O).code == 403 && req("POST", "/api/screen/stop", m, "", "Origin", O).code == 403);
         check("manager can list players and give powers", req("GET", "/api/players", m, null).code == 200);
@@ -468,6 +487,27 @@ public class Harness {
         String stj = req("GET", "/api/screen/stat", cg, null).text();
         check("stream stat reports live, time and frame rate", stj.contains("\"live\":true") && stj.contains("\"since\":") && !stj.contains("\"fps\":0,") && stj.contains("\"age\":"));
         h2.stop();
+        System.out.println("== invite links");
+        c.password = "secret1";
+        String tk = c.createInvite(3600000L, 1);
+        check("invite check says valid", req("GET", "/api/invite?t=" + tk, null, null).text().contains("\"valid\":true"));
+        check("a bad token is not valid", req("GET", "/api/invite?t=nope", null, null).text().contains("\"valid\":false"));
+        check("no password and no invite -> 401", req("POST", "/api/login", null, "device=dev-i1&name=Ivy&password=").code == 401);
+        Res ir = req("POST", "/api/login", null, "device=dev-i1&name=Ivy&password=&invite=" + tk);
+        check("the invite lets a guest in without the password", ir.code == 200 && ir.text().contains("\"pending\":false"));
+        check("a one-person invite is used up", req("GET", "/api/invite?t=" + tk, null, null).text().contains("\"valid\":false"));
+        check("another device cannot reuse it", req("POST", "/api/login", null, "device=dev-i2&name=Ian&password=&invite=" + tk).code == 401);
+        check("the invited device can sign in again", req("POST", "/api/login", null, "device=dev-i1&name=Ivy&password=").code == 200);
+        c.askToJoin = true;
+        String tk2 = c.createInvite(3600000L, 2);
+        check("an invite skips ask-before-joining", req("POST", "/api/login", null, "device=dev-i3&name=Ira&password=&invite=" + tk2).text().contains("\"pending\":false"));
+        c.revokeInvite(tk2);
+        check("a revoked invite stops working", req("POST", "/api/login", null, "device=dev-i4&name=Ike&password=&invite=" + tk2).code == 401);
+        check("a revoked invite also ends the device's pass", req("POST", "/api/login", null, "device=dev-i3&name=Ira&password=").code == 401);
+        String tk3 = c.createInvite(-1000L, 5);
+        check("an expired invite is refused", req("GET", "/api/invite?t=" + tk3, null, null).text().contains("\"valid\":false") && req("POST", "/api/login", null, "device=dev-i5&name=Ivo&password=&invite=" + tk3).code == 401);
+        c.askToJoin = false;
+        c.password = "";
         System.out.println("== per-device game only");
         s.setPerms(sid(s, "Pat"), ServerConfig.P_GAME_ONLY | ServerConfig.P_DELETE);
         check("game-only device cannot list -> 403", req("GET", "/api/list?path=", t2, null).code == 403);

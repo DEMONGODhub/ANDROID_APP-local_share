@@ -26,6 +26,12 @@ data class LogLine(val time: Long, val kind: String, val who: String, val detail
 /** How much the shared folders hold, against the phone's own storage. */
 data class StorageInfo(val sharedBytes: Long = 0, val files: Int = 0, val folders: Int = 0, val total: Long = 0, val free: Long = 0, val counting: Boolean = false, val partial: Boolean = false)
 
+data class InviteInfo(val token: String, val expires: Long, val uses: Int)
+
+data class GameRules(val teams: Boolean = false, val shots: Boolean = true, val bots: Int = 1, val zone: Int = 1, val health: Int = 1)
+
+data class HallRow(val name: String, val best: Int, val kills: Int, val wins: Int)
+
 data class UiState(
     val running: Boolean = false,
     val port: Int = 8080,
@@ -40,6 +46,9 @@ data class UiState(
     val viewers: Int = 0,
     val castSince: Long = 0,
     val storage: StorageInfo = StorageInfo(),
+    val invites: List<InviteInfo> = emptyList(),
+    val wifiSsid: String = "",
+    val wifiPass: String = "",
     val blocks: List<BlockedDevice> = emptyList(),
     val log: List<LogLine> = emptyList(),
     val password: String = "",
@@ -49,6 +58,8 @@ data class UiState(
     val allowDelete: Boolean = false,
     val gameOnly: Boolean = false,
     val gameMode: Int = 0,
+    val rules: GameRules = GameRules(),
+    val hall: List<HallRow> = emptyList(),
     val sessionHours: Int = 6,
     val error: String? = null,
 )
@@ -86,11 +97,13 @@ object ShareController {
         cfg.gameOnly = prefs.gameOnly
         cfg.askToJoin = prefs.askToJoin
         cfg.gameMode = prefs.gameMode
+        cfg.loadRules(prefs.gameRules)
+        cfg.loadRecords(prefs.hall)
         cfg.gameEnabled = prefs.gameEnabled || prefs.gameOnly
         cfg.loadPerms(prefs.loadPerms())
         cfg.sessionMs = prefs.sessionHours * 3600000L
         cfg.setBlocks(prefs.loadBlocks())
-        cfg.onChange = Runnable { prefs.saveBlocks(cfg.blocks()); prefs.savePerms(cfg.permsSnapshot()); prefs.gameMode = cfg.gameMode; refresh() }
+        cfg.onChange = Runnable { prefs.saveBlocks(cfg.blocks()); prefs.savePerms(cfg.permsSnapshot()); prefs.gameMode = cfg.gameMode; prefs.gameRules = cfg.rulesText(); prefs.hall = cfg.recordsText(); refresh() }
         refresh()
     }
 
@@ -101,10 +114,20 @@ object ShareController {
     /** Game-only hosting needs no folders: guests only ever see the game. */
     fun setGameOnly(v: Boolean) { prefs.gameOnly = v; cfg.gameOnly = v; cfg.gameEnabled = prefs.gameEnabled || v; refresh() }
     fun setGameMode(m: Int) { cfg.setGameMode(m) }
+    fun setRule(k: String, v: Int) { cfg.setRule(k, v) }
+    fun clearHall() { cfg.clearRecords() }
+    private fun hallRows(): List<HallRow> = try {
+        val a = org.json.JSONArray(cfg.hallJson(10))
+        (0 until a.length()).map { val r = a.getJSONArray(it); HallRow(r.getString(0), r.getInt(1), r.getInt(2), r.getInt(3)) }
+    } catch (e: Exception) { emptyList() }
     fun setAskToJoin(v: Boolean) { prefs.askToJoin = v; cfg.askToJoin = v; refresh() }
     /** The host (or a manager) lets a waiting device in, or turns it away. */
     fun approve(id: String, allow: Boolean): Boolean { val ok = server?.approve(id, allow) ?: true; refresh(); return ok }
     fun setManager(id: String, on: Boolean) { server?.setManager(id, on); refresh() }
+    /** A link that lets someone in without the password until it runs out; uses < 0 means anyone who has it. */
+    fun createInvite(hours: Int, uses: Int) { cfg.createInvite(hours * 3600000L, uses); refresh() }
+    fun revokeInvite(token: String) { cfg.revokeInvite(token); refresh() }
+    fun setWifi(ssid: String, pass: String) { prefs.wifiSsid = ssid; prefs.wifiPass = pass; refresh() }
     fun streamHub() = server?.stream()
     fun setOnStopStream(r: () -> Unit) { server?.setOnStopStream(Runnable(r)) }
     fun setDevicePerms(id: String, perms: Int) { server?.setPerms(id, perms); refresh() }
@@ -236,6 +259,9 @@ object ShareController {
             viewers = s?.stream()?.viewers() ?: 0,
             castSince = if (CastService.active) s?.stream()?.startedAt() ?: 0L else 0L,
             storage = storage,
+            invites = if (s != null) cfg.activeInvites().map { InviteInfo(it.token, it.expires, it.uses) } else emptyList(),
+            wifiSsid = prefs.wifiSsid,
+            wifiPass = prefs.wifiPass,
             blocks = cfg.blocks().map { BlockedDevice(it.id, it.name, it.ip) },
             log = if (s != null) cfg.log.recent().take(100).map { LogLine(it.time, it.kind, it.who, it.detail) } else emptyList(),
             password = cfg.password,
@@ -245,6 +271,8 @@ object ShareController {
             allowDelete = cfg.allowDelete,
             gameOnly = cfg.gameOnly,
             gameMode = cfg.gameMode,
+            rules = GameRules(cfg.gameTeams, cfg.gameShots, cfg.gameBots, cfg.gameZone, cfg.gameHealth),
+            hall = hallRows(),
             sessionHours = prefs.sessionHours,
             error = _state.value.error.takeIf { s == null },
         )

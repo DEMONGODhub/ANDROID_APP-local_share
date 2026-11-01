@@ -75,6 +75,39 @@ fun GameScreen(st: UiState, onOpen: (String) -> Unit) {
         }
         item {
             SectionCard {
+                val ru = st.rules
+                Text("Rules", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Toggle("Teams", "Red against blue. Teammates cannot hurt each other. In Battle Royale the last team wins.", ru.teams) { ShareController.setRule("teams", if (it) 1 else 0) }
+                Toggle("Shooting", "Turn off for a peaceful eating contest.", ru.shots) { ShareController.setRule("shots", if (it) 1 else 0) }
+                Text("Sparring bots", fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("None", "1", "2", "3").forEachIndexed { i, l -> FilterChip(ru.bots == i, { ShareController.setRule("bots", i) }, { Text(l) }) }
+                }
+                Text("Health", fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Low", "Normal", "Tough").forEachIndexed { i, l -> FilterChip(ru.health == i, { ShareController.setRule("health", i) }, { Text(l) }) }
+                }
+                Text("Zone shrinks (Battle Royale)", fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Fast", "Normal", "Slow").forEachIndexed { i, l -> FilterChip(ru.zone == i, { ShareController.setRule("zone", i) }, { Text(l) }) }
+                }
+            }
+        }
+        item {
+            SectionCard {
+                Text("Hall of fame", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                if (st.hall.isEmpty()) Text("Nobody yet. Scores are saved on this phone between sessions.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                st.hall.forEachIndexed { i, h ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("${i + 1}. ${h.name}", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                        Text("${h.wins} wins · best ${h.best} · ${h.kills} kills", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                if (st.hall.isNotEmpty()) TextButton({ ShareController.clearHall() }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("Clear the hall of fame") }
+            }
+        }
+        item {
+            SectionCard {
                 Text("You, the host", fontWeight = FontWeight.SemiBold)
                 Text(
                     if (st.running) "Play like any guest, or leave the arena and watch everything live. Pinch to zoom, drag to move, follow any player."

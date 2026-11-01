@@ -39,6 +39,7 @@ public class ArenaTest {
     static GameHub hub(ServerConfig c, int bots) {
         GameHub h = new GameHub(c, DIRECT, false);
         h.botFill = bots;
+        c.gameBots = bots;
         return h;
     }
 
@@ -64,6 +65,77 @@ public class ArenaTest {
         h.tick();
         h.input(a, "f 0");
         ticks(h, 12);
+    }
+
+    static void rules() {
+        System.out.println("== arena: host rules, teams, saved hall of fame");
+        ServerConfig c = new ServerConfig();
+        GameHub h = hub(c, 0);
+        Rec ra = new Rec(), rb = new Rec(), rc = new Rec();
+        GameHub.Player a = h.join("ta", "aaaa", "Alice", ra), b = h.join("tb", "bbbb", "Bob", rb), d = h.join("tc", "cccc", "Cy", rc);
+        h.parkOrbs();
+        ticks(h, 45);
+        check("no teams by default", ra.snap().contains("\"tm\":0"));
+        c.setRule("teams", 1);
+        h.place(a, 1000, 1000, 30);
+        h.place(b, 1200, 1000, 18);
+        h.place(d, 1010, 1000, 18);
+        ticks(h, 2);
+        check("teams on: players are split red / blue", ra.snap().contains("\"tm\":1") && rb.snap().contains("\"tm\":2") && rc.snap().contains("\"tm\":1"));
+        check("a team is drawn in its colour", ra.snap().matches("(?s).*\\[\"cccc\",\"Cy\",[^,]*,[^,]*,[^,]*,5,.*") && ra.snap().matches("(?s).*\\[\"bbbb\",\"Bob\",[^,]*,[^,]*,[^,]*,210,.*"));
+        h.place(a, 1000, 1000, 30);
+        h.place(d, 1010, 1000, 18);
+        ticks(h, 3);
+        check("a bigger player cannot eat a teammate", h.hpOf(d) == 100 && ra.snap().contains("\"cccc\""));
+        h.input(a, "a 0");
+        h.input(a, "f 1");
+        h.tick();
+        h.input(a, "f 0");
+        ticks(h, 8);
+        check("a shot flies through a teammate", h.hpOf(d) == 100);
+        c.setRule("teams", 0);
+        ticks(h, 2);
+        check("teams off: back to personal colours", ra.snap().contains("\"tm\":0"));
+        c.setRule("shots", 0);
+        h.place(a, 1000, 1000, 30);
+        h.input(a, "a 0");
+        h.input(a, "f 1");
+        h.tick();
+        h.input(a, "f 0");
+        check("shooting off: no bullet", h.bulletCount() == 0);
+        c.setRule("shots", 1);
+        c.setRule("bots", 2);
+        ticks(h, 2);
+        check("bots rule: two sparring bots", h.botCount() == 2);
+        c.setRule("bots", 9);
+        check("rules are clamped", c.gameBots == 3 && !c.setRule("nope", 1));
+        c.setRule("health", 2);
+        h.place(b, 3000, 3000, 18);
+        h.place(a, 500, 500, 18);
+        h.place(d, 2000, 2000, 18);
+        ticks(h, 2);
+        h.setSpectator("bbbb", true);
+        h.setSpectator("bbbb", false);
+        check("health rule: tough means 200 HP", h.hpOf(b) == 200);
+        c.setRule("health", 0);
+        h.setSpectator("bbbb", true);
+        h.setSpectator("bbbb", false);
+        check("health rule: low means 60 HP", h.hpOf(b) == 60);
+        ServerConfig c2 = new ServerConfig();
+        c2.loadRules(c.rulesText());
+        check("rules survive a restart", c2.gameBots == 3 && c2.gameHealth == 0 && c2.gameShots && !c2.gameTeams);
+        check("the game itself records deaths and kills", !c.hallJson(10).equals("[]"));
+        c = new ServerConfig();
+        c.record("Alice", 120, 2, 0);
+        c.record("Alice", 80, 1, 1);
+        c.record("Bob", 300, 0, 0);
+        String hall = c.hallJson(10);
+        check("hall keeps the best score, adds kills and wins: " + hall, hall.startsWith("[[\"Alice\",120,3,1],[\"Bob\",300,0,0]]"));
+        ServerConfig c3 = new ServerConfig();
+        c3.loadRecords(c.recordsText());
+        check("hall survives a restart", c3.hallJson(10).equals(hall));
+        c3.clearRecords();
+        check("hall can be cleared", c3.hallJson(10).equals("[]"));
     }
 
     static void gun() {
@@ -348,6 +420,7 @@ public class ArenaTest {
         check("leaderboard present", ra.snap().contains("\"lb\":[["));
 
         gun();
+        rules();
         royale();
         System.out.println("== arena: switches off");
         cfg.gameEnabled = false;

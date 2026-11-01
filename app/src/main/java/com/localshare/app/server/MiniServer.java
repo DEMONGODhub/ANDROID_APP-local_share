@@ -555,6 +555,9 @@ public final class MiniServer {
             host = true;
         }
         long now = System.currentTimeMillis();
+        String invTok = r.form.get("invite");
+        String dkey = ServerConfig.permKey(device, r.ip);
+        boolean viaInv = !host && ((invTok != null && cfg.invite(invTok) != null) || cfg.granted(dkey));
         if (!host) {
             if (cfg.isBlocked(r.ip, device)) {
                 cfg.log.add("blocked", name, r.ip, "login refused");
@@ -568,7 +571,7 @@ public final class MiniServer {
                 return;
             }
             String pw = cfg.password;
-            if (pw.length() > 0 && !Util.safeEq(pw, r.form.get("password"))) {
+            if (pw.length() > 0 && !viaInv && !Util.safeEq(pw, r.form.get("password"))) {
                 synchronized (fails) {
                     long[] g = fails.get(r.ip);
                     if (g == null) {
@@ -609,7 +612,7 @@ public final class MiniServer {
             for (int i = 0; !host && i < 20 && nameInUse(name, r.ip); i++) name = "Guest " + (100 + rnd.nextInt(900));
         }
         boolean pend = false;
-        if (!host && cfg.askToJoin && (cfg.perms(ServerConfig.permKey(device, r.ip)) & (ServerConfig.P_TRUSTED | ServerConfig.P_MANAGER)) == 0) {
+        if (!host && !viaInv && cfg.askToJoin && (cfg.perms(ServerConfig.permKey(device, r.ip)) & (ServerConfig.P_TRUSTED | ServerConfig.P_MANAGER)) == 0) {
             int waiting = 0;
             for (Session w : sessions.values()) if (w.pending && now - w.lastSeen < ACTIVE_MS) waiting++;
             if (waiting >= 10) {
@@ -618,7 +621,10 @@ public final class MiniServer {
             }
             pend = true;
         }
-        if (!host) cfg.log.add(pend ? "request" : "join", name, r.ip, "");
+        if (!host && invTok != null && cfg.invite(invTok) != null) {
+            cfg.useInvite(invTok, dkey);
+            cfg.log.add("join", name, r.ip, "with an invite link");
+        } else if (!host) cfg.log.add(pend ? "request" : "join", name, r.ip, "");
         String token = hex(16);
         Session s = new Session(token, hex(4), name, r.ip, device, host);
         s.pending = pend;
@@ -672,6 +678,11 @@ public final class MiniServer {
             Session s = sessionOf(r);
             if (s != null) drop(s);
             json(out, false, 200, "{\"ok\":true}", "Set-Cookie: ls_token=; Path=/; HttpOnly; Max-Age=0");
+            return true;
+        }
+        if (get && path.equals("/api/invite")) { // does this invite link still work? (asked before the guest has signed in)
+            ServerConfig.Invite iv = cfg.invite(r.q.get("t"));
+            json(out, isHead, 200, iv == null ? "{\"valid\":false}" : "{\"valid\":true,\"minutes\":" + Math.max(1, (iv.expires - System.currentTimeMillis()) / 60000) + "}");
             return true;
         }
         if (get && path.equals("/api/ping")) {
@@ -741,6 +752,41 @@ public final class MiniServer {
                 return true;
             }
             json(out, isHead, 200, game == null ? "[]" : game.rosterJson());
+            return true;
+        }
+        if (path.equals("/api/gamerules") && (post || !isHead)) {
+            Session s = auth(r, out, false);
+            if (s == null) return true;
+            if (post) {
+                if (!mgr(s) || !sameOrigin(r)) {
+                    json(out, false, 403, err("Only the host can change the game rules"));
+                    return true;
+                }
+                String k = r.form.get("k");
+                int v = 0;
+                try { v = Integer.parseInt(r.form.get("v")); } catch (RuntimeException e) { }
+                if (k == null || !cfg.setRule(k, v)) {
+                    json(out, false, 400, err("Unknown rule"));
+                    return true;
+                }
+                cfg.log.add("mode", "Host", "", "Game rule " + k + " = " + v);
+            }
+            json(out, isHead, 200, "{\"teams\":" + cfg.gameTeams + ",\"shots\":" + cfg.gameShots + ",\"bots\":" + cfg.gameBots + ",\"zone\":" + cfg.gameZone + ",\"health\":" + cfg.gameHealth + "}");
+            return true;
+        }
+        if (path.equals("/api/hall")) {
+            Session s = auth(r, out, false);
+            if (s == null) return true;
+            if (post) {
+                if (!adm(s) || !sameOrigin(r)) {
+                    json(out, false, 403, err("Only the host can clear the hall of fame"));
+                    return true;
+                }
+                cfg.clearRecords();
+                json(out, false, 200, "{\"ok\":true}");
+                return true;
+            }
+            json(out, isHead, 200, cfg.hallJson(10));
             return true;
         }
         if (post && path.equals("/api/gamemode")) {
@@ -857,7 +903,7 @@ public final class MiniServer {
             if (auth(r, out, isHead) == null) return true;
             long st = stream.startedAt();
             json(out, isHead, 200, "{\"live\":" + stream.isLive() + ",\"since\":" + (st == 0 ? 0 : System.currentTimeMillis() - st)
-                    + ",\"fps\":" + stream.fps() + ",\"age\":" + Math.min(stream.frameAge(), 600000L) + ",\"viewers\":" + stream.viewers() + "}");
+                    + ",\"fps\":" + stream.fps() + ",\"age\":" + Math.min(stream.frameAge(), 600000L) + ",\"viewers\":" + stream.viewers() + ",\"audio\":" + stream.hasAudio() + "}");
             return true;
         }
         if (get && path.equals("/api/screen")) {

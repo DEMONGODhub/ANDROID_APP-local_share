@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
+import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
 import android.webkit.CookieManager
@@ -59,6 +60,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -78,7 +80,30 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         ShareController.init(this)
+        handle(intent)
         setContent { LocalShareTheme { App() } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handle(intent)
+    }
+
+    /** Home-screen shortcuts and the Quick Settings tile arrive here. */
+    private fun handle(i: Intent?) {
+        when (i?.action) {
+            ACTION_START -> if (!ShareController.state.value.running) ShareService.start(this)
+            ACTION_STOP_SHARE -> ShareService.stop(this)
+            ACTION_GAME -> { if (!ShareController.state.value.running) ShareService.start(this); launchAction = ACTION_GAME }
+        }
+        i?.action = null
+    }
+
+    companion object {
+        const val ACTION_START = "com.localshare.app.START"
+        const val ACTION_STOP_SHARE = "com.localshare.app.STOP_SHARE"
+        const val ACTION_GAME = "com.localshare.app.GAME"
+        var launchAction by mutableStateOf<String?>(null)
     }
 }
 
@@ -90,13 +115,23 @@ private fun App() {
 
     var joinUrl by rememberSaveable { mutableStateOf<String?>(null) } // another phone's share, opened inside this app
     val ctx = androidx.compose.ui.platform.LocalContext.current
+    val la = MainActivity.launchAction
+    LaunchedEffect(la, st.running) {
+        if (la == MainActivity.ACTION_GAME && st.running) { browser = "play"; MainActivity.launchAction = null }
+    }
     val castLauncher = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
         val d = res.data
         if (res.resultCode == android.app.Activity.RESULT_OK && d != null) CastService.start(ctx, res.resultCode, d)
     }
-    val startCast = {
+    val launchCast = {
         val mpm = ctx.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
         castLauncher.launch(mpm.createScreenCaptureIntent())
+    }
+    // sound needs the microphone permission; ask once, and share the screen either way
+    val micLauncher = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { launchCast() }
+    val startCast = {
+        val have = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (have || android.os.Build.VERSION.SDK_INT < 29) launchCast() else micLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
     }
     joinUrl?.let { u ->
         HostBrowser(0, "", "", u) { joinUrl = null }

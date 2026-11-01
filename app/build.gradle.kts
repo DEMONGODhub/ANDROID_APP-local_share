@@ -12,12 +12,25 @@ android {
         applicationId = "com.localshare.app"
         minSdk = 21            // Android 5.0+ (covers ~99% of devices)
         targetSdk = 35
-        versionCode = 17
-        versionName = "2.11.0"
+        versionCode = 18
+        versionName = "2.12.0"
+    }
+
+    // Release signing comes from environment variables (GitHub secrets); without them the release build is simply unsigned.
+    signingConfigs {
+        System.getenv("KEYSTORE_FILE")?.let { f ->
+            create("release") {
+                storeFile = file(f)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

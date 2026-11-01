@@ -40,6 +40,15 @@ class Prefs(ctx: Context) {
         get() = sp.getInt("port", 8080)
         set(v) = sp.edit().putInt("port", v).apply()
 
+    /** Wi-Fi details the host chose to show as a QR code, so friends can join the network with one scan. */
+    var wifiSsid: String
+        get() = sp.getString("wifi_ssid", "") ?: ""
+        set(v) = sp.edit().putString("wifi_ssid", v).apply()
+
+    var wifiPass: String
+        get() = sp.getString("wifi_pass", "") ?: ""
+        set(v) = sp.edit().putString("wifi_pass", v).apply()
+
     /** Ask me before a new device is let in. */
     var askToJoin: Boolean
         get() = sp.getBoolean("ask_join", false)
@@ -65,6 +74,15 @@ class Prefs(ctx: Context) {
     var gameMode: Int
         get() = sp.getInt("game_mode", 0)
         set(v) = sp.edit().putInt("game_mode", v).apply()
+
+    /** Game rules (teams, shots, bots, zone speed, health) and the saved hall of fame. */
+    var gameRules: String
+        get() = sp.getString("game_rules", "") ?: ""
+        set(v) = sp.edit().putString("game_rules", v).apply()
+
+    var hall: String
+        get() = sp.getString("hall", "") ?: ""
+        set(v) = sp.edit().putString("hall", v).apply()
 
     var gameEnabled: Boolean
         get() = sp.getBoolean("game", true)

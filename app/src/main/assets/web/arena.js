@@ -93,7 +93,7 @@ function onMsg(m){
     $("#dmsg").textContent="Eliminated by "+m.by+". Score "+m.score+(m.kills?" · "+m.kills+" kills":"")+".";
     $("#dead h2").textContent=G.mode===1?"You are out. Watching":"You were taken out";
     $("#again").classList.toggle("hide",G.mode===1);if(G.mode!==1)$("#again").focus();
-    G.shake=14;G.flash=1;beep(180,.35,"sawtooth",.06,50);return;
+    showHall();G.shake=14;G.flash=1;beep(180,.35,"sawtooth",.06,50);return;
   }
   if(m.t!=="s")return;
   G.mode=m.g.m;
@@ -103,7 +103,7 @@ function onMsg(m){
     o.name=q[1];o.tx=q[2];o.ty=q[3];o.tr=q[4];o.hue=q[5];o.taim=q[6];o.hp=q[7];o.av=q[8];o.bits=q[9]}
   for(const id of[...G.pl.keys()])if(!seen.has(id))G.pl.delete(id);
   if(G.dead&&G.pl.has(G.me)&&performance.now()-G.deadAt>800){G.dead=false;$("#dead").classList.add("hide")} // alive again: a new round, or a respawn
-  G.os=m.o;G.lb=m.lb;G.mm=m.mm;G.n=m.n;G.g=m.g;G.my=m.me;G.camT={x:m.cx,y:m.cy};
+  G.os=m.o;G.lb=m.lb;G.mm=m.mm;G.n=m.n;G.g=m.g;G.my=m.me;{const tb=$("#gtm"),tm=m.g.tm|0;tb.classList.toggle("hide",!tm);tb.className=tm?"t"+tm:"hide";tb.textContent=tm===1?"Red team":tm===2?"Blue team":""}G.camT={x:m.cx,y:m.cy};
   // bullets: remember where each one is and how fast it moves, so it glides between snapshots
   const nb=new Set();
   for(const b of m.b){nb.add(b[0]);let o=G.trails.get(b[0]);
@@ -194,7 +194,21 @@ function sendInput(now){
 /* ---- host panel: mode and super powers (only the host's page shows it, and the server checks too) ---- */
 function toggleHost(v){
   G.hostOpen=v===undefined?!G.hostOpen:v;$("#hp").classList.toggle("hide",!G.hostOpen);if(G.hostOpen)loadRoster();
-  document.querySelectorAll("#hp .seg button").forEach(b=>b.classList.toggle("sel",+b.dataset.m===G.mode));
+  document.querySelectorAll("#hp > .seg button").forEach(b=>b.classList.toggle("sel",+b.dataset.m===G.mode));
+  if(G.hostOpen)loadRules();
+}
+async function loadRules(){
+  const r=await J("/api/gamerules");if(!r.ok)return;
+  document.querySelectorAll("#hrules .seg").forEach(s=>{const v=r.d[s.dataset.k],n=typeof v==="boolean"?(v?1:0):v;s.querySelectorAll("button").forEach(b=>b.classList.toggle("sel",+b.dataset.v===n))});
+}
+document.querySelectorAll("#hrules .seg button").forEach(b=>b.onclick=async()=>{
+  const r=await J("/api/gamerules",{method:"POST",body:new URLSearchParams({k:b.parentNode.dataset.k,v:b.dataset.v})});
+  hpNote(r.ok?"Rule changed":(r.d.error||"Could not change that rule"));if(r.ok)loadRules();
+});
+async function showHall(){
+  const r=await J("/api/hall"),box=$("#hall");if(!r.ok||!r.d.length){box.innerHTML="";return}
+  box.textContent="";const t=document.createElement("h4");t.textContent="Hall of fame";box.appendChild(t);
+  r.d.slice(0,5).forEach((h,i)=>{const d=document.createElement("div"),s=document.createElement("span"),m=document.createElement("small");s.textContent=(i+1)+". "+h[0];m.textContent=h[3]+" wins · best "+h[1];d.append(s,m);box.appendChild(d)});
 }
 $("#ghost").onclick=()=>toggleHost();
 const PWR=[["speed","b1","Speed"],["rapid","b2","Rapid"],["power","b3","Power"],["shield","b4","Shield"],["invincible","b5","Invincible"]];
@@ -221,10 +235,10 @@ async function loadRoster(){
     paintSpec()}
   clearTimeout(G.rosterT);G.rosterT=setTimeout(loadRoster,2500);
 }
-document.querySelectorAll("#hp .seg button").forEach(b=>b.onclick=async()=>{
+document.querySelectorAll("#hp > .seg button").forEach(b=>b.onclick=async()=>{
   const r=await J("/api/gamemode",{method:"POST",body:new URLSearchParams({mode:b.dataset.m})});
   hpNote(r.ok?(b.dataset.m==="1"?"Battle Royale: rounds start by themselves":"PvP: fight and respawn"):(r.d.error||"Could not change the mode"));
-  if(r.ok)document.querySelectorAll("#hp .seg button").forEach(x=>x.classList.toggle("sel",x===b));
+  if(r.ok)document.querySelectorAll("#hp > .seg button").forEach(x=>x.classList.toggle("sel",x===b));
 });
 async function setSpec(id,on){
   const r=await J("/api/spectate",{method:"POST",body:new URLSearchParams({id,on:on?"1":"0"})});

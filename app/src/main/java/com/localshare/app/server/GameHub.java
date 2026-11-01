@@ -115,6 +115,7 @@ final class GameHub {
         boolean dead;
         long respawnAt, nextShot, lastHurt, spawnUntil, speedUntil, rapidUntil, powerUntil, invUntil;
         int kills;
+        volatile int team; // 0 = no teams, 1 = red, 2 = blue
         volatile double dx, dy, aim;
         volatile boolean boost, fire, pending, spec;
         int think;
@@ -269,8 +270,8 @@ final class GameHub {
                 case 1: p.rapidUntil = clock + 15000; break;
                 case 2: p.powerUntil = clock + 15000; break;
                 case 3:
-                    p.hpMax = 150;
-                    p.hp = 150;
+                    p.hpMax = Math.max(150, hpBase() * 1.5);
+                    p.hp = p.hpMax;
                     break;
                 default: p.invUntil = clock + 8000;
             }
@@ -314,7 +315,7 @@ final class GameHub {
 
     private void spawn(Player p) {
         p.r = START_R;
-        p.hp = p.hpMax = HP;
+        p.hp = p.hpMax = hpBase();
         p.dead = false;
         p.dx = p.dy = 0;
         p.boost = false;
@@ -337,12 +338,34 @@ final class GameHub {
         return Math.max(0, (int) ((r * r - START_R * START_R) / 10));
     }
 
+    private double hpBase() { return cfg.gameHealth == 0 ? 60 : cfg.gameHealth == 2 ? 200 : HP; }
+
+    private long shrinkMs() { return cfg.gameZone == 0 ? 90000 : cfg.gameZone == 2 ? 300000 : SHRINK_MS; }
+
+    /** The colour others see: red or blue when teams are on. */
+    private int hueOf(Player p) { return cfg.gameTeams && p.team != 0 ? (p.team == 1 ? 5 : 210) : p.hue; }
+
+    private boolean mates(Player a, Player b) { return a != null && b != null && cfg.gameTeams && a.team != 0 && a.team == b.team; }
+
+    /** Puts newcomers on the smaller team (bots too); clears teams when the rule is off. */
+    private void balance(List<Player> ps) {
+        if (!cfg.gameTeams) {
+            for (Player p : ps) p.team = 0;
+            return;
+        }
+        int a = 0, b = 0;
+        for (Player p : ps) if (p.team == 1) a++; else if (p.team == 2) b++;
+        for (Player p : ps) if (p.team == 0) {
+            if (a <= b) { p.team = 1; a++; } else { p.team = 2; b++; }
+        }
+    }
+
     private boolean guarded(Player p) {
         return clock < p.invUntil || clock < p.spawnUntil;
     }
 
     private void fillBots(int humans) {
-        int want = humans > 0 ? botFill : 0, have = 0; // one sparring bot; everyone else is a connected device
+        int want = humans > 0 ? cfg.gameBots : 0, have = 0; // one sparring bot; everyone else is a connected device
         for (Player p : players.values()) if (p.out == null) have++;
         while (have < want) {
             String id = "b" + (++botSeq);
@@ -465,7 +488,7 @@ final class GameHub {
                 }
                 break;
             case PH_RUN: {
-                double f = Math.min(1.0, (clock - phaseAt) / (double) SHRINK_MS);
+                double f = Math.min(1.0, (clock - phaseAt) / (double) shrinkMs());
                 zoneR = ZONE_R0 - (ZONE_R0 - ZONE_R1) * f;
                 int alive = 0;
                 Player last = null;
@@ -473,10 +496,14 @@ final class GameHub {
                     alive++;
                     last = p;
                 }
-                if (alive <= 1) {
+                boolean oneTeam = cfg.gameTeams && alive > 1;
+                if (oneTeam) for (Player p : players.values()) if (!p.dead && p.team != last.team) oneTeam = false;
+                if (alive <= 1 || oneTeam) {
                     phase = PH_END;
                     phaseAt = clock;
-                    events.add("[\"w\"," + Util.q(last == null ? "Nobody" : last.name) + "," + (last != null && last.out != null ? 1 : 0) + "]");
+                    String who = last == null ? "Nobody" : oneTeam || (cfg.gameTeams && last.team != 0) ? (last.team == 1 ? "Red team" : "Blue team") : last.name;
+                    events.add("[\"w\"," + Util.q(who) + "," + (last != null && last.out != null ? 1 : 0) + "]");
+                    for (Player p : players.values()) if (!p.dead && p.out != null && (oneTeam || p == last)) cfg.record(p.name, score(p.r), 0, 1);
                 }
                 break;
             }
@@ -495,7 +522,9 @@ final class GameHub {
             by.r = Math.sqrt(by.r * by.r + v.r * v.r * 0.7);
             by.kills++;
         }
-        events.add("[\"k\"," + Util.q(byName) + "," + Util.q(v.name) + "," + Math.round(v.x) + "," + Math.round(v.y) + "," + v.hue + "]");
+        if (v.out != null) cfg.record(v.name, sc, 0, 0);
+        if (by != null && by.out != null) cfg.record(by.name, score(by.r), 1, 0);
+        events.add("[\"k\"," + Util.q(byName) + "," + Util.q(v.name) + "," + Math.round(v.x) + "," + Math.round(v.y) + "," + hueOf(v) + "]");
         if (v.out != null) outbox.add(new Pending(v, "{\"t\":\"dead\",\"by\":" + Util.q(byName) + ",\"score\":" + sc + ",\"kills\":" + v.kills + "}"));
     }
 
@@ -515,7 +544,7 @@ final class GameHub {
     }
 
     private void shoot(Player p, boolean live) {
-        if (!live || p.dead) {
+        if (!live || p.dead || !cfg.gameShots) {
             p.pending = false;
             return;
         }
@@ -537,7 +566,7 @@ final class GameHub {
         b.vy = ay * BULLET_SPEED;
         b.life = BULLET_LIFE;
         b.owner = p;
-        b.hue = p.hue;
+        b.hue = hueOf(p);
         b.dmg = clock < p.powerUntil ? POWER_DAMAGE : SHOT_DAMAGE;
         bullets.add(b);
         p.nextShot = clock + (rapid ? 120 : 350);
@@ -565,7 +594,7 @@ final class GameHub {
                 continue;
             }
             for (Player q : ps) {
-                if (q == b.owner || q.dead || !sweeps(b.px, b.py, b.x, b.y, q.x, q.y, q.r + 4)) continue;
+                if (q == b.owner || q.dead || mates(q, b.owner) || !sweeps(b.px, b.py, b.x, b.y, q.x, q.y, q.r + 4)) continue;
                 damage(q, b.owner, b.dmg, b.x, b.y);
                 it.remove();
                 break;
@@ -602,6 +631,7 @@ final class GameHub {
             events.clear();
             outbox.clear();
             List<Player> ps = new ArrayList<Player>(players.values());
+            balance(ps);
             if (mode == 1) royale();
             boolean live = mode == 0 || phase == PH_RUN;
             for (Player p : ps) {
@@ -624,7 +654,7 @@ final class GameHub {
                 for (Player a : ps) {
                     if (a.dead) continue;
                     for (Player b : ps) {
-                        if (a == b || b.dead || guarded(b)) continue;
+                        if (a == b || b.dead || guarded(b) || mates(a, b)) continue;
                         double d = Math.hypot(a.x - b.x, a.y - b.y);
                         if (a.r > b.r * 1.15 && d < a.r - b.r * 0.35) kill(b, a, a.name);
                     }
@@ -723,7 +753,7 @@ final class GameHub {
     private String effAv(Player p) {
         if (p.out == null) return p.av;
         if (clock < p.invUntil) return "b5";
-        if (p.hpMax > HP) return "b4";
+        if (p.hpMax > hpBase()) return "b4";
         if (clock < p.powerUntil) return "b3";
         if (clock < p.rapidUntil) return "b2";
         if (clock < p.speedUntil) return "b1";
@@ -732,7 +762,7 @@ final class GameHub {
 
     private int powerBits(Player p) {
         return (clock < p.speedUntil ? 1 : 0) | (clock < p.rapidUntil ? 2 : 0) | (clock < p.powerUntil ? 4 : 0)
-                | (p.hpMax > HP ? 8 : 0) | (clock < p.invUntil ? 16 : 0) | (clock < p.spawnUntil ? 32 : 0);
+                | (p.hpMax > hpBase() ? 8 : 0) | (clock < p.invUntil ? 16 : 0) | (clock < p.spawnUntil ? 32 : 0);
     }
 
     private String snapshot(Player me, List<Player> ps, String lb, String mm, String ev) {
@@ -754,7 +784,7 @@ final class GameHub {
             if (!first) sb.append(',');
             first = false;
             sb.append('[').append(Util.q(p.id)).append(',').append(Util.q(p.name)).append(',')
-                    .append(round(p.x)).append(',').append(round(p.y)).append(',').append(round(p.r)).append(',').append(p.hue).append(',')
+                    .append(round(p.x)).append(',').append(round(p.y)).append(',').append(round(p.r)).append(',').append(hueOf(p)).append(',')
                     .append(round2(p.aim)).append(',').append(Math.round(p.hp)).append(',').append(Util.q(effAv(p))).append(',').append(powerBits(p)).append(']');
         }
         sb.append("],\"o\":[");
@@ -776,10 +806,10 @@ final class GameHub {
         int alive = 0;
         for (Player p : ps) if (!p.dead) alive++;
         long left = phase == PH_COUNT ? COUNT_MS - (clock - phaseAt) : phase == PH_END ? END_MS - (clock - phaseAt)
-                : phase == PH_RUN ? SHRINK_MS - (clock - phaseAt) : 0;
+                : phase == PH_RUN ? shrinkMs() - (clock - phaseAt) : 0;
         sb.append("],\"ev\":").append(ev)
                 .append(",\"g\":{\"m\":").append(cfg.gameMode == 1 ? 1 : 0).append(",\"ph\":").append(phase).append(",\"t\":").append(Math.max(0, left / 1000))
-                .append(",\"zr\":").append(Math.round(zoneR)).append(",\"al\":").append(alive).append('}')
+                .append(",\"tm\":").append(cfg.gameTeams ? me.team : 0).append(",\"zr\":").append(Math.round(zoneR)).append(",\"al\":").append(alive).append('}')
                 .append(",\"me\":[").append(Math.round(me.hp)).append(',').append(Math.round(me.hpMax)).append(',').append(score(me.r)).append(',').append(me.kills)
                 .append(',').append(Math.max(0, me.speedUntil - clock)).append(',').append(Math.max(0, me.rapidUntil - clock)).append(',')
                 .append(Math.max(0, me.powerUntil - clock)).append(',').append(Math.max(0, me.invUntil - clock)).append(',').append(watching ? 1 : 0).append(',').append(me.spec ? 1 : 0).append(']')

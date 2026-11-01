@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">LocalShare</string>
     <string name="stop">Stop</string>
+    <string name="tile_label">LocalShare</string>
+    <string name="shortcut_start">Start sharing</string>
+    <string name="shortcut_stop">Stop sharing</string>
+    <string name="shortcut_game">Open the game</string>
 </resources>

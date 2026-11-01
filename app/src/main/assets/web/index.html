@@ -119,6 +119,7 @@ kbd{background:var(--surface2);border:1px solid var(--outline);border-bottom-wid
 #vh{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top))}
 #vh .ib{color:#F7F3DC}#vh .ib:hover{background:rgba(255,255,255,.12)}
 #vt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+#vqp{position:absolute;right:0;top:56px;bottom:0;width:min(340px,100%);background:var(--surface);border-left:1px solid var(--outline);overflow:auto;padding:10px;z-index:3}#vqp.hide{display:none}#vqp button{display:flex;width:100%;text-align:left;gap:8px;padding:11px 12px;border-radius:10px;background:none;border:0;color:var(--text);font:inherit;cursor:pointer}#vqp button.on{background:var(--surface2);color:var(--primary-text)}#vqp .ap{display:flex;justify-content:space-between;align-items:center;padding:6px 12px 12px;color:var(--muted)}
 #vb{flex:1;min-height:0;display:grid;place-items:center;position:relative;padding:0 8px 12px}
 #vb img,#vb video{max-width:100%;max-height:100%;border-radius:8px;background:#000}
 #vb pre{margin:0;width:100%;height:100%;overflow:auto;white-space:pre-wrap;word-break:break-word;background:var(--surface);color:var(--text);border-radius:12px;padding:14px;font:13px/1.5 ui-monospace,Consolas,monospace}
@@ -182,6 +183,9 @@ kbd{background:var(--surface2);border:1px solid var(--outline);border-bottom-wid
 #hp .seg{display:flex;gap:4px;background:#1B1B1B;border-radius:22px;padding:4px}
 #hp .seg button{flex:1;min-height:44px;border-radius:18px;border:0;background:none;color:#F7F3DC;font-weight:700;font-size:14px;cursor:pointer;transition:background .2s,color .2s}
 #hp .seg button.sel{background:#FFE33B;color:#000}
+#hrules .rr{display:grid;gap:4px;margin:8px 0}#hrules .rr span{font-size:13px;color:#B8B49A;font-weight:600}#hrules .seg button{min-height:38px;font-size:13px}
+#gtm{position:fixed;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);padding:5px 14px;border-radius:20px;font-weight:800;font-size:13px;z-index:5;pointer-events:none;color:#fff}#gtm.t1{background:#D8382F}#gtm.t2{background:#2F6FE0}
+#hall{margin:10px auto 0;text-align:left;font-size:13px;max-width:320px}#hall h4{margin:0 0 4px;color:#FFD60A}#hall div{display:flex;justify-content:space-between;gap:10px;padding:2px 0}#hall small{color:#B8B49A}
 .hrow{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 14px;border-radius:20px;border:1px solid #2a2a2a;background:#141414;color:#F7F3DC;text-align:left;cursor:pointer;font:inherit}
 .hrow span{flex:1;display:grid}.hrow small{color:#A7A27A;font-size:12px}
 .sw2{width:46px;height:28px;border-radius:14px;background:#2c2c2c;position:relative;transition:background .2s;flex:none}
@@ -273,15 +277,16 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
 
 <button id="fab" class="hide" aria-label="Play Orb Arena"></button>
 <div id="ups"></div>
-<div id="scr" class="hide"><div id="scrv"><img id="scrimg" alt="The host's screen" draggable="false"></div><div id="scrinfo" aria-live="off"><i id="scrq"></i><span id="scrtxt">Connecting…</span></div><div class="t"><button class="btn" id="scrm" aria-label="Zoom out">−</button><button class="btn" id="scrz" aria-label="Reset zoom">1×</button><button class="btn" id="scrp" aria-label="Zoom in">+</button><button class="btn" id="scrc">Chat</button><button class="btn" id="scrfs">Full screen</button><button class="btn pri" id="scrx">Close</button></div></div>
+<div id="scr" class="hide"><div id="scrv"><img id="scrimg" alt="The host's screen" draggable="false"></div><div id="scrinfo" aria-live="off"><i id="scrq"></i><span id="scrtxt">Connecting…</span></div><div class="t"><button class="btn" id="scrsnd" hidden aria-pressed="false">🔊 Sound</button><button class="btn" id="scrm" aria-label="Zoom out">−</button><button class="btn" id="scrz" aria-label="Reset zoom">1×</button><button class="btn" id="scrp" aria-label="Zoom in">+</button><button class="btn" id="scrc">Chat</button><button class="btn" id="scrfs">Full screen</button><button class="btn pri" id="scrx">Close</button></div></div>
 <div id="chat" class="hide" role="dialog" aria-label="Live chat"><div class="ch"><b>Live chat</b><span id="chwho"></span><button class="ib" id="chc" hidden aria-label="Clear the chat for everyone">Clear</button><button class="ib" id="chx" aria-label="Close chat"></button></div><div id="chl" aria-live="polite"></div><form id="chf" autocomplete="off"><input id="chi" maxlength="300" placeholder="Message everyone" aria-label="Message"><button class="btn pri">Send</button></form></div>
 <div id="wait" class="center hide"><div class="panel"><div class="logo" id="logo5"></div><h1>Waiting for the host</h1><p>The host has to let you in. Keep this page open.</p><button class="btn" id="wcancel" style="justify-content:center">Cancel</button></div></div>
 <div id="toast" class="hide" role="status"></div>
 <div id="layer"></div>
 
 <div id="viewer" class="hide" role="dialog" aria-modal="true" aria-label="Viewer">
-  <div id="vh"><button class="ib" id="vx" aria-label="Close"></button><div id="vt"></div><a class="ib" id="vdl" aria-label="Download"></a></div>
+  <div id="vh"><button class="ib" id="vx" aria-label="Close"></button><div id="vt"></div><button class="ib" id="vq" aria-label="Queue" hidden></button><a class="ib" id="vdl" aria-label="Download"></a></div>
   <div id="vb"></div>
+  <div id="vqp" class="hide" role="list" aria-label="Queue"></div>
 </div>
 
 <div id="game" class="hide" role="application" aria-label="Orb Arena">
@@ -299,19 +304,27 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
   <div class="hud hide" id="gbn" role="status"></div>
   <div id="sbar"><b>Spectating</b><span>drag to move · scroll or pinch to zoom</span><button id="szo" aria-label="Zoom out">&minus;</button><button id="szi" aria-label="Zoom in">+</button><button id="sfo">Follow a player</button></div>
   <div id="gh"></div>
+  <div id="gtm" class="hide" aria-live="polite"></div>
   <div class="hud hide" id="gconn">Reconnecting&hellip;</div>
   <div id="hp" class="hide" role="dialog" aria-label="Host controls">
     <div class="hpg" aria-hidden="true"></div>
     <div class="hph"><b>Host controls</b><button id="hpx" aria-label="Close host controls">&times;</button></div>
     <div class="note" id="hpn" aria-live="polite"></div>
     <div class="seg" role="group" aria-label="Game mode"><button data-m="0">PvP</button><button data-m="1">Battle Royale</button></div>
+    <div class="hcard" id="hrules"><h4>Rules</h4>
+      <div class="rr"><span>Teams</span><div class="seg" data-k="teams"><button data-v="0">Off</button><button data-v="1">Red / Blue</button></div></div>
+      <div class="rr"><span>Shooting</span><div class="seg" data-k="shots"><button data-v="0">Off</button><button data-v="1">On</button></div></div>
+      <div class="rr"><span>Bots</span><div class="seg" data-k="bots"><button data-v="0">0</button><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
+      <div class="rr"><span>Health</span><div class="seg" data-k="health"><button data-v="0">Low</button><button data-v="1">Normal</button><button data-v="2">Tough</button></div></div>
+      <div class="rr"><span>Zone shrinks</span><div class="seg" data-k="zone"><button data-v="0">Fast</button><button data-v="1">Normal</button><button data-v="2">Slow</button></div></div>
+    </div>
     <button id="hpob" class="hrow" aria-pressed="false"><span><b>Observe the match</b><small>Leave the arena, see everything, zoom</small></span><i class="sw2"></i></button>
     <div class="hcard"><h4>Everyone</h4><div class="pwr" id="hpe"></div></div>
     <h4 class="hpl-h">Players</h4>
     <div id="hpl"><p class="hempty">Nobody has joined yet.</p></div>
     <p class="hempty">Tap a hero to give that power. The player turns into the hero while it lasts.</p>
   </div>
-  <div id="dead" class="hide"><div><h2>Game over</h2><p id="dmsg"></p><button class="btn pri" id="again" style="justify-self:center">Play again</button></div></div>
+  <div id="dead" class="hide"><div><h2>Game over</h2><p id="dmsg"></p><div id="hall"></div><button class="btn pri" id="again" style="justify-self:center">Play again</button></div></div>
 </div>
 
 <script>
@@ -355,6 +368,8 @@ const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},s
 const rid=()=>{const a=new Uint8Array(12);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else a.forEach((_,i)=>a[i]=Math.random()*256);return Array.from(a,b=>b.toString(16).padStart(2,"0")).join("")};
 const DEV=store.get("ls_dev")||(()=>{const d=rid();store.set("ls_dev",d);return d})();
 const reduced=matchMedia("(prefers-reduced-motion:reduce)").matches;
+/* an invite link looks like http://host:port/#inv=TOKEN: it lets this person in with just a name */
+let INV="";try{if(location.hash.startsWith("#inv=")){INV=location.hash.slice(5).split("&")[0];sessionStorage.setItem("ls_inv",INV);history.replaceState(null,"","#/")}else INV=sessionStorage.getItem("ls_inv")||""}catch(e){}
 let ME={name:"",host:false,mgr:false},INFO={},view=store.get("ls_view")||"grid",entries=[],cur="",pinger=0,firstLoad=true;
 
 async function J(u,opt){
@@ -371,16 +386,18 @@ function stopAll(){clearInterval(pinger);chStop();clearTimeout(wt);closeScr();cl
 /* ---------- sign in ---------- */
 function showLogin(msg){
   show("login");stopAll();
-  $("#pwrap").classList.toggle("hide",!INFO.needPassword);
-  $("#lsub").textContent=INFO.needPassword?"This folder is password protected.":"Enter a name to join.";
+  const inv=INV&&INFO.invOk;
+  if(INV&&!INFO.invOk&&!msg)msg="This invite link has expired or was already used.";
+  $("#pwrap").classList.toggle("hide",!INFO.needPassword||!!inv);
+  $("#lsub").textContent=inv?"You are invited. Enter a name to join.":INFO.needPassword?"This folder is password protected.":"Enter a name to join.";
   $("#lname").value=store.get("ls_name")||"";$("#lerr").textContent=msg||"";
 }
 $("#eye").onclick=()=>{const p=$("#lpw"),h=p.type==="password";p.type=h?"text":"password";set("#eye",h?P.eyeoff:P.eye);$("#eye").setAttribute("aria-label",h?"Hide password":"Show password")};
 $("#lf").onsubmit=async e=>{
   e.preventDefault();const b=$("#lgo");b.disabled=true;$("#lerr").textContent="";
-  const r=await J("/api/login",{method:"POST",body:new URLSearchParams({name:$("#lname").value,password:$("#lpw").value,device:DEV})});
+  const r=await J("/api/login",{method:"POST",body:new URLSearchParams(Object.assign({name:$("#lname").value,password:$("#lpw").value,device:DEV},INV&&INFO.invOk?{invite:INV}:{}))});
   b.disabled=false;
-  if(r.ok){store.set("ls_name",$("#lname").value);$("#lpw").value="";await boot()}
+  if(r.ok){INV="";try{sessionStorage.removeItem("ls_inv")}catch(e){}store.set("ls_name",$("#lname").value);$("#lpw").value="";await boot()}
   else $("#lerr").textContent=r.status===429&&r.d.retry?`Too many tries. Please wait ${r.d.retry} seconds.`:r.status===429?"The room is full right now.":(r.d.error||"Could not sign in");
 };
 async function boot(){
@@ -389,7 +406,8 @@ async function boot(){
     await J("/api/login",{method:"POST",body:new URLSearchParams({hostToken:t,name:"Host",device:"host"})});
   }
   const r=await J("/api/info");if(!r.ok){$("#boot").textContent="Could not reach the host. Check your Wi-Fi and reload.";return}
-  INFO=r.d;if(!INFO.authed)return showLogin();
+  INFO=r.d;
+  if(!INFO.authed){if(INV){const v=await J("/api/invite?t="+encodeURIComponent(INV));INFO.invOk=!!(v.ok&&v.d.valid)}return showLogin()}
   ME={name:INFO.name,host:INFO.host,mgr:!!INFO.manager};
   if(INFO.pending)return waitIn();
   enter();
@@ -478,12 +496,37 @@ function zPaint(){
 }
 async function zPoll(){
   const t=performance.now(),r=await J("/api/screen/stat");zrtt=performance.now()-t;
-  if(r.ok){zlive=r.d.live;zbase=r.d.since;zt0=Date.now();zfps=r.d.fps;zage=r.d.age;if(!zlive){closeScr();toast("The host stopped sharing the screen");return}}
+  if(r.ok){$("#scrsnd").hidden=!r.d.audio;if(!r.d.audio&&snd)stopSound();zlive=r.d.live;zbase=r.d.since;zt0=Date.now();zfps=r.d.fps;zage=r.d.age;if(!zlive){closeScr();toast("The host stopped sharing the screen");return}}
   else zlive=false;
   zPaint();
 }
 function openScr(){Z={z:1,x:0,y:0};zApply();zbase=0;zt0=Date.now();zage=0;zlive=true;$("#scrtxt").textContent="Connecting…";$("#scrq").className="";scrimg.src="/api/screen?"+Date.now();$("#scr").classList.remove("hide");clearInterval(zst);clearInterval(zpt);zPoll();zst=setInterval(zPoll,2000);zpt=setInterval(zPaint,1000)}
-function closeScr(){clearInterval(zst);clearInterval(zpt);scrimg.removeAttribute("src");$("#scr").classList.add("hide");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
+/* the phone's sound: raw 16-bit stereo PCM streamed over HTTP, played with the browser's audio engine */
+let snd=null;
+async function startSound(){
+  if(snd)return;const ab=new AbortController();snd={ab,ctx:null};
+  try{
+    const r=await fetch("/api/screen-audio",{signal:ab.signal});if(!r.ok||!r.body)throw 0;
+    const rate=+r.headers.get("X-Rate")||24000,ch=+r.headers.get("X-Channels")||2,AC=window.AudioContext||window.webkitAudioContext;
+    const ctx=new AC();snd.ctx=ctx;if(ctx.state==="suspended")await ctx.resume();
+    const rd=r.body.getReader();let left=new Uint8Array(0),next=0;
+    for(;;){
+      const{value,done}=await rd.read();if(done||!snd)break;
+      const buf=new Uint8Array(left.length+value.length);buf.set(left);buf.set(value,left.length);
+      const fr=2*ch,n=Math.floor(buf.length/fr)*fr;left=buf.slice(n);if(!n)continue;
+      const dv=new DataView(buf.buffer,0,n),frames=n/fr,b=ctx.createBuffer(ch,frames,rate);
+      for(let c=0;c<ch;c++){const d=b.getChannelData(c);for(let i=0;i<frames;i++)d[i]=dv.getInt16((i*ch+c)*2,true)/32768}
+      const now=ctx.currentTime;if(next<now+0.03)next=now+0.12;
+      if(next-now>0.7)continue; // fell behind: drop this piece so the sound stays in step with the picture
+      const s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(next);next+=b.duration;
+      snd.played=(snd.played||0)+frames;
+    }
+  }catch(e){}
+  if(snd&&snd.ab===ab)stopSound();
+}
+function stopSound(){const s=snd;snd=null;if(s){try{s.ab.abort()}catch(e){}try{s.ctx&&s.ctx.close()}catch(e){}}const b=$("#scrsnd");b.setAttribute("aria-pressed","false");b.textContent="🔊 Sound"}
+$("#scrsnd").onclick=()=>{if(snd){stopSound();return}const b=$("#scrsnd");b.setAttribute("aria-pressed","true");b.textContent="🔇 Mute";startSound()};
+function closeScr(){stopSound();clearInterval(zst);clearInterval(zpt);scrimg.removeAttribute("src");$("#scr").classList.add("hide");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
 $("#watch").onclick=openScr;$("#scrx").onclick=closeScr;
 $("#scrfs").onclick=()=>{const e=$("#scr");if(document.fullscreenElement)document.exitFullscreen();else if(e.requestFullscreen)e.requestFullscreen().catch(()=>toast("Full screen is not available here"))};
 $("#scrimg").onerror=()=>{if(!$("#scr").classList.contains("hide")){closeScr();toast("The host stopped sharing the screen")}};
@@ -502,7 +545,7 @@ async function ping(){
   if(r.ok){liveBtn(!!r.d.live);ME.mgr=!!r.d.mgr&&!ME.host}
   if(r.ok&&(r.d.up!==INFO.canUpload||r.d.del!==INFO.canDelete||r.d.ren!==INFO.canRename||r.d.edt!==INFO.canEdit||r.d.mov!==INFO.canMove)){INFO.canUpload=r.d.up;INFO.canDelete=r.d.del;INFO.canRename=r.d.ren;INFO.canEdit=r.d.edt;INFO.canMove=r.d.mov;toolbar()}
 }
-$("#lo").onclick=async()=>{await J("/api/logout",{method:"POST"});ME.name="";const r=await J("/api/info");INFO=r.d||{};showLogin()};
+$("#lo").onclick=async()=>{INV="";try{sessionStorage.removeItem("ls_inv")}catch(e){}await J("/api/logout",{method:"POST"});ME.name="";const r=await J("/api/info");INFO=r.d||{};showLogin()};
 
 /* ---------- browsing ---------- */
 const fmt=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(0)+" KB":n<1073741824?(n/1048576).toFixed(1)+" MB":(n/1073741824).toFixed(2)+" GB";
@@ -801,15 +844,15 @@ function openViewer(e){
   vlist=shown.filter(viewable);vi=Math.max(0,vlist.findIndex(x=>x.n===e.n));
   $("#viewer").classList.remove("hide");showItem();
 }
-function closeViewer(){$("#viewer").classList.add("hide");$("#vb").innerHTML=""}
+function closeViewer(){$("#viewer").classList.add("hide");$("#vb").innerHTML="";$("#vqp").classList.add("hide")}
 $("#vx").onclick=closeViewer;
 function step(d){if(vlist.length<2)return;vi=(vi+d+vlist.length)%vlist.length;showItem()}
 async function showItem(){
   const e=vlist[vi],p=join(cur,e.n),b=$("#vb"),my=++showItem.n;b.innerHTML="";
   $("#vt").textContent=e.n;$("#vdl").href=fileUrl(p,1);$("#vdl").setAttribute("download",e.n);
   if(e.k==="image"){const i=new Image();i.alt=e.n;i.src=fileUrl(p);b.appendChild(i)}
-  else if(e.k==="video"){const v=document.createElement("video");v.controls=true;v.autoplay=true;v.playsInline=true;v.src=fileUrl(p);b.appendChild(v)}
-  else if(e.k==="audio"){const w=document.createElement("div");w.style.cssText="display:grid;gap:18px;justify-items:center;width:min(420px,100%)";w.innerHTML='<div style="color:var(--accent)">'+svg(P.music,96)+"</div>";const a=document.createElement("audio");a.controls=true;a.autoplay=true;a.style.width="100%";a.src=fileUrl(p);w.appendChild(a);b.appendChild(w)}
+  else if(e.k==="video"){const v=document.createElement("video");v.controls=true;v.autoplay=true;v.playsInline=true;v.src=fileUrl(p);b.appendChild(v);wireMedia(v,e,p,my);addSubs(v,e)}
+  else if(e.k==="audio"){const w=document.createElement("div");w.style.cssText="display:grid;gap:18px;justify-items:center;width:min(420px,100%)";w.innerHTML='<div style="color:var(--accent)">'+svg(P.music,96)+"</div>";const a=document.createElement("audio");a.controls=true;a.autoplay=true;a.style.width="100%";a.src=fileUrl(p);w.appendChild(a);b.appendChild(w);wireMedia(a,e,p,my)}
   else{
     const pre=document.createElement("pre");pre.textContent="Loading…";b.appendChild(pre);
     try{const r=await fetch(fileUrl(p),{headers:{Range:"bytes=0-524287"}});const t=await r.text();if(my!==showItem.n)return;pre.textContent=t+(e.s>524288?"\n\n… first 512 KB shown. Download the file to see all of it.":"")}catch(x){pre.textContent="Could not load this file."}
@@ -819,8 +862,47 @@ async function showItem(){
     l.className="nav l";r.className="nav r";l.innerHTML=svg(P.l);r.innerHTML=svg(P.r);l.setAttribute("aria-label","Previous");r.setAttribute("aria-label","Next");
     l.onclick=()=>step(-1);r.onclick=()=>step(1);b.append(l,r);
   }
+  queueUi();
 }
 showItem.n=0;
+/* ---------- video and music extras: continue where you left off, queue, autoplay next, subtitles ---------- */
+const isMed=x=>x&&(x.k==="video"||x.k==="audio");
+const mmss=t=>{t=Math.floor(t);return Math.floor(t/60)+":"+String(t%60).padStart(2,"0")};
+function wireMedia(m,e,p,my){
+  const key="ls_pos:"+p+":"+(e.s||0);let last=0;
+  const saved=parseFloat(store.get(key)||"0")||0;
+  m.addEventListener("loadedmetadata",()=>{if(saved>5&&m.duration&&saved<m.duration-10){m.currentTime=saved;toast("Continuing from "+mmss(saved))}});
+  const save=()=>{if(my!==showItem.n||!m.duration)return;const t=m.currentTime;store.set(key,t>5&&t<m.duration-10?String(Math.floor(t)):"")};
+  m.addEventListener("timeupdate",()=>{const n=Date.now();if(n-last>5000){last=n;save()}});
+  m.addEventListener("pause",save);
+  m.addEventListener("ended",()=>{store.set(key,"");if(store.get("ls_ap")!=="0"){for(let j=vi+1;j<vlist.length;j++)if(isMed(vlist[j])){vi=j;showItem();return}}});
+}
+async function addSubs(m,e){
+  const base=e.n.replace(/\.[^.]+$/,"").toLowerCase();let first=true;
+  for(const x of entries){
+    const n=x.n.toLowerCase();
+    if(x.d||!/\.(srt|vtt)$/.test(n)||!n.startsWith(base+".")||(x.s||0)>2e6)continue;
+    try{
+      const r=await fetch(fileUrl(join(cur,x.n)));if(!r.ok)continue;
+      let t=(await r.text()).replace(/^\uFEFF/,"").replace(/\r/g,"");
+      if(!/^WEBVTT/.test(t))t="WEBVTT\n\n"+t.replace(/(\d\d:\d\d:\d\d),(\d{3})/g,"$1.$2");
+      if(!m.isConnected)return;
+      const tr=document.createElement("track");tr.kind="subtitles";
+      tr.label=n.slice(base.length+1).replace(/\.(srt|vtt)$/,"")||"Subtitles";tr.srclang=tr.label.slice(0,2);
+      tr.src=URL.createObjectURL(new Blob([t],{type:"text/vtt"}));if(first)tr.default=true;first=false;
+      m.appendChild(tr);if(tr.default&&tr.track)tr.track.mode="showing";
+    }catch(err){}
+  }
+}
+function queueUi(){
+  const n=vlist.filter(isMed).length,q=$("#vq");q.hidden=n<2;
+  const pn=$("#vqp");if(n<2){pn.classList.add("hide");return}
+  pn.innerHTML="";
+  const ap=document.createElement("label");ap.className="ap";ap.innerHTML="<span>Play next automatically</span>";
+  const cb=document.createElement("input");cb.type="checkbox";cb.checked=store.get("ls_ap")!=="0";cb.onchange=()=>store.set("ls_ap",cb.checked?"1":"0");ap.appendChild(cb);pn.appendChild(ap);
+  vlist.forEach((x,i)=>{if(!isMed(x))return;const bt=document.createElement("button");bt.textContent=(i===vi?"▶ ":"")+x.n;bt.className=i===vi?"on":"";bt.setAttribute("role","listitem");bt.onclick=()=>{vi=i;pn.classList.add("hide");showItem()};pn.appendChild(bt)});
+}
+set("#vq",P.list);$("#vq").onclick=()=>$("#vqp").classList.toggle("hide");
 let sx=0;$("#vb").addEventListener("touchstart",e=>{sx=e.touches[0].clientX},{passive:true});
 $("#vb").addEventListener("touchend",e=>{const d=e.changedTouches[0].clientX-sx;if(Math.abs(d)>70&&vlist[vi]&&vlist[vi].k==="image")step(d>0?-1:1)},{passive:true});
 

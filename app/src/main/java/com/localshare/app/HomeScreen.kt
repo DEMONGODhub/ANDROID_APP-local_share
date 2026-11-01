@@ -156,6 +156,8 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
         item { StorageCard(st) }
         item { FoldersCard(st, { picker.launch(null) }) }
         item { ScreenCard(st, onCast) }
+        item { InviteCard(st) }
+        item { WifiCard(st) }
         item { JoinCard(onJoin) }
         item { PermissionsCard(perms) { p -> notif.launch(p) } }
         if (st.running) item {
@@ -371,6 +373,74 @@ private fun ScreenCard(st: UiState, onCast: () -> Unit) {
         )
         if (st.casting) Button({ CastService.stop(ctx) }, Modifier.fillMaxWidth().heightIn(min = 48.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)) { Text("Stop sharing screen") }
         else OutlinedButton(onCast, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.running) { Text("Start sharing screen") }
+    }
+}
+
+private fun leftText(ms: Long): String {
+    val m = (ms - System.currentTimeMillis()) / 60000
+    return when { m <= 0 -> "expired"; m < 60 -> "$m min left"; m < 48 * 60 -> "${m / 60} h left"; else -> "${m / 1440} days left" }
+}
+
+/** Links that let a friend in without the password until they expire. */
+@Composable
+private fun InviteCard(st: UiState) {
+    val ctx = LocalContext.current
+    val clip = LocalClipboardManager.current
+    var hours by rememberSaveable { mutableStateOf(24) }
+    var uses by rememberSaveable { mutableStateOf(1) }
+    var qrFor by remember { mutableStateOf<String?>(null) }
+    var tick by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(30000); tick++ } }
+    val base = st.urls.firstOrNull()
+    SectionCard {
+        Text("Invite links", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Give a friend a link that works without the password, for a limited time. You can cancel it at any time.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        if (!st.running || base == null) { Text("Start sharing first.", color = MaterialTheme.colorScheme.onSurfaceVariant); return@SectionCard }
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(1 to "1 hour", 24 to "1 day", 168 to "7 days").forEach { (h, l) -> FilterChip(hours == h, { hours = h }, { Text(l) }) }
+        }
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(1 to "One person", 5 to "Five people", -1 to "Anyone").forEach { (n, l) -> FilterChip(uses == n, { uses = n }, { Text(l) }) }
+        }
+        Button({ ShareController.createInvite(hours, uses) }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Create invite link") }
+        st.invites.forEach { inv ->
+            val url = "$base/#inv=${inv.token}"
+            @Suppress("UNUSED_EXPRESSION") tick
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("${leftText(inv.expires)} · ${if (inv.uses < 0) "anyone" else "${inv.uses} left"}", fontWeight = FontWeight.SemiBold)
+                Text(url, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    TextButton({ clip.setText(AnnotatedString(url)); android.widget.Toast.makeText(ctx, "Link copied", android.widget.Toast.LENGTH_SHORT).show() }) { Text("Copy") }
+                    TextButton({
+                        ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "Join my LocalShare: $url"), "Share invite"))
+                    }) { Text("Share") }
+                    TextButton({ qrFor = if (qrFor == inv.token) null else inv.token }) { Text(if (qrFor == inv.token) "Hide QR" else "QR code") }
+                    TextButton({ ShareController.revokeInvite(inv.token) }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("Cancel") }
+                }
+                if (qrFor == inv.token) Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { QrCode(url, 200.dp, "QR code for the invite link") }
+            }
+        }
+    }
+}
+
+private fun wifiEsc(s: String) = s.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace(":", "\\:").replace("\"", "\\\"")
+
+/** A QR code that joins this Wi-Fi network, so guests can connect before opening the link. */
+@Composable
+private fun WifiCard(st: UiState) {
+    var ssid by rememberSaveable { mutableStateOf(st.wifiSsid) }
+    var pass by rememberSaveable { mutableStateOf(st.wifiPass) }
+    var show by rememberSaveable { mutableStateOf(false) }
+    SectionCard {
+        Text("Wi-Fi QR code", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Guests scan this with their camera to join your Wi-Fi. Android does not let apps read the Wi-Fi password, so type it here once. It stays on this phone.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        OutlinedTextField(ssid, { ssid = it; ShareController.setWifi(it, pass) }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Network name") })
+        OutlinedTextField(pass, { pass = it; ShareController.setWifi(ssid, it) }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Password (leave empty for an open network)") })
+        OutlinedButton({ show = !show }, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = ssid.isNotBlank()) { Text(if (show) "Hide QR code" else "Show QR code") }
+        if (show && ssid.isNotBlank()) {
+            val code = if (pass.isEmpty()) "WIFI:T:nopass;S:${wifiEsc(ssid)};;" else "WIFI:T:WPA;S:${wifiEsc(ssid)};P:${wifiEsc(pass)};;"
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { QrCode(code, 220.dp, "QR code to join the Wi-Fi network") }
+        }
     }
 }
 

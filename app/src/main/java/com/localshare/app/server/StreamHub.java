@@ -12,11 +12,14 @@ public final class StreamHub {
     private long winStart;
     private int winCount;
     private volatile int viewers;
+    private volatile boolean audioSeen;
     private volatile int audioRate = 24000, audioCh = 2;
     private final ArrayDeque<byte[]> audio = new ArrayDeque<byte[]>();
     private long audioBase; // absolute index of audio.peekFirst()
 
     public boolean isLive() { return live; }
+    /** True once the phone has sent any sound for this share. */
+    public boolean hasAudio() { return live && audioSeen; }
     /** When the share began (ms since 1970), 0 when nothing is live. */
     public long startedAt() { return live ? startedAt : 0; }
     /** Frames per second the phone is producing right now. */
@@ -31,6 +34,7 @@ public final class StreamHub {
         frame = null; seq = 0; audio.clear(); audioBase = 0;
         audioRate = rate; audioCh = channels;
         live = true;
+        audioSeen = false;
         startedAt = System.currentTimeMillis();
         lastFrameAt = 0; fps = 0; winStart = startedAt; winCount = 0;
         notifyAll();
@@ -56,6 +60,7 @@ public final class StreamHub {
 
     public synchronized void pushAudio(byte[] pcm) {
         if (!live) return;
+        audioSeen = true;
         audio.addLast(pcm);
         while (audio.size() > 40) { audio.pollFirst(); audioBase++; }
         notifyAll();

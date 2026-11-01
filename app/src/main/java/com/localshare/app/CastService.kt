@@ -12,6 +12,10 @@ import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioPlaybackCaptureConfiguration
+import android.media.AudioRecord
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
@@ -32,6 +36,8 @@ class CastService : Service() {
     private var handler: Handler? = null
     @Volatile private var lastJpeg: ByteArray? = null
     @Volatile private var lastAt = 0L
+    private var rec: AudioRecord? = null
+    private var audioThread: Thread? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -88,6 +94,7 @@ class CastService : Service() {
                     if (active) h.postDelayed(this, 1000)
                 }
             }, 1000)
+            startAudio(p, hub)
             active = true
             ShareController.setOnStopStream { stopCast() }
             ShareController.refresh()
@@ -98,8 +105,38 @@ class CastService : Service() {
         return START_NOT_STICKY
     }
 
+    /** Sound the phone is playing (Android 10+ and only with the microphone permission, which the system requires for this). */
+    private fun startAudio(p: MediaProjection, hub: com.localshare.app.server.StreamHub) {
+        if (Build.VERSION.SDK_INT < 29) return
+        if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        try {
+            val cfg = AudioPlaybackCaptureConfiguration.Builder(p)
+                .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                .build()
+            val fmt = AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(24000).setChannelMask(AudioFormat.CHANNEL_IN_STEREO).build()
+            val min = AudioRecord.getMinBufferSize(24000, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT)
+            val r = AudioRecord.Builder().setAudioPlaybackCaptureConfig(cfg).setAudioFormat(fmt).setBufferSizeInBytes(maxOf(min, 9600) * 2).build()
+            if (r.state != AudioRecord.STATE_INITIALIZED) { r.release(); return }
+            rec = r
+            r.startRecording()
+            audioThread = Thread {
+                val buf = ByteArray(4800) // 50 ms
+                while (rec === r) {
+                    val n = try { r.read(buf, 0, buf.size) } catch (e: Exception) { -1 }
+                    if (n <= 0) break
+                    hub.pushAudio(if (n == buf.size) buf.copyOf() else buf.copyOf(n))
+                }
+            }.also { it.isDaemon = true; it.start() }
+        } catch (e: Exception) { rec = null } // no sound is fine, the picture still works
+    }
+
     private fun stopCast() {
         active = false
+        val r = rec; rec = null
+        try { r?.stop() } catch (e: Exception) { }
+        try { r?.release() } catch (e: Exception) { }
         val d = display; val rd = reader; val p = projection; val t = thread
         display = null; reader = null; projection = null; thread = null; handler = null // cleared first: p.stop() calls back into here
         try { ShareController.streamHub()?.stop() } catch (e: Exception) { }
