@@ -600,6 +600,11 @@ public class Harness {
         check("zip contents identical", "alpha".equals(new String(got.get("a.txt"), "UTF-8")) && Arrays.equals(got.get("sub/b.bin"), rnd(100000)));
         Map<String, byte[]> all = unzip(req("GET", "/api/zip?path=", t, null).body);
         check("zip of the whole share keeps folder names", all.containsKey("Main/docs/note.txt") && all.containsKey("Extra Files/readme.txt"));
+        Res zs = req("GET", "/api/zip?path=Extra%20Files%2Ftree&names=a.txt%2Fsub", t, null);
+        Map<String, byte[]> sel = unzip(zs.body);
+        check("selection zip: named selection.zip with only the picked items " + sel.keySet(), zs.head("Content-Disposition").contains("selection.zip") && sel.keySet().equals(got.keySet()));
+        Map<String, byte[]> one = unzip(req("GET", "/api/zip?path=Extra%20Files%2Ftree&names=a.txt", t, null).body);
+        check("selection zip of one file leaves the rest out " + one.keySet(), one.keySet().equals(new TreeSet<String>(Arrays.asList("a.txt"))));
         check("zip traversal rejected", req("GET", "/api/zip?path=..%2f..", t, null).code == 400);
         check("zip of a file -> 404", req("GET", "/api/zip?path=Extra%20Files%2Ftree%2Fa.txt", t, null).code == 404);
 

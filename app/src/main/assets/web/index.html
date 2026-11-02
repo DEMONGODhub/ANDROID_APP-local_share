@@ -45,6 +45,8 @@ header{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:max(
 #crumbs i{color:var(--muted);font-style:normal}
 #bar{display:flex;align-items:center;gap:8px;padding:2px 12px 8px;flex-wrap:wrap}
 #count{color:var(--muted);flex:1;min-width:80px}
+#selbar{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:40;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;padding:10px 14px;border-radius:26px;background:var(--surface2);border:1px solid var(--primary);box-shadow:0 8px 30px #000a;max-width:calc(100vw - 24px)}#selbar.hide{display:none}#selbar b{padding:0 6px}
+.card.picked{outline:3px solid var(--primary);outline-offset:-3px}.card.picked .thumb::after{content:"\2713";position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#000;font-weight:900;display:grid;place-items:center}.card .thumb{position:relative}
 #bar select{background:var(--surface2);color:var(--text);border:1px solid var(--outline);border-radius:18px;height:40px;padding:0 10px;font:inherit}
 #bar .btn{min-height:40px;padding:0 14px}
 #main{flex:1;overflow:auto;padding:4px 12px 96px;-webkit-overflow-scrolling:touch;position:relative}
@@ -267,10 +269,12 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
     <button class="ib" id="vtog" aria-label="Switch grid and list"></button>
     <label id="sw"><span id="sico"></span><input id="q" placeholder="Search" aria-label="Search this folder" autocomplete="off"></label>
     <button class="btn hide" id="watch">Watch screen</button>
+    <button class="btn hide" id="selb">Select</button>
     <button class="btn" id="zipb"></button>
     <button class="btn pri" id="upb"></button>
     <input type="file" id="pick" multiple hidden>
   </div>
+  <div id="selbar" class="hide" role="toolbar" aria-label="Selection"><b id="selc"></b><button class="btn" id="sela">All</button><button class="btn" id="selz">Download ZIP</button><button class="btn dng hide" id="seld">Delete</button><button class="btn" id="selx">Cancel</button></div>
   <div id="main" tabindex="-1"></div>
   <button id="totop" aria-label="Back to top" hidden></button>
 </div>
@@ -558,7 +562,7 @@ const hashOf=p=>"#/"+p.split("/").filter(Boolean).map(enc).join("/");
 const hashPath=()=>{try{return decodeURIComponent(location.hash.replace(/^#\/?/,""))}catch(e){return""}};
 const cache=new Map();
 let skelT=0,loadId=0;
-async function go(p,initial){
+async function go(p,initial){ if(SEL)selMode(false);
   const my=++loadId;
   const hit=cache.get(p);
   if(hit&&!initial){apply(p,hit)}
@@ -592,7 +596,7 @@ function crumbs(){
 }
 function toolbar(){
   const root=!cur;
-  $("#zipb").classList.toggle("hide",root);$("#upb").classList.toggle("hide",root||!INFO.canUpload);
+  $("#zipb").classList.toggle("hide",root);$("#selb").classList.toggle("hide",root);if(root&&SEL)selMode(false);$("#upb").classList.toggle("hide",root||!INFO.canUpload);
   $("#sort").classList.toggle("hide",root);$("#vtog").classList.toggle("hide",root);
 }
 const byName=(a,b)=>a.n.localeCompare(b.n,undefined,{numeric:true,sensitivity:"base"});
@@ -661,8 +665,32 @@ function card(e){
   setLink(a,e,p);
   const mb=document.createElement("button");mb.className="more";mb.innerHTML=svg(P.more);mb.setAttribute("aria-label","More options for "+e.n);mb.setAttribute("aria-haspopup","menu");
   mb.onclick=ev=>{ev.stopPropagation();openMenu(e,p,mb)};
-  c.append(a,mb);return c;
+  c.append(a,mb);
+  a.addEventListener("click",ev=>{if(!SEL)return;ev.preventDefault();ev.stopImmediatePropagation();pick(e,c)},true);
+  if(SEL&&SEL.has(e.n))c.classList.add("picked");
+  return c;
 }
+/* multi-select: tap items, then download them as one ZIP or delete them together */
+let SEL=null;
+function selUi(){
+  const on=!!SEL;$("#selbar").classList.toggle("hide",!on);$("#selb").textContent=on?"Done":"Select";
+  if(!on)return;$("#selc").textContent=SEL.size+" selected";$("#selz").disabled=$("#seld").disabled=!SEL.size;$("#seld").classList.toggle("hide",!INFO.canDelete);
+}
+function pick(e,c){if(SEL.has(e.n))SEL.delete(e.n);else SEL.add(e.n);c.classList.toggle("picked",SEL.has(e.n));selUi()}
+function selMode(on){SEL=on?new Set():null;document.querySelectorAll(".card").forEach(c=>c.classList.remove("picked"));selUi()}
+$("#selb").onclick=()=>selMode(!SEL);$("#selx").onclick=()=>selMode(false);
+$("#sela").onclick=()=>{if(!SEL)return;const all=shown.length===SEL.size;SEL.clear();if(!all)shown.forEach(e=>SEL.add(e.n));document.querySelectorAll(".card").forEach(c=>c.classList.toggle("picked",SEL.has(c._e.n)));selUi()};
+$("#selz").onclick=()=>{const a=document.createElement("a");a.href="/api/zip?path="+enc(cur)+"&names="+enc([...SEL].join("/"));a.download="selection.zip";a.click()};
+$("#seld").onclick=()=>dialog('<h3>Delete '+SEL.size+' item'+(SEL.size===1?"":"s")+'?</h3><p>They will be removed from the host\'s phone. This cannot be undone.</p><div class="acts"><button class="btn" id="dc">Cancel</button><button class="btn dng" id="dd">Delete</button></div>',(d,close)=>{
+  d.querySelector("#dc").onclick=close;
+  d.querySelector("#dd").onclick=async()=>{
+    d.querySelector("#dd").disabled=true;let ok=0,bad="";
+    for(const n of [...SEL]){const e=entries.find(x=>x.n===n);if(!e)continue;
+      const r=await J("/api/delete",{method:"POST",body:new URLSearchParams(e.d?{path:join(cur,n),recursive:"1"}:{path:join(cur,n)})});
+      if(r.ok)ok++;else{bad=r.status===403?"The host turned off deleting":(r.d.error||"Could not delete");if(r.status===403){INFO.canDelete=false;break}}}
+    close();cache.delete(cur);toast(ok+" deleted"+(bad?". "+bad:""));selMode(false);go(cur,true);
+  };
+});
 function setLink(a,e,p){
   if(e.d){a.href=hashOf(p);return}
   if(e.k==="image"){

@@ -1158,7 +1158,9 @@ public final class MiniServer {
             json(out, false, 404, err("not found"));
             return true;
         }
-        String fname = (sg.isEmpty() ? "share" : sg.get(sg.size() - 1)) + ".zip";
+        String nm = r.q.get("names"); // "a/b/c": zip only these items of the folder (multi-select)
+        java.util.Set<String> only = nm == null || nm.length() == 0 ? null : new java.util.HashSet<String>(java.util.Arrays.asList(nm.split("/")));
+        String fname = only != null ? "selection.zip" : (sg.isEmpty() ? "share" : sg.get(sg.size() - 1)) + ".zip";
         String enc = URLEncoder.encode(fname, "UTF-8").replace("+", "%20");
         // no Content-Length: the archive is streamed, and closing the connection marks the end
         out.write(("HTTP/1.1 200 OK\r\nContent-Type: application/zip\r\nContent-Disposition: attachment; filename=\""
@@ -1168,7 +1170,7 @@ public final class MiniServer {
         ZipOutputStream zo = new ZipOutputStream(out);
         zo.setLevel(1); // phones compress slowly and most media is already compressed
         try {
-            addDir(zo, sg, "", 0, new int[1]);
+            addDir(zo, sg, "", 0, new int[1], only);
             zo.finish();
             out.flush();
         } catch (IOException ignored) {
@@ -1177,16 +1179,16 @@ public final class MiniServer {
         return false;
     }
 
-    private void addDir(ZipOutputStream zo, List<String> dir, String prefix, int depth, int[] count) throws IOException {
+    private void addDir(ZipOutputStream zo, List<String> dir, String prefix, int depth, int[] count, java.util.Set<String> only) throws IOException {
         if (depth > 20) return;
         List<FileSource.Entry> es = fs.list(dir);
         if (es == null) return;
         byte[] buf = new byte[65536];
         for (FileSource.Entry e : es) {
-            if (e.name.startsWith(".") || count[0] >= 20000) continue;
+            if (e.name.startsWith(".") || count[0] >= 20000 || (only != null && !only.contains(e.name))) continue;
             List<String> p = child(dir, e.name);
             if (e.dir) {
-                addDir(zo, p, prefix + e.name + "/", depth + 1, count);
+                addDir(zo, p, prefix + e.name + "/", depth + 1, count, null);
                 continue;
             }
             InputStream is;
