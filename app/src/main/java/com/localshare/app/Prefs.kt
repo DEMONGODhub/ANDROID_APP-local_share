@@ -49,6 +49,11 @@ class Prefs(ctx: Context) {
         get() = sp.getString("wifi_pass", "") ?: ""
         set(v) = sp.edit().putString("wifi_pass", v).apply()
 
+    /** Also send the microphone with the screen sound. */
+    var castMic: Boolean
+        get() = sp.getBoolean("cast_mic", false)
+        set(v) = sp.edit().putBoolean("cast_mic", v).apply()
+
     /** Ask me before a new device is let in. */
     var askToJoin: Boolean
         get() = sp.getBoolean("ask_join", false)

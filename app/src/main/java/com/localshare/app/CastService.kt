@@ -38,6 +38,7 @@ class CastService : Service() {
     @Volatile private var lastAt = 0L
     private var rec: AudioRecord? = null
     private var audioThread: Thread? = null
+    private var mic: AudioRecord? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -49,7 +50,8 @@ class CastService : Service() {
         val hub = ShareController.streamHub()
         if (data == null || code != Activity.RESULT_OK || hub == null) { stopSelf(); return START_NOT_STICKY }
         try {
-            val type = if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION else 0
+val wantMic = Prefs(this).castMic && androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val type = if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or (if (wantMic && Build.VERSION.SDK_INT >= 30) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0) else 0
             ServiceCompat.startForeground(this, 2, notification(), type)
             val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             val p = mpm.getMediaProjection(code, data)
@@ -94,7 +96,7 @@ class CastService : Service() {
                     if (active) h.postDelayed(this, 1000)
                 }
             }, 1000)
-            startAudio(p, hub)
+            startAudio(p, hub, wantMic)
             active = true
             ShareController.setOnStopStream { stopCast() }
             ShareController.refresh()
@@ -106,7 +108,8 @@ class CastService : Service() {
     }
 
     /** Sound the phone is playing (Android 10+ and only with the microphone permission, which the system requires for this). */
-    private fun startAudio(p: MediaProjection, hub: com.localshare.app.server.StreamHub) {
+    private fun startAudio(p: MediaProjection, hub: com.localshare.app.server.StreamHub, wantMic: Boolean) {
+        silent = false; loudAt = System.currentTimeMillis(); startedAt = loudAt
         if (Build.VERSION.SDK_INT < 29) return
         if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) return
         try {
@@ -121,11 +124,36 @@ class CastService : Service() {
             if (r.state != AudioRecord.STATE_INITIALIZED) { r.release(); return }
             rec = r
             r.startRecording()
+            var m: AudioRecord? = null
+            if (wantMic) try { // the microphone is mono; it is mixed into both sides
+                val mm = AudioRecord(android.media.MediaRecorder.AudioSource.MIC, 24000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(AudioRecord.getMinBufferSize(24000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT), 4800) * 2)
+                if (mm.state == AudioRecord.STATE_INITIALIZED) { mm.startRecording(); m = mm; mic = mm } else mm.release()
+            } catch (e: Exception) { m = null }
             audioThread = Thread {
-                val buf = ByteArray(4800) // 50 ms
+                val buf = ByteArray(4800) // 50 ms of stereo
+                val mb = ByteArray(2400)  // 50 ms of mono
                 while (rec === r) {
                     val n = try { r.read(buf, 0, buf.size) } catch (e: Exception) { -1 }
                     if (n <= 0) break
+                    if (m != null) {
+                        val k = try { m.read(mb, 0, mb.size, AudioRecord.READ_NON_BLOCKING) } catch (e: Exception) { 0 }
+                        var i = 0
+                        while (i + 1 < k && i * 2 + 3 < n) {
+                            val s = (mb[i + 1].toInt() shl 8) or (mb[i].toInt() and 255)
+                            for (c in 0..1) {
+                                val o = i * 2 + c * 2
+                                val v = ((buf[o + 1].toInt() shl 8) or (buf[o].toInt() and 255)) + s
+                                val cl = v.coerceIn(-32768, 32767)
+                                buf[o] = cl.toByte(); buf[o + 1] = (cl shr 8).toByte()
+                            }
+                            i += 2
+                        }
+                    }
+                    var peak = 0
+                    var j = 0
+                    while (j + 1 < n) { val s = Math.abs((buf[j + 1].toInt() shl 8) or (buf[j].toInt() and 255)); if (s > peak) peak = s; j += 2 }
+                    val now = System.currentTimeMillis()
+                    if (peak > 300) { loudAt = now; silent = false } else if (now - loudAt > 8000) silent = true
                     hub.pushAudio(if (n == buf.size) buf.copyOf() else buf.copyOf(n))
                 }
             }.also { it.isDaemon = true; it.start() }
@@ -135,6 +163,9 @@ class CastService : Service() {
     private fun stopCast() {
         active = false
         val r = rec; rec = null
+        val mi = mic; mic = null
+        try { mi?.stop() } catch (e: Exception) { }
+        try { mi?.release() } catch (e: Exception) { }
         try { r?.stop() } catch (e: Exception) { }
         try { r?.release() } catch (e: Exception) { }
         val d = display; val rd = reader; val p = projection; val t = thread
@@ -174,6 +205,10 @@ class CastService : Service() {
         const val ACTION_STOP = "com.localshare.app.CAST_STOP"
         const val CHANNEL = "cast"
         @Volatile var active = false
+        /** True when nothing audible was captured for a while (the app playing may block capture). */
+        @Volatile var silent = false
+        @Volatile var loudAt = 0L
+        @Volatile var startedAt = 0L
 
         fun start(ctx: Context, code: Int, data: Intent) {
             androidx.core.content.ContextCompat.startForegroundService(ctx, Intent(ctx, CastService::class.java).putExtra("code", code).putExtra("data", data))

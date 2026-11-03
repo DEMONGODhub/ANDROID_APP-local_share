@@ -375,6 +375,14 @@ private fun ScreenCard(st: UiState, onCast: () -> Unit) {
             },
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium,
         )
+        if (st.casting && st.castSilent) Text("No sound captured for a while. If something is playing, that app may not allow its sound to be shared (Netflix, calls and some music apps block it).", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall)
+        if (!st.casting) Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Also send my microphone", fontWeight = FontWeight.SemiBold)
+                Text("Your voice is heard along with the phone's sound.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+            Switch(st.castMic, { ShareController.setCastMic(it) })
+        }
         if (st.casting) Button({ CastService.stop(ctx) }, Modifier.fillMaxWidth().heightIn(min = 48.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)) { Text("Stop sharing screen") }
         else OutlinedButton(onCast, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.running) { Text("Start sharing screen") }
     }

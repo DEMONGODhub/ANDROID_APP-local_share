@@ -47,6 +47,8 @@ data class UiState(
     val casting: Boolean = false,
     val viewers: Int = 0,
     val castSince: Long = 0,
+    val castSilent: Boolean = false,
+    val castMic: Boolean = false,
     val storage: StorageInfo = StorageInfo(),
     val invites: List<InviteInfo> = emptyList(),
     val chat: List<ChatRow> = emptyList(),
@@ -132,6 +134,7 @@ object ShareController {
     fun createInvite(hours: Int, uses: Int) { cfg.createInvite(hours * 3600000L, uses); refresh() }
     fun revokeInvite(token: String) { cfg.revokeInvite(token); refresh() }
     fun setWifi(ssid: String, pass: String) { prefs.wifiSsid = ssid; prefs.wifiPass = pass; refresh() }
+    fun setCastMic(v: Boolean) { prefs.castMic = v; refresh() }
     fun chatSay(text: String) { server?.hostSay(text); refresh() }
     fun setChatSlow(sec: Int) { server?.setChatSlow(sec); refresh() }
     fun streamHub() = server?.stream()
@@ -263,6 +266,8 @@ object ShareController {
             askToJoin = cfg.askToJoin,
             casting = CastService.active && s != null,
             viewers = s?.stream()?.viewers() ?: 0,
+            castSilent = CastService.active && CastService.silent,
+            castMic = prefs.castMic,
             castSince = if (CastService.active) s?.stream()?.startedAt() ?: 0L else 0L,
             storage = storage,
             chat = s?.chatRecent(12)?.map { ChatRow(it[0], it[1], it[2] == "1") } ?: emptyList(),
