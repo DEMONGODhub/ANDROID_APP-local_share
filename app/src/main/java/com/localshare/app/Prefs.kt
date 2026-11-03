@@ -54,6 +54,11 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("cast_mic", false)
         set(v) = sp.edit().putBoolean("cast_mic", v).apply()
 
+    /** Use the old picture-by-picture stream (for very old browsers). The default hardware video is smoother and cooler. */
+    var castCompat: Boolean
+        get() = sp.getBoolean("cast_compat", false)
+        set(v) = sp.edit().putBoolean("cast_compat", v).apply()
+
     /** Ask me before a new device is let in. */
     var askToJoin: Boolean
         get() = sp.getBoolean("ask_join", false)

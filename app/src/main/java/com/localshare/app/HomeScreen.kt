@@ -376,6 +376,15 @@ private fun ScreenCard(st: UiState, onCast: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium,
         )
         if (st.casting && st.castSilent) Text("No sound captured for a while. If something is playing, that app may not allow its sound to be shared (Netflix, calls and some music apps block it).", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall)
+        if (st.casting && st.castMeter.isNotEmpty()) Text(st.castMeter, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        if (st.casting && st.castNote.isNotEmpty()) Text(st.castNote + " to keep your phone cool.", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall)
+        if (!st.casting) Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Compatibility mode", fontWeight = FontWeight.SemiBold)
+                Text("Only for very old browsers. Uses more battery and looks less smooth.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+            Switch(st.castCompat, { ShareController.setCastCompat(it) })
+        }
         if (!st.casting) Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Also send my microphone", fontWeight = FontWeight.SemiBold)

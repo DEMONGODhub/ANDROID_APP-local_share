@@ -1029,15 +1029,33 @@ public final class MiniServer {
             return true;
         }
         if (get && path.equals("/api/screen/stat")) {
-            if (auth(r, out, isHead) == null) return true;
+            Session ss = auth(r, out, isHead);
+            if (ss == null) return true;
+            try { String qq = r.q.get("q"); if (qq != null) stream.want(ss.token, Integer.parseInt(qq)); } catch (NumberFormatException e) { }
             long st = stream.startedAt();
             json(out, isHead, 200, "{\"live\":" + stream.isLive() + ",\"since\":" + (st == 0 ? 0 : System.currentTimeMillis() - st)
-                    + ",\"fps\":" + stream.fps() + ",\"age\":" + Math.min(stream.frameAge(), 600000L) + ",\"viewers\":" + stream.viewers() + ",\"audio\":" + stream.hasAudio() + "}");
+                    + ",\"fps\":" + stream.fps() + ",\"age\":" + Math.min(stream.frameAge(), 600000L) + ",\"viewers\":" + stream.viewers() + ",\"audio\":" + stream.hasAudio()
+                    + ",\"codec\":\"" + (stream.hasVideo() ? "h264" : stream.expectsVideo() ? "starting" : stream.isLive() ? "mjpeg" : "none") + "\",\"mime\":" + Util.q(stream.hasVideo() ? stream.videoMime() : "")
+                    + ",\"w\":" + stream.videoWidth() + ",\"h\":" + stream.videoHeight() + ",\"kbps\":" + stream.kbps() + ",\"q\":" + stream.quality() + ",\"note\":" + Util.q(stream.note()) + "}");
             return true;
         }
         if (get && path.equals("/api/screen")) {
             if (authFiles(r, out, false) == null) return true;
             return streamVideo(out);
+        }
+        if (get && path.equals("/api/screen-video")) {
+            if (authFiles(r, out, false) == null) return true;
+            return streamH264(out);
+        }
+        if (post && path.equals("/api/screen/quality")) {
+            Session s = auth(r, out, false);
+            if (s == null) return true;
+            if (!sameOrigin(r)) { json(out, false, 403, err("bad origin")); return true; }
+            int q = 0;
+            try { q = Integer.parseInt(r.form.get("q")); } catch (RuntimeException e) { json(out, false, 400, err("bad value")); return true; }
+            stream.want(s.token, q);
+            json(out, false, 200, "{\"ok\":true,\"q\":" + stream.quality() + "}");
+            return true;
         }
         if (get && path.equals("/api/screen-audio")) {
             if (authFiles(r, out, false) == null) return true;
@@ -1819,6 +1837,36 @@ public final class MiniServer {
                 out.write(f);
                 out.write(CRLF);
                 out.flush();
+            }
+        } catch (InterruptedException ignored) {
+        } finally {
+            stream.viewerDelta(-1);
+        }
+        return false;
+    }
+
+    /** The hardware-encoded screen: the init segment, then fragments from the newest keyframe, until the share (or its resolution) changes. */
+    private boolean streamH264(OutputStream out) throws IOException {
+        byte[] init = stream.videoInit();
+        if (!stream.isLive() || init == null) {
+            json(out, false, 404, err("Nobody is sharing a screen right now"));
+            return false;
+        }
+        long epoch = stream.videoEpoch();
+        out.write(("HTTP/1.1 200 OK\r\nContent-Type: video/mp4\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n").getBytes(LATIN1));
+        out.write(init);
+        out.flush();
+        stream.viewerDelta(1);
+        try {
+            long[] cur = {-1};
+            while (running && stream.isLive() && stream.videoEpoch() == epoch) {
+                byte[] f = stream.nextVideo(cur, 3000);
+                if (f == null) continue;
+                if (f.length == 0) break;
+                long t0 = System.nanoTime();
+                out.write(f);
+                out.flush();
+                if ((System.nanoTime() - t0) / 1000000L > 150) stream.noteSlow(); // a slow reader: ask the phone for less data
             }
         } catch (InterruptedException ignored) {
         } finally {

@@ -205,6 +205,27 @@ public class Harness {
                     } catch (Exception e) { }
                 } }).start();
             }
+            if (System.getProperty("video") != null) { // play a fragmented mp4 as the phone's hardware-encoded screen
+                final com.localshare.app.server.StreamHub hub = s.stream();
+                if (!hub.isLive()) hub.start(24000, 2);
+                final byte[] all = Files.readAllBytes(new File(System.getProperty("video")).toPath());
+                final java.util.List<byte[]> frags = new java.util.ArrayList<byte[]>();
+                java.io.ByteArrayOutputStream init = new java.io.ByteArrayOutputStream(), cur = new java.io.ByteArrayOutputStream();
+                for (int pos = 0; pos + 8 <= all.length; ) {
+                    int sz = ((all[pos] & 255) << 24) | ((all[pos + 1] & 255) << 16) | ((all[pos + 2] & 255) << 8) | (all[pos + 3] & 255);
+                    String ty = new String(all, pos + 4, 4, "ISO-8859-1");
+                    if (ty.equals("ftyp") || ty.equals("moov")) init.write(all, pos, sz);
+                    else { cur.write(all, pos, sz); if (ty.equals("mdat")) { frags.add(cur.toByteArray()); cur.reset(); } }
+                    pos += sz;
+                }
+                hub.setVideo(init.toByteArray(), System.getProperty("vmime"), 480, 270);
+                System.out.println("VIDEO " + frags.size() + " fragments");
+                new Thread(new Runnable() { public void run() {
+                    try {
+                        for (int i = 0; i < frags.size(); i++) { hub.pushVideo(frags.get(i), i % 30 == 0); Thread.sleep(33); }
+                    } catch (Exception e) { }
+                } }).start();
+            }
             System.out.println("READY 18080 hostToken=" + s.hostToken());
             Thread.sleep(Long.MAX_VALUE);
         }

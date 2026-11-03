@@ -99,7 +99,10 @@ header{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:max(
 table.keys{border-collapse:collapse;width:100%}.keys td{padding:5px 0;vertical-align:top}.keys td:first-child{white-space:nowrap;padding-right:14px}
 kbd{background:var(--surface2);border:1px solid var(--outline);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font:600 12.5px ui-monospace,Consolas,monospace}
 .tips{margin:0;padding-left:20px;color:var(--text)}.tips li{margin:4px 0}
-#scr{position:fixed;inset:0;background:#000;z-index:70;display:flex;align-items:center;justify-content:center}#scr.hide{display:none}#scr #scrv{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;cursor:grab}#scr #scrv.pan{cursor:grabbing}#scr img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:50% 50%;will-change:transform;user-select:none;-webkit-user-drag:none}
+#scr{position:fixed;inset:0;background:#000;z-index:70;display:flex;align-items:center;justify-content:center}#scr.hide{display:none}#scr #scrv{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;cursor:grab}#scr #scrv.pan{cursor:grabbing}#scr video{pointer-events:none;background:#000}#scr [hidden]{display:none!important}
+#vol{position:relative;display:flex;align-items:center;height:44px;border-radius:22px;background:rgba(12,12,13,.72);border:1px solid var(--outline)}#vol .btn{border:0;background:none;min-width:44px;padding:0;color:#fff}#vol #scrvol{width:0;opacity:0;margin:0;height:4px;transition:width .2s,opacity .2s,margin .2s;accent-color:#fff;cursor:pointer}#vol:hover #scrvol,#vol:focus-within #scrvol,#vol.open #scrvol{width:82px;opacity:1;margin:0 14px 0 2px}#dvr{position:absolute;left:12px;right:12px;bottom:max(14px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;z-index:3;background:rgba(12,12,13,.72);border:1px solid var(--outline);border-radius:26px;padding:4px 8px}#dvr[hidden]{display:none}#dvr .btn{min-width:44px;border:0;background:none;color:#fff;padding:0 8px}#dvr #dvrs{flex:1;accent-color:var(--primary);cursor:pointer}#dvrl.live{color:#FF4D4D}#dvrl:not(.live){color:var(--muted)}#scr.dock #dvr{right:392px}
+#vlv{position:absolute;left:12px;bottom:5px;height:3px;border-radius:2px;background:var(--primary);width:0;max-width:20px;transition:width .1s}
+#scrqs{background:rgba(12,12,13,.72);color:var(--text);border:1px solid var(--outline);border-radius:22px;height:44px;padding:0 12px;font:inherit}#scr img,#scr video{max-width:100%;max-height:100%;object-fit:contain;transform-origin:50% 50%;will-change:transform;user-select:none;-webkit-user-drag:none}
 #scrinfo{position:absolute;left:12px;top:max(12px,env(safe-area-inset-top));display:flex;align-items:center;gap:8px;background:rgba(12,12,13,.72);border:1px solid var(--outline);border-radius:20px;padding:7px 13px;font-size:13px;color:var(--text);pointer-events:none}#scrq{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}#scrq.good{background:#4ADE80}#scrq.fair{background:var(--primary)}#scrq.poor{background:var(--danger)}
 #scr .t .btn{min-width:44px;justify-content:center}@media(max-width:560px){#scr .t{flex-wrap:wrap;justify-content:flex-end;max-width:70%}#scrinfo{max-width:52%;flex-wrap:wrap}}#scr .t{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;display:flex;gap:8px}
 #chb b{position:absolute;top:2px;right:2px;min-width:17px;height:17px;border-radius:9px;background:var(--primary);color:var(--onprimary);font-size:11px;line-height:17px;text-align:center;padding:0 4px}
@@ -288,7 +291,7 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
 
 <button id="fab" class="hide" aria-label="Play Orb Arena"></button>
 <div id="ups"></div>
-<div id="scr" class="hide"><div id="scrv"><img id="scrimg" alt="The host's screen" draggable="false"></div><div id="scrinfo" aria-live="off"><i id="scrq"></i><span id="scrtxt">Connecting…</span></div><div class="t"><button class="btn" id="scrsnd" hidden aria-pressed="false">🔊 Sound</button><input type="range" id="scrvol" hidden min="0" max="1" step="0.05" aria-label="Volume" style="width:90px;accent-color:var(--primary)"><button class="btn" id="scrm" aria-label="Zoom out">−</button><button class="btn" id="scrz" aria-label="Reset zoom">1×</button><button class="btn" id="scrp" aria-label="Zoom in">+</button><span id="scrrx"></span><button class="btn" id="scrc">Chat</button><button class="btn" id="scrfs">Full screen</button><button class="btn pri" id="scrx">Close</button></div></div>
+<div id="scr" class="hide"><div id="scrv"><img id="scrimg" alt="The host's screen" draggable="false"><video id="scrvid" muted autoplay playsinline hidden aria-label="The host's screen"></video></div><div id="dvr" hidden><button class="btn" id="dvrp" aria-label="Pause">&#10074;&#10074;</button><input type="range" id="dvrs" min="0" max="1" step="0.1" value="1" aria-label="Rewind the live picture"><button class="btn" id="dvrl" aria-label="Back to live">&#9679; LIVE</button></div><div id="scrinfo" aria-live="off"><i id="scrq"></i><span id="scrtxt">Connecting…</span><span id="scrsns"></span></div><div class="t"><select id="scrqs" hidden aria-label="Picture quality"><option value="0">Auto</option><option value="1">480p</option><option value="2">720p</option><option value="3">1080p</option></select><div id="vol" hidden><button class="btn" id="volb" aria-label="Sound off. Tap to turn on"></button><input type="range" id="scrvol" min="0" max="1" step="0.02" aria-label="Volume"><i id="vlv"></i></div><button class="btn" id="scrm" aria-label="Zoom out">−</button><button class="btn" id="scrz" aria-label="Reset zoom">1×</button><button class="btn" id="scrp" aria-label="Zoom in">+</button><span id="scrrx"></span><button class="btn" id="scrc">Chat</button><button class="btn" id="scrfs">Full screen</button><button class="btn pri" id="scrx">Close</button></div></div>
 <div id="rxl" aria-hidden="true"></div>
 <div id="chat" class="hide" role="dialog" aria-label="Live chat"><div class="ch"><b>Live chat</b><span id="chwho"></span><select id="chsl" hidden aria-label="Slow mode"><option value="0">Slow: off</option><option value="5">5 s</option><option value="15">15 s</option><option value="30">30 s</option></select><button class="ib" id="chs" aria-label="Message sound"></button><button class="ib" id="chc" hidden aria-label="Clear the chat for everyone">Clear</button><button class="ib" id="chx" aria-label="Close chat"></button></div><div id="chl" aria-live="polite"></div><div id="chrx"></div><form id="chf" autocomplete="off"><button type="button" class="ib" id="cha" aria-label="Send a picture">&#128444;</button><input type="file" id="chfile" accept="image/*" hidden><input id="chi" maxlength="300" placeholder="Message everyone" aria-label="Message"><button class="btn pri">Send</button></form></div>
 <div id="wait" class="center hide"><div class="panel"><div class="logo" id="logo5"></div><h1>Waiting for the host</h1><p>The host has to let you in. Keep this page open.</p><button class="btn" id="wcancel" style="justify-content:center">Cancel</button></div></div>
@@ -344,6 +347,9 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
 const $=s=>document.querySelector(s);
 const P={
  chat:"M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z",
+ volHi:"M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z",
+ volLo:"M18.5 12A4.5 4.5 0 0 0 16 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z",
+ volOff:"M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z",
  folder:"M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z",
  file:"M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z",
  music:"M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z",
@@ -507,8 +513,8 @@ function waitIn(){
 }
 $("#wcancel").onclick=async()=>{clearTimeout(wt);await J("/api/logout",{method:"POST"});ME.name="";const r=await J("/api/info");INFO=r.d||{};showLogin()};
 /* ---------- watching the host's screen ---------- */
-let Z={z:1,x:0,y:0},zst=0,zpt=0,zbase=0,zt0=0,zrtt=0,zfps=0,zage=0,zlive=true;
-const scrv=$("#scrv"),scrimg=$("#scrimg");
+let zkb=0,znote="",Z={z:1,x:0,y:0},zst=0,zpt=0,zbase=0,zt0=0,zrtt=0,zfps=0,zage=0,zlive=true;
+const scrv=$("#scrv"),imgEl=$("#scrimg"),scrvid=$("#scrvid");let scrimg=imgEl;
 function zApply(){
   const cw=scrv.clientWidth,ch=scrv.clientHeight,w=scrimg.offsetWidth,h=scrimg.offsetHeight;
   const mx=Math.max(0,(Z.z*w-cw)/2),my=Math.max(0,(Z.z*h-ch)/2);
@@ -539,24 +545,79 @@ function zPaint(){
   if($("#scr").classList.contains("hide"))return;
   const q=!zlive||zage>4000?"poor":(zrtt<200&&zage<2500)?"good":zrtt<500?"fair":"poor";
   $("#scrq").className=q;
-  const w=scrimg.naturalWidth,h=scrimg.naturalHeight;
-  $("#scrtxt").textContent=(!zlive||zage>4000?"Stalled":q==="good"?"Good":q==="fair"?"Fair":"Poor")+(w?" · "+w+"×"+h:"")+" · "+zfps+" fps · live "+clock(zbase+Date.now()-zt0);
+  const w=scrimg.naturalWidth||scrimg.videoWidth,h=scrimg.naturalHeight||scrimg.videoHeight;
+  $("#scrtxt").textContent=(!zlive||zage>4000?"Stalled":q==="good"?"Good":q==="fair"?"Fair":"Poor")+(w?" · "+w+"×"+h:"")+" · "+zfps+" fps"+(zkb?" · "+(zkb/1000).toFixed(1)+" Mbps":"")+" · live "+clock(zbase+Date.now()-zt0)+(znote?" · "+znote:"");
 }
 async function zPoll(){
-  const t=performance.now(),r=await J("/api/screen/stat");zrtt=performance.now()-t;
-  if(r.ok){$("#scrsnd").hidden=!r.d.audio;if(!r.d.audio&&snd)stopSound();zlive=r.d.live;zbase=r.d.since;zt0=Date.now();zfps=r.d.fps;zage=r.d.age;if(!zlive){closeScr();toast("The host stopped sharing the screen");return}}
+  const t=performance.now(),r=await J("/api/screen/stat?q="+(store.get("ls_q")||"0"));zrtt=performance.now()-t;
+  if(r.ok){$("#vol").hidden=!r.d.audio;if(!r.d.audio&&snd)stopSound();zkb=r.d.kbps|0;znote=r.d.note||"";const qs=$("#scrqs");qs.hidden=r.d.codec!=="h264";if(document.activeElement!==qs)qs.value=store.get("ls_q")||"0";$("#dvr").hidden=r.d.codec!=="h264";zlive=r.d.live;zbase=r.d.since;zt0=Date.now();zfps=r.d.fps;zage=r.d.age;if(!zlive){closeScr();toast("The host stopped sharing the screen");return}}
   else zlive=false;
   zPaint();
 }
-function openScr(){Z={z:1,x:0,y:0};zApply();zbase=0;zt0=Date.now();zage=0;zlive=true;$("#scrtxt").textContent="Connecting…";$("#scrq").className="";scrimg.src="/api/screen?"+Date.now();$("#scr").classList.remove("hide");chDock();clearInterval(zst);clearInterval(zpt);zPoll();zst=setInterval(zPoll,2000);zpt=setInterval(zPaint,1000)}
-/* the phone's sound: raw 16-bit PCM over HTTP. The audio context is made inside the tap itself, or phone browsers keep it muted. */
+function openScr(){Z={z:1,x:0,y:0};zApply();zbase=0;zt0=Date.now();zage=0;zlive=true;$("#scrtxt").textContent="Connecting…";$("#scrq").className="";$("#scr").classList.remove("hide");chDock();clearInterval(zst);clearInterval(zpt);zPoll();zst=setInterval(zPoll,2000);zpt=setInterval(zPaint,1000);attach()}
+/* the picture: the phone's hardware-encoded video through the browser's video engine, or the old JPEG stream when that is not on */
+function useVid(on){imgEl.hidden=on;scrvid.hidden=!on;imgEl.style.transform=scrvid.style.transform="";scrimg=on?scrvid:imgEl;zApply()}
+async function attach(tries=0){
+  if($("#scr").classList.contains("hide"))return;
+  const r=await J("/api/screen/stat");if($("#scr").classList.contains("hide"))return;
+  const d=r.ok?r.d:{};
+  if(d.codec==="starting"&&tries<20)return setTimeout(()=>attach(tries+1),500);
+  if(d.codec==="h264"){
+    if(window.MediaSource&&MediaSource.isTypeSupported(d.mime)){useVid(true);return startVideo(d.mime)}
+    toast("This browser cannot play the phone's video. The host can turn on Compatibility mode.");closeScr();return;
+  }
+  useVid(false);imgEl.src="/api/screen?"+Date.now();
+}
+let vp=null;
+function stopVideo(){const v=vp;vp=null;if(v){clearInterval(v.timer);try{v.ab.abort()}catch(e){}try{URL.revokeObjectURL(v.url)}catch(e){}}scrvid.removeAttribute("src");try{scrvid.load()}catch(e){}}
+function startVideo(mime){
+  stopVideo();
+  const ab=new AbortController(),ms=new MediaSource(),url=URL.createObjectURL(ms),v={ab,ms,url,q:[],sb:null};vp=v;scrvid.src=url;
+  const again=()=>{if(vp===v){stopVideo();setTimeout(attach,400)}}; // the phone changed its picture size, or the link dropped: start over
+  const pump=()=>{
+    if(vp!==v||!v.sb||v.sb.updating||!v.q.length)return;
+    let n=0;for(const c of v.q)n+=c.length;const buf=new Uint8Array(n);let o=0;for(const c of v.q){buf.set(c,o);o+=c.length}v.q=[];
+    try{v.sb.appendBuffer(buf)}catch(e){if(e.name==="QuotaExceededError"){try{const b=v.sb.buffered;if(b.length)v.sb.remove(b.start(0),Math.max(b.start(0),scrvid.currentTime-2))}catch(x){}v.q.unshift(buf)}else again()}
+  };
+  ms.addEventListener("sourceopen",async()=>{
+    try{v.sb=ms.addSourceBuffer(mime);v.sb.mode="segments"}catch(e){toast("This browser cannot play the phone's video");closeScr();return}
+    v.sb.addEventListener("updateend",pump);
+    try{
+      const r=await fetch("/api/screen-video",{signal:ab.signal});if(!r.ok||!r.body)throw 0;const rd=r.body.getReader();
+      for(;;){const{value,done}=await rd.read();if(done||vp!==v)break;v.q.push(value);pump();if(v.q.length>300){again();return}}
+    }catch(e){}
+    again();
+  },{once:true});
+  v.dvr=false;
+  v.timer=setInterval(()=>{
+    if(vp!==v||!v.sb)return;const b=scrvid.buffered;if(!b.length)return;
+    const st=b.start(0),end=b.end(b.length-1),lag=end-scrvid.currentTime;
+    if(!v.dvr){
+      if(scrvid.paused)scrvid.play().catch(()=>{});
+      if(scrvid.currentTime<st-.05||lag>1.2)scrvid.currentTime=Math.max(st,end-.15); // stay at the live edge
+      else scrvid.playbackRate=lag>.6?1.08:1;
+    }else if(lag<.8&&!scrvid.paused){v.dvr=false} // caught up with the live picture again
+    if(!v.sb.updating&&end-st>34){try{v.sb.remove(st,end-30)}catch(e){}} // the last 30 s stay for rewinding; memory stays flat for hours
+    if(snd&&!snd.muted)snd.gain.gain.value=v.dvr?0:sndVol(); // no live sound over an old picture
+    const dl=$("#dvrl"),sl=$("#dvrs");dl.classList.toggle("live",!v.dvr);$("#dvrp").innerHTML=scrvid.paused?"&#9654;":"&#10074;&#10074;";
+    if(!v.drag){sl.min=st;sl.max=Math.max(end,st+.1);sl.value=scrvid.currentTime}
+  },400);
+}
+$("#dvrp").onclick=()=>{if(!vp)return;if(scrvid.paused){scrvid.play().catch(()=>{})}else{vp.dvr=true;scrvid.pause()}};
+$("#dvrs").addEventListener("input",()=>{if(!vp)return;vp.drag=true;vp.dvr=true;scrvid.currentTime=parseFloat($("#dvrs").value)});
+$("#dvrs").addEventListener("change",()=>{if(vp)vp.drag=false});
+$("#dvrl").onclick=()=>{if(!vp)return;const b=scrvid.buffered;vp.dvr=false;if(b.length)scrvid.currentTime=b.end(b.length-1)-.15;scrvid.play().catch(()=>{})};
+scrvid.addEventListener("resize",zApply);scrvid.addEventListener("loadedmetadata",zApply);
+/* the phone's sound: raw 16-bit PCM over HTTP, with a YouTube-style volume control. The audio context is made inside the tap itself, or phone browsers keep it muted. */
 let snd=null;
 const sndVol=()=>{const v=parseFloat(store.get("ls_vol"));return isNaN(v)?1:Math.max(0,Math.min(1,v))};
-function sndStatus(){
-  const b=$("#scrsnd");if(!snd){b.textContent="🔊 Sound";b.setAttribute("aria-pressed","false");$("#scrvol").hidden=true;return}
-  const now=performance.now(),lv=snd.lvl||0,bars=Math.min(5,Math.round(lv*12));
-  const m=!snd.got?"Connecting…":now-snd.loud>3000?"Silent from the phone":"Playing "+"▇".repeat(bars)+"▁".repeat(5-bars);
-  b.textContent="🔊 "+m+" · tap to stop";b.setAttribute("aria-pressed","true");$("#scrvol").hidden=false;
+function volPaint(){
+  const v=sndVol(),off=!snd||snd.muted||v===0,b=$("#volb");
+  b.innerHTML=svg(off?P.volOff:v<.5?P.volLo:P.volHi,24);
+  b.setAttribute("aria-label",off?"Sound off. Tap to turn on":"Sound on. Tap to mute");
+  $("#scrvol").value=off&&snd&&snd.muted?0:v;
+  $("#vlv").style.width=snd&&!snd.muted?Math.min(20,Math.round((snd.lvl||0)*30))+"px":"0";
+  const s=$("#scrsns");s.textContent=!snd||snd.muted?"":!snd.got?" · sound connecting…":performance.now()-snd.loud>3000?" · no sound from the phone":"";
 }
 function startSound(){
   if(snd)return;
@@ -564,7 +625,7 @@ function startSound(){
   const ab=new AbortController(),ctx=new AC(),gain=ctx.createGain();
   gain.gain.value=sndVol();gain.connect(ctx.destination);
   try{ctx.resume()}catch(e){}
-  snd={ab,ctx,gain,got:false,loud:performance.now(),lvl:0,played:0,tm:setInterval(sndStatus,250)};sndStatus();
+  snd={ab,ctx,gain,muted:false,got:false,loud:performance.now(),lvl:0,played:0,tm:setInterval(volPaint,250)};volPaint();
   (async()=>{
     try{
       const r=await fetch("/api/screen-audio",{signal:ab.signal});if(!r.ok||!r.body)throw new Error("The host is not sending sound");
@@ -578,18 +639,27 @@ function startSound(){
         for(let c=0;c<ch;c++){const d=bf.getChannelData(c);for(let i=0;i<frames;i++){const s=dv.getInt16((i*ch+c)*2,true)/32768;d[i]=s;if(s>pk)pk=s;else if(-s>pk)pk=-s}}
         snd.got=true;snd.lvl=pk;if(pk>.01)snd.loud=performance.now();
         if(ctx.state==="suspended")ctx.resume();
-        const now=ctx.currentTime;if(next<now+0.03)next=now+0.12;
-        if(next-now>0.7)continue; // fell behind: drop this piece so the sound stays in step with the picture
+        const now=ctx.currentTime;if(next<now+0.03)next=now+0.12+(vp?0.2:0); // the video engine adds a little delay of its own
+        if(next-now>0.9)continue; // fell behind: drop this piece so the sound stays in step with the picture
         const s=ctx.createBufferSource();s.buffer=bf;s.connect(gain);s.start(next);next+=bf.duration;snd.played+=frames;
       }
     }catch(e){if(snd&&snd.ab===ab&&e.name!=="AbortError")toast(e.message&&e.message.length<80?e.message:"Could not play the sound")}
     if(snd&&snd.ab===ab)stopSound();
   })();
 }
-function stopSound(){const s=snd;snd=null;if(s){clearInterval(s.tm);try{s.ab.abort()}catch(e){}try{s.ctx.close()}catch(e){}}sndStatus()}
-$("#scrsnd").onclick=()=>{if(snd)stopSound();else startSound()};
-$("#scrvol").value=String(sndVol());$("#scrvol").oninput=()=>{const v=parseFloat($("#scrvol").value);store.set("ls_vol",String(v));if(snd)snd.gain.gain.value=v};
-function closeScr(){stopSound();clearInterval(zst);clearInterval(zpt);scrimg.removeAttribute("src");$("#scr").classList.add("hide");chDock();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
+function stopSound(){const s=snd;snd=null;if(s){clearInterval(s.tm);try{s.ab.abort()}catch(e){}try{s.ctx.close()}catch(e){}}volPaint()}
+function volToggle(){if(!snd){startSound()}else{snd.muted=!snd.muted;snd.gain.gain.value=snd.muted?0:sndVol()}volPaint()}
+function volSet(v){v=Math.max(0,Math.min(1,v));store.set("ls_vol",String(v));if(!snd)startSound();else{snd.muted=v===0;snd.gain.gain.value=v}volPaint()}
+$("#volb").onclick=()=>{if(matchMedia("(hover:none)").matches&&!$("#vol").classList.contains("open")&&snd){$("#vol").classList.add("open");return}volToggle()};
+$("#scrvol").oninput=()=>volSet(parseFloat($("#scrvol").value));
+$("#scrqs").onchange=async()=>{store.set("ls_q",$("#scrqs").value);const r=await J("/api/screen/quality",{method:"POST",body:new URLSearchParams({q:$("#scrqs").value})});toast(r.ok?"Quality: "+$("#scrqs").selectedOptions[0].text+(r.d.q>+$("#scrqs").value?" (someone else asked for more)":""):(r.d.error||"Could not change it"))};
+document.addEventListener("keydown",e=>{
+  const el=document.activeElement||{};if($("#scr").classList.contains("hide")||/TEXTAREA|SELECT/.test(el.tagName)||(el.tagName==="INPUT"&&el.type!=="range")||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.key==="m"||e.key==="M"){e.preventDefault();volToggle()}
+  else if(e.key==="ArrowUp"){e.preventDefault();volSet(sndVol()+.1)}
+  else if(e.key==="ArrowDown"){e.preventDefault();volSet(sndVol()-.1)}
+});
+function closeScr(){stopSound();stopVideo();$("#vol").classList.remove("open");clearInterval(zst);clearInterval(zpt);imgEl.removeAttribute("src");$("#scr").classList.add("hide");chDock();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
 $("#watch").onclick=openScr;$("#scrx").onclick=closeScr;
 $("#scrfs").onclick=()=>{const e=$("#scr");if(document.fullscreenElement)document.exitFullscreen();else if(e.requestFullscreen)e.requestFullscreen().catch(()=>toast("Full screen is not available here"))};
 $("#scrimg").onerror=()=>{if(!$("#scr").classList.contains("hide")){closeScr();toast("The host stopped sharing the screen")}};

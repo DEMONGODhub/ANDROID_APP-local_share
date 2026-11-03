@@ -49,6 +49,10 @@ data class UiState(
     val castSince: Long = 0,
     val castSilent: Boolean = false,
     val castMic: Boolean = false,
+    val castCompat: Boolean = false,
+    /** Live line for the screen card: "720p · 30 fps · 2.6 Mbps · 36 °C · battery 71% (-6%/h)". Empty when not casting. */
+    val castMeter: String = "",
+    val castNote: String = "",
     val storage: StorageInfo = StorageInfo(),
     val invites: List<InviteInfo> = emptyList(),
     val chat: List<ChatRow> = emptyList(),
@@ -135,6 +139,20 @@ object ShareController {
     fun revokeInvite(token: String) { cfg.revokeInvite(token); refresh() }
     fun setWifi(ssid: String, pass: String) { prefs.wifiSsid = ssid; prefs.wifiPass = pass; refresh() }
     fun setCastMic(v: Boolean) { prefs.castMic = v; refresh() }
+    fun setCastCompat(v: Boolean) { prefs.castCompat = v; refresh() }
+
+    private fun meter(ctx: Context, s: com.localshare.app.server.StreamHub?): String {
+        if (!CastService.active || s == null) return ""
+        val b = CastService.battery(ctx)
+        val hrs = (System.currentTimeMillis() - CastService.startMs) / 3_600_000.0
+        val drop = CastService.startPct - b[0]
+        val drain = if (hrs >= 0.1 && CastService.startPct >= 0 && b[0] >= 0 && b[1] == 0) " (-" + Math.round(maxOf(0, drop) / hrs) + "%/h)" else ""
+        val vid = if (CastService.jpegMode || s.videoHeight() == 0) "Compatibility stream" else minOf(s.videoWidth(), s.videoHeight()).toString() + "p"
+        val rate = if (s.kbps() > 0) " · " + String.format(java.util.Locale.US, "%.1f", s.kbps() / 1000.0) + " Mbps" else ""
+        val heat = if (b[2] > 0) " · " + (b[2] / 10) + " °C" else ""
+        val bat = if (b[0] >= 0) " · battery " + b[0] + "%" + (if (b[1] == 1) " (charging)" else drain) else ""
+        return vid + rate + heat + bat
+    }
     fun chatSay(text: String) { server?.hostSay(text); refresh() }
     fun setChatSlow(sec: Int) { server?.setChatSlow(sec); refresh() }
     fun streamHub() = server?.stream()
@@ -268,6 +286,9 @@ object ShareController {
             viewers = s?.stream()?.viewers() ?: 0,
             castSilent = CastService.active && CastService.silent,
             castMic = prefs.castMic,
+            castCompat = prefs.castCompat,
+            castMeter = meter(app, s?.stream()),
+            castNote = if (CastService.active) s?.stream()?.note() ?: "" else "",
             castSince = if (CastService.active) s?.stream()?.startedAt() ?: 0L else 0L,
             storage = storage,
             chat = s?.chatRecent(12)?.map { ChatRow(it[0], it[1], it[2] == "1") } ?: emptyList(),
