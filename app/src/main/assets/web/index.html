@@ -556,7 +556,7 @@ function sndStatus(){
   const b=$("#scrsnd");if(!snd){b.textContent="🔊 Sound";b.setAttribute("aria-pressed","false");$("#scrvol").hidden=true;return}
   const now=performance.now(),lv=snd.lvl||0,bars=Math.min(5,Math.round(lv*12));
   const m=!snd.got?"Connecting…":now-snd.loud>3000?"Silent from the phone":"Playing "+"▇".repeat(bars)+"▁".repeat(5-bars);
-  b.textContent="🔇 "+m;b.setAttribute("aria-pressed","true");$("#scrvol").hidden=false;
+  b.textContent="🔊 "+m+" · tap to stop";b.setAttribute("aria-pressed","true");$("#scrvol").hidden=false;
 }
 function startSound(){
   if(snd)return;
