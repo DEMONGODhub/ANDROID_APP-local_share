@@ -131,14 +131,74 @@ public final class MiniServer {
 
     private static final class ChatMsg {
         final long id, t;
-        final String name, text;
+        final String name, text, key;
         final boolean host, mgr;
-        ChatMsg(long id, String name, String text, boolean host, boolean mgr) {
+        final int team, kind; // kind 0 = text, 1 = emoji reaction
+        volatile byte[] img; // a small JPEG; only the newest few are kept
+        ChatMsg(long id, String name, String text, boolean host, boolean mgr, String key, int team, int kind) {
             this.id = id; this.t = System.currentTimeMillis(); this.name = name; this.text = text; this.host = host; this.mgr = mgr;
+            this.key = key; this.team = team; this.kind = kind;
         }
     }
+    private final java.util.Set<String> chatMuted = java.util.Collections.synchronizedSet(new java.util.HashSet<String>());
+    private volatile int chatSlowSec;
+    private static final String[] REACTIONS = {"\u2764\ufe0f", "\ud83d\udd25", "\ud83d\ude02", "\ud83d\udc4f", "\ud83d\ude2e"};
+    private static final int CHAT_IMG_MAX = 120000, CHAT_IMGS_KEPT = 20;
+
+    private void addChat(ChatMsg m) {
+        synchronized (chat) {
+            chat.add(m);
+            long now = System.currentTimeMillis();
+            for (int i = chat.size() - 1; i >= 0; i--) if (chat.get(i).kind == 1 && now - chat.get(i).t > 20000) chat.remove(i); // reactions are fleeting
+            while (chat.size() > 200) chat.remove(0);
+            int imgs = 0;
+            for (int i = chat.size() - 1; i >= 0; i--) if (chat.get(i).img != null && ++imgs > CHAT_IMGS_KEPT) chat.get(i).img = null;
+        }
+    }
+
+    /** Shared checks for every way of speaking: muted, and the slow-mode wait. Writes the refusal and returns false. */
+    private boolean chatGate(Session s, OutputStream out, boolean slowable) throws IOException {
+        if (!s.host && chatMuted.contains(ServerConfig.permKey(s.device, s.ip))) { json(out, false, 403, err("The host muted you in the chat")); return false; }
+        long now = System.currentTimeMillis();
+        long gap = slowable && !mgr(s) ? Math.max(600, chatSlowSec * 1000L) : 600;
+        if (now - s.lastChat < gap) {
+            long w = (gap - (now - s.lastChat) + 999) / 1000;
+            json(out, false, 429, err(gap > 1000 ? "Slow mode: wait " + w + " s" : "Slow down a little"));
+            return false;
+        }
+        s.lastChat = now;
+        return true;
+    }
+
+    private ChatMsg newMsg(Session s, String text, int kind) {
+        return new ChatMsg(++chatSeq, s.name, text, s.host, !s.host && mgr(s), ServerConfig.permKey(s.device, s.ip), game == null ? 0 : game.teamOf(s.token), kind);
+    }
+
+    /** For the phone app: the latest messages as {name, text, "1" if from the host}. */
+    public java.util.List<String[]> chatRecent(int n) {
+        java.util.List<String[]> out = new java.util.ArrayList<String[]>();
+        synchronized (chat) {
+            for (int i = chat.size() - 1; i >= 0 && out.size() < n; i--) {
+                ChatMsg m = chat.get(i);
+                if (m.kind == 0) out.add(0, new String[]{m.name, m.img != null ? "\ud83d\udcf7 photo" : m.text, m.host ? "1" : "0"});
+            }
+        }
+        return out;
+    }
+
+    public void hostSay(String text) {
+        if (text == null || text.trim().length() == 0) return;
+        synchronized (chat) {
+            addChat(new ChatMsg(++chatSeq, "Host", text.trim().substring(0, Math.min(300, text.trim().length())), true, false, "host", 0, 0));
+        }
+    }
+
+    public int chatSlow() { return chatSlowSec; }
+
+    public void setChatSlow(int sec) { chatSlowSec = Math.max(0, Math.min(60, sec)); }
     private final java.util.ArrayList<ChatMsg> chat = new java.util.ArrayList<ChatMsg>();
     private long chatSeq;
+    private volatile int chatGen;
     private volatile Runnable onStopStream;
     private volatile boolean running;
     private int port;
@@ -344,7 +404,7 @@ public final class MiniServer {
             } catch (NumberFormatException e) {
                 return null;
             }
-            if (len >= 0 && r.method.equals("POST") && (r.path.equals("/api/upload") || r.path.equals("/api/save") || r.path.equals("/api/avatar"))) {
+            if (len >= 0 && r.method.equals("POST") && (r.path.equals("/api/upload") || r.path.equals("/api/save") || r.path.equals("/api/avatar") || r.path.equals("/api/chat/img"))) {
                 r.bodyLen = len;
                 return r;
             }
@@ -863,10 +923,12 @@ public final class MiniServer {
                     if (m.id <= after) continue;
                     if (sb.length() > 1) sb.append(',');
                     sb.append("{\"id\":").append(m.id).append(",\"t\":").append(m.t).append(",\"name\":").append(Util.q(m.name))
-                            .append(",\"text\":").append(Util.q(m.text)).append(",\"host\":").append(m.host).append(",\"mgr\":").append(m.mgr).append('}');
+                            .append(",\"text\":").append(Util.q(m.text)).append(",\"host\":").append(m.host).append(",\"mgr\":").append(m.mgr)
+                            .append(",\"k\":").append(m.kind).append(",\"team\":").append(m.team).append(",\"img\":").append(m.img != null)
+                            .append(",\"mu\":").append(chatMuted.contains(m.key)).append('}');
                 }
             }
-            json(out, isHead, 200, "{\"last\":" + last + ",\"online\":" + (activeCount(null) + 1) + ",\"msgs\":" + sb.append(']') + "}");
+            json(out, isHead, 200, "{\"last\":" + last + ",\"online\":" + (activeCount(null) + 1) + ",\"gen\":" + chatGen + ",\"slow\":" + chatSlowSec + ",\"canMod\":" + mgr(s) + ",\"msgs\":" + sb.append(']') + "}");
             return true;
         }
         if (post && path.equals("/api/chat")) {
@@ -881,14 +943,81 @@ public final class MiniServer {
             }
             String msg = cl.toString().trim();
             if (msg.length() == 0) { json(out, false, 400, err("Write something first")); return true; }
-            long now = System.currentTimeMillis();
-            if (now - s.lastChat < 600) { json(out, false, 429, err("Slow down a little")); return true; }
-            s.lastChat = now;
+            if (!chatGate(s, out, true)) return true;
+            synchronized (chat) { addChat(newMsg(s, msg, 0)); }
+            json(out, false, 200, "{\"ok\":true}");
+            return true;
+        }
+        if (post && path.equals("/api/chat/react")) {
+            Session s = auth(r, out, false);
+            if (s == null) return true;
+            if (!sameOrigin(r)) { json(out, false, 403, err("bad origin")); return true; }
+            String e = r.form.get("e");
+            boolean okE = false;
+            for (String x : REACTIONS) if (x.equals(e)) okE = true;
+            if (!okE) { json(out, false, 400, err("Unknown reaction")); return true; }
+            if (!chatGate(s, out, false)) return true;
+            synchronized (chat) { addChat(newMsg(s, e, 1)); }
+            json(out, false, 200, "{\"ok\":true}");
+            return true;
+        }
+        if (post && path.equals("/api/chat/img")) {
+            Session s = auth(r, out, false);
+            if (s == null) return false;
+            if (!sameOrigin(r) || r.bodyLen < 0 || r.bodyLen > CHAT_IMG_MAX) { json(out, false, 413, err("The picture is too big")); return false; }
+            byte[] b = new byte[(int) r.bodyLen];
+            int o = 0;
+            while (o < b.length) {
+                int k = in.read(b, o, b.length - o);
+                if (k < 0) return false;
+                o += k;
+            }
+            if (b.length < 4 || (b[0] & 255) != 0xff || (b[1] & 255) != 0xd8 || (b[2] & 255) != 0xff) { json(out, false, 400, err("Only JPEG pictures")); return true; }
+            if (!chatGate(s, out, true)) return true;
             synchronized (chat) {
-                chat.add(new ChatMsg(++chatSeq, s.name, msg, s.host, !s.host && mgr(s)));
-                while (chat.size() > 200) chat.remove(0);
+                ChatMsg m = newMsg(s, "", 0);
+                m.img = b;
+                addChat(m);
             }
             json(out, false, 200, "{\"ok\":true}");
+            return true;
+        }
+        if (get && path.equals("/api/chat/img")) {
+            if (auth(r, out, isHead) == null) return true;
+            long id = -1;
+            try { id = Long.parseLong(r.q.get("id")); } catch (RuntimeException e) { }
+            byte[] b = null;
+            synchronized (chat) { for (ChatMsg m : chat) if (m.id == id) b = m.img; }
+            if (b == null) { json(out, isHead, 404, err("gone")); return true; }
+            send(out, isHead, 200, "image/jpeg", b, "Cache-Control: private, max-age=86400", "X-Content-Type-Options: nosniff");
+            return true;
+        }
+        if (post && (path.equals("/api/chat/del") || path.equals("/api/chat/mute") || path.equals("/api/chat/slow"))) {
+            Session s = auth(r, out, false);
+            if (s == null) return true;
+            if (!mgr(s) || !sameOrigin(r)) { json(out, false, 403, err("Only the host or a manager can do that")); return true; }
+            if (path.equals("/api/chat/slow")) {
+                try { setChatSlow(Integer.parseInt(r.form.get("s"))); } catch (RuntimeException e) { json(out, false, 400, err("bad value")); return true; }
+                json(out, false, 200, "{\"ok\":true,\"slow\":" + chatSlowSec + "}");
+                return true;
+            }
+            long id = -1;
+            try { id = Long.parseLong(r.form.get("id")); } catch (RuntimeException e) { }
+            boolean done = false;
+            synchronized (chat) {
+                for (int i = 0; i < chat.size(); i++) {
+                    ChatMsg m = chat.get(i);
+                    if (m.id != id) continue;
+                    if (path.equals("/api/chat/del")) chat.remove(i);
+                    else if (!m.host && !"host".equals(m.key)) {
+                        if ("1".equals(r.form.get("on"))) chatMuted.add(m.key); else chatMuted.remove(m.key);
+                    } else break;
+                    done = true;
+                    break;
+                }
+                if (done) chatGen++; // pages notice and reload the list, so removals and mutes show up
+            }
+            json(out, false, done ? 200 : 404, done ? "{\"ok\":true}" : err("Nothing to change"));
             return true;
         }
         if (post && path.equals("/api/chat/clear")) {

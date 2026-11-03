@@ -20,6 +20,20 @@ public class Harness {
     static class Res { int code; byte[] body; Map<String, List<String>> h; String text() { return new String(body); }
         String head(String k) { List<String> v = h.get(k); return v == null ? "" : v.get(0); } }
 
+    /** POST raw bytes (a chat picture); returns the status code. */
+    static int postBin(String path, String cookie, byte[] body, String origin) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL("http://127.0.0.1:" + port + path).openConnection();
+        c.setRequestMethod("POST");
+        c.setRequestProperty("Cookie", "ls_token=" + cookie);
+        c.setRequestProperty("Origin", origin);
+        c.setRequestProperty("Content-Type", "image/jpeg");
+        c.setDoOutput(true);
+        c.getOutputStream().write(body);
+        int code = c.getResponseCode();
+        try { (code < 400 ? c.getInputStream() : c.getErrorStream()).close(); } catch (Exception ignored) { }
+        return code;
+    }
+
     static Res req(String method, String path, String cookie, String form, String... hdr) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL("http://127.0.0.1:" + port + path).openConnection();
         c.setInstanceFollowRedirects(false);
@@ -480,6 +494,42 @@ public class Harness {
         check("chat needs a sign-in", req("GET", "/api/chat?after=0", null, null).code == 401);
         check("guests cannot clear the chat", req("POST", "/api/chat/clear", cg, "", "Origin", O).code == 403);
         check("host clears the chat", req("POST", "/api/chat/clear", host, "", "Origin", O).code == 200 && req("GET", "/api/chat?after=0", cg, null).text().contains("\"msgs\":[]"));
+        System.out.println("== chat upgrades");
+        Thread.sleep(700);
+        check("a reaction is accepted and unknown ones are not", req("POST", "/api/chat/react", cg, "e=%E2%9D%A4%EF%B8%8F", "Origin", O).code == 200 && req("POST", "/api/chat/react", cg, "e=zzz", "Origin", O).code == 400);
+        check("a reaction shows as kind 1", req("GET", "/api/chat?after=0", cg, null).text().contains("\"k\":1"));
+        Thread.sleep(700);
+        byte[] jpg = new byte[3000]; jpg[0] = (byte) 0xff; jpg[1] = (byte) 0xd8; jpg[2] = (byte) 0xff;
+        check("a picture can be sent", postBin("/api/chat/img", cg, jpg, O) == 200);
+        String cj2 = req("GET", "/api/chat?after=0", cg, null).text();
+        check("the message says it has a picture", cj2.contains("\"img\":true"));
+        java.util.regex.Matcher mm = java.util.regex.Pattern.compile("\"id\":(\\d+),[^}]*\"img\":true").matcher(cj2);
+        mm.find();
+        String pid = mm.group(1);
+        Res pr = req("GET", "/api/chat/img?id=" + pid, cg, null);
+        check("the picture comes back as a JPEG, unchanged", pr.code == 200 && pr.head("Content-Type").contains("image/jpeg") && Arrays.equals(pr.body, jpg));
+        check("picture needs a sign-in", req("GET", "/api/chat/img?id=" + pid, null, null).code == 401);
+        Thread.sleep(700);
+        check("a non-JPEG is refused", postBin("/api/chat/img", cg, new byte[]{1, 2, 3, 4, 5}, O) == 400);
+        check("a huge picture is refused", postBin("/api/chat/img", cg, new byte[130000], O) == 413);
+        check("a guest cannot mute, delete or set slow mode", req("POST", "/api/chat/mute", cg, "id=" + pid + "&on=1", "Origin", O).code == 403 && req("POST", "/api/chat/del", cg, "id=" + pid, "Origin", O).code == 403 && req("POST", "/api/chat/slow", cg, "s=5", "Origin", O).code == 403);
+        check("the host mutes the guest", req("POST", "/api/chat/mute", host, "id=" + pid + "&on=1", "Origin", O).code == 200 && req("GET", "/api/chat?after=0", cg, null).text().contains("\"mu\":true"));
+        Thread.sleep(700);
+        check("a muted guest cannot speak", req("POST", "/api/chat", cg, "text=hi", "Origin", O).code == 403);
+        check("the host unmutes", req("POST", "/api/chat/mute", host, "id=" + pid + "&on=0", "Origin", O).code == 200);
+        Thread.sleep(700);
+        check("and the guest can speak again", req("POST", "/api/chat", cg, "text=back", "Origin", O).code == 200);
+        check("slow mode can be set by the host", req("POST", "/api/chat/slow", host, "s=5", "Origin", O).text().contains("\"slow\":5"));
+        Thread.sleep(700);
+        Res sl = req("POST", "/api/chat", cg, "text=one", "Origin", O);
+        Thread.sleep(700);
+        Res sl2 = req("POST", "/api/chat", cg, "text=two", "Origin", O);
+        check("slow mode holds a guest back with a clear message", sl.code == 429 || (sl.code == 200 && sl2.code == 429 && sl2.text().contains("Slow mode")));
+        check("but not the host", req("POST", "/api/chat", host, "text=a", "Origin", O).code == 200);
+        req("POST", "/api/chat/slow", host, "s=0", "Origin", O);
+        check("the host deletes a message", req("POST", "/api/chat/del", host, "id=" + pid, "Origin", O).code == 200 && !req("GET", "/api/chat?after=0", cg, null).text().contains("\"img\":true"));
+        check("deleting changes gen so pages reload", req("GET", "/api/chat?after=0", cg, null).text().contains("\"gen\":"));
+        req("POST", "/api/chat/clear", host, "", "Origin", O);
         check("stream stat is reachable and idle", req("GET", "/api/screen/stat", cg, null).text().contains("\"live\":false"));
         com.localshare.app.server.StreamHub h2 = s.stream();
         h2.start(24000, 2);

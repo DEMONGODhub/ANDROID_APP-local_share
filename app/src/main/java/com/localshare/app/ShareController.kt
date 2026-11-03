@@ -26,6 +26,8 @@ data class LogLine(val time: Long, val kind: String, val who: String, val detail
 /** How much the shared folders hold, against the phone's own storage. */
 data class StorageInfo(val sharedBytes: Long = 0, val files: Int = 0, val folders: Int = 0, val total: Long = 0, val free: Long = 0, val counting: Boolean = false, val partial: Boolean = false)
 
+data class ChatRow(val name: String, val text: String, val host: Boolean)
+
 data class InviteInfo(val token: String, val expires: Long, val uses: Int)
 
 data class GameRules(val teams: Boolean = false, val shots: Boolean = true, val bots: Int = 1, val zone: Int = 1, val health: Int = 1)
@@ -47,6 +49,8 @@ data class UiState(
     val castSince: Long = 0,
     val storage: StorageInfo = StorageInfo(),
     val invites: List<InviteInfo> = emptyList(),
+    val chat: List<ChatRow> = emptyList(),
+    val chatSlow: Int = 0,
     val wifiSsid: String = "",
     val wifiPass: String = "",
     val blocks: List<BlockedDevice> = emptyList(),
@@ -128,6 +132,8 @@ object ShareController {
     fun createInvite(hours: Int, uses: Int) { cfg.createInvite(hours * 3600000L, uses); refresh() }
     fun revokeInvite(token: String) { cfg.revokeInvite(token); refresh() }
     fun setWifi(ssid: String, pass: String) { prefs.wifiSsid = ssid; prefs.wifiPass = pass; refresh() }
+    fun chatSay(text: String) { server?.hostSay(text); refresh() }
+    fun setChatSlow(sec: Int) { server?.setChatSlow(sec); refresh() }
     fun streamHub() = server?.stream()
     fun setOnStopStream(r: () -> Unit) { server?.setOnStopStream(Runnable(r)) }
     fun setDevicePerms(id: String, perms: Int) { server?.setPerms(id, perms); refresh() }
@@ -259,6 +265,8 @@ object ShareController {
             viewers = s?.stream()?.viewers() ?: 0,
             castSince = if (CastService.active) s?.stream()?.startedAt() ?: 0L else 0L,
             storage = storage,
+            chat = s?.chatRecent(12)?.map { ChatRow(it[0], it[1], it[2] == "1") } ?: emptyList(),
+            chatSlow = s?.chatSlow() ?: 0,
             invites = if (s != null) cfg.activeInvites().map { InviteInfo(it.token, it.expires, it.uses) } else emptyList(),
             wifiSsid = prefs.wifiSsid,
             wifiPass = prefs.wifiPass,

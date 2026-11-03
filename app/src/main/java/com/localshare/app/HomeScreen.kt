@@ -49,6 +49,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -157,6 +160,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
         item { FoldersCard(st, { picker.launch(null) }) }
         item { ScreenCard(st, onCast) }
         item { InviteCard(st) }
+        if (st.running) item { ChatCard(st) }
         item { WifiCard(st) }
         item { JoinCard(onJoin) }
         item { PermissionsCard(perms) { p -> notif.launch(p) } }
@@ -373,6 +377,31 @@ private fun ScreenCard(st: UiState, onCast: () -> Unit) {
         )
         if (st.casting) Button({ CastService.stop(ctx) }, Modifier.fillMaxWidth().heightIn(min = 48.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)) { Text("Stop sharing screen") }
         else OutlinedButton(onCast, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.running) { Text("Start sharing screen") }
+    }
+}
+
+/** Read and answer the live chat without opening the browser page. */
+@Composable
+private fun ChatCard(st: UiState) {
+    var msg by rememberSaveable { mutableStateOf("") }
+    SectionCard {
+        Text("Live chat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        if (st.chat.isEmpty()) Text("No messages yet. Guests chat from the page, and you can answer here.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        st.chat.forEach { c ->
+            Text(buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (c.host) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)) { append(c.name + ": ") }
+                append(c.text)
+            }, style = MaterialTheme.typography.bodyMedium)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(msg, { if (it.length <= 300) msg = it }, Modifier.weight(1f), singleLine = true, label = { Text("Message everyone") })
+            Button({ ShareController.chatSay(msg); msg = "" }, Modifier.heightIn(min = 48.dp), enabled = msg.isNotBlank()) { Text("Send") }
+        }
+        Text("Slow mode (guests only)", fontWeight = FontWeight.SemiBold)
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(0 to "Off", 5 to "5 s", 15 to "15 s", 30 to "30 s").forEach { (s, l) -> FilterChip(st.chatSlow == s, { ShareController.setChatSlow(s) }, { Text(l) }) }
+        }
+        Text("To mute a guest or delete a message, use the host controls on the web page.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
     }
 }
 

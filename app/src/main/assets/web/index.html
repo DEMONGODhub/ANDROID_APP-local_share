@@ -104,7 +104,14 @@ kbd{background:var(--surface2);border:1px solid var(--outline);border-bottom-wid
 #scr .t .btn{min-width:44px;justify-content:center}@media(max-width:560px){#scr .t{flex-wrap:wrap;justify-content:flex-end;max-width:70%}#scrinfo{max-width:52%;flex-wrap:wrap}}#scr .t{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;display:flex;gap:8px}
 #chb b{position:absolute;top:2px;right:2px;min-width:17px;height:17px;border-radius:9px;background:var(--primary);color:var(--onprimary);font-size:11px;line-height:17px;text-align:center;padding:0 4px}
 #chat{position:fixed;right:16px;bottom:16px;width:min(360px,calc(100% - 32px));height:min(500px,72vh);background:var(--surface);border:1px solid var(--outline);border-radius:20px;z-index:80;display:flex;flex-direction:column;box-shadow:var(--shadow);overflow:hidden;animation:chin .22s ease-out}
-#chat.hide{display:none}@keyframes chin{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+#chat.hide{display:none}#chat.dock{top:0;right:0;bottom:0;left:auto;height:auto;width:380px;border-radius:0;border-width:0 0 0 1px}
+#scr.dock #scrv{right:380px;left:0;width:auto}#scr.dock .t{right:392px;max-width:calc(100% - 680px)}#scr .t{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 300px)}
+#chb b,#scrc b{position:absolute;top:2px;right:2px;min-width:17px;height:17px;border-radius:9px;background:var(--primary);color:var(--onprimary);font-size:11px;line-height:17px;text-align:center;padding:0 4px}#scrc{position:relative}
+#chl .cm img{display:block;max-width:100%;max-height:220px;border-radius:12px;margin-top:4px;cursor:zoom-in}#chl .cm .mod{display:inline-flex;gap:4px;margin-left:8px}#chl .cm .mod button{border:0;background:var(--surface2);color:var(--muted);border-radius:10px;font-size:11px;padding:2px 7px;cursor:pointer}
+#chrx{display:flex;gap:4px;padding:4px 10px;border-top:1px solid var(--outline)}#chrx button,#scrrx button{border:0;background:none;font-size:20px;cursor:pointer;border-radius:10px;min-width:36px;min-height:36px}#chrx button:active,#scrrx button:active{transform:scale(1.25)}
+#chsl{background:var(--surface2);color:var(--text);border:1px solid var(--outline);border-radius:12px;height:30px;font-size:12px}
+#rxl{position:fixed;right:0;bottom:0;width:140px;height:60vh;pointer-events:none;z-index:85;overflow:hidden}#rxl i{position:absolute;bottom:0;font-style:normal;font-size:32px;animation:rxup 2.6s ease-out forwards}@keyframes rxup{from{opacity:1;transform:translateY(0) scale(.7)}to{opacity:0;transform:translateY(-55vh) scale(1.3)}}
+@media (prefers-reduced-motion:reduce){#rxl i{animation:none;opacity:0}}@keyframes chin{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 #chat .ch{display:flex;align-items:center;gap:8px;padding:12px 12px 12px 16px;border-bottom:1px solid var(--outline)}#chat .ch b{font-size:16px}#chwho{flex:1;color:var(--muted);font-size:12px}
 #chl{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
 .cm{max-width:86%;align-self:flex-start;background:var(--surface2);border-radius:16px 16px 16px 4px;padding:8px 12px;word-break:break-word;animation:chin .18s ease-out}.cm.me{align-self:flex-end;background:var(--primary);color:var(--onprimary);border-radius:16px 16px 4px 16px}
@@ -281,8 +288,9 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
 
 <button id="fab" class="hide" aria-label="Play Orb Arena"></button>
 <div id="ups"></div>
-<div id="scr" class="hide"><div id="scrv"><img id="scrimg" alt="The host's screen" draggable="false"></div><div id="scrinfo" aria-live="off"><i id="scrq"></i><span id="scrtxt">Connecting…</span></div><div class="t"><button class="btn" id="scrsnd" hidden aria-pressed="false">🔊 Sound</button><button class="btn" id="scrm" aria-label="Zoom out">−</button><button class="btn" id="scrz" aria-label="Reset zoom">1×</button><button class="btn" id="scrp" aria-label="Zoom in">+</button><button class="btn" id="scrc">Chat</button><button class="btn" id="scrfs">Full screen</button><button class="btn pri" id="scrx">Close</button></div></div>
-<div id="chat" class="hide" role="dialog" aria-label="Live chat"><div class="ch"><b>Live chat</b><span id="chwho"></span><button class="ib" id="chc" hidden aria-label="Clear the chat for everyone">Clear</button><button class="ib" id="chx" aria-label="Close chat"></button></div><div id="chl" aria-live="polite"></div><form id="chf" autocomplete="off"><input id="chi" maxlength="300" placeholder="Message everyone" aria-label="Message"><button class="btn pri">Send</button></form></div>
+<div id="scr" class="hide"><div id="scrv"><img id="scrimg" alt="The host's screen" draggable="false"></div><div id="scrinfo" aria-live="off"><i id="scrq"></i><span id="scrtxt">Connecting…</span></div><div class="t"><button class="btn" id="scrsnd" hidden aria-pressed="false">🔊 Sound</button><button class="btn" id="scrm" aria-label="Zoom out">−</button><button class="btn" id="scrz" aria-label="Reset zoom">1×</button><button class="btn" id="scrp" aria-label="Zoom in">+</button><span id="scrrx"></span><button class="btn" id="scrc">Chat</button><button class="btn" id="scrfs">Full screen</button><button class="btn pri" id="scrx">Close</button></div></div>
+<div id="rxl" aria-hidden="true"></div>
+<div id="chat" class="hide" role="dialog" aria-label="Live chat"><div class="ch"><b>Live chat</b><span id="chwho"></span><select id="chsl" hidden aria-label="Slow mode"><option value="0">Slow: off</option><option value="5">5 s</option><option value="15">15 s</option><option value="30">30 s</option></select><button class="ib" id="chs" aria-label="Message sound"></button><button class="ib" id="chc" hidden aria-label="Clear the chat for everyone">Clear</button><button class="ib" id="chx" aria-label="Close chat"></button></div><div id="chl" aria-live="polite"></div><div id="chrx"></div><form id="chf" autocomplete="off"><button type="button" class="ib" id="cha" aria-label="Send a picture">&#128444;</button><input type="file" id="chfile" accept="image/*" hidden><input id="chi" maxlength="300" placeholder="Message everyone" aria-label="Message"><button class="btn pri">Send</button></form></div>
 <div id="wait" class="center hide"><div class="panel"><div class="logo" id="logo5"></div><h1>Waiting for the host</h1><p>The host has to let you in. Keep this page open.</p><button class="btn" id="wcancel" style="justify-content:center">Cancel</button></div></div>
 <div id="toast" class="hide" role="status"></div>
 <div id="layer"></div>
@@ -418,33 +426,69 @@ async function boot(){
   if(window.gameAuto&&window.gameOpen)gameOpen();
 }
 /* ---------- live chat ---------- */
-let chLast=0,chTimer=0,chOpen=false,chUnread=0,chFirst=true;
-const chBadge=()=>{let b=$("#chb b");if(!chUnread){if(b)b.remove();return}if(!b){b=document.createElement("b");$("#chb").appendChild(b)}b.textContent=chUnread>9?"9+":chUnread};
+let chLast=0,chTimer=0,chOpen=false,chUnread=0,chFirst=true,chGen=-1,chMod=false,chAC=null;
+const REACT=["❤️","🔥","😂","👏","😮"],TEAM={1:"#FF6B63",2:"#6FA1FF"};
+const chSnd=()=>store.get("ls_chs")!=="0";
+function paintChs(){$("#chs").textContent=chSnd()?"🔔":"🔕";$("#chs").setAttribute("aria-pressed",String(chSnd()))}
+function chBeep(){if(!chSnd())return;try{chAC=chAC||new(window.AudioContext||window.webkitAudioContext)();const o=chAC.createOscillator(),g=chAC.createGain();o.frequency.value=880;g.gain.setValueAtTime(.08,chAC.currentTime);g.gain.exponentialRampToValueAtTime(.001,chAC.currentTime+.18);o.connect(g);g.connect(chAC.destination);o.start();o.stop(chAC.currentTime+.2)}catch(e){}}
+const chBadge=()=>["#chb","#scrc"].forEach(id=>{let b=$(id+" b");if(!chUnread){if(b)b.remove();return}if(!b){b=document.createElement("b");$(id).appendChild(b)}b.textContent=chUnread>9?"9+":chUnread});
+function floatReact(e){const l=$("#rxl"),i=document.createElement("i");i.textContent=e;i.style.right=(10+Math.random()*90)+"px";l.appendChild(i);setTimeout(()=>i.remove(),2700)}
+async function chAct(path,body){const r=await J(path,{method:"POST",body:new URLSearchParams(body)});if(r.ok){chLast=0;chGen=-1;$("#chl").innerHTML="";chFirst=true;chPoll()}else toast(r.d.error||"Could not do that")}
 function chAdd(m){
+  if(m.k===1){if(!chFirst&&m.name!==ME.name)floatReact(m.text);return}
   const l=$("#chl"),near=l.scrollHeight-l.scrollTop-l.clientHeight<80,d=document.createElement("div"),mine=m.name===ME.name;
   d.className="cm"+(mine?" me":"");
-  const s=document.createElement("small"),n=document.createElement("i");n.textContent=m.name+(m.host?" · host":m.mgr?" · manager":"");
+  const s=document.createElement("small"),n=document.createElement("i");n.textContent=m.name+(m.host?" · host":m.mgr?" · manager":"")+(m.mu?" · muted":"");
+  if(TEAM[m.team])n.style.color=TEAM[m.team];
   s.appendChild(n);s.appendChild(document.createTextNode("  "+new Date(m.t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})));
-  const t=document.createElement("div");t.textContent=m.text;d.appendChild(s);d.appendChild(t);l.appendChild(d);
+  if(chMod){const md=document.createElement("span");md.className="mod";
+    const del=document.createElement("button");del.textContent="Delete";del.onclick=()=>chAct("/api/chat/del",{id:m.id});md.appendChild(del);
+    if(!m.host){const mu=document.createElement("button");mu.textContent=m.mu?"Unmute":"Mute";mu.onclick=()=>chAct("/api/chat/mute",{id:m.id,on:m.mu?"0":"1"});md.appendChild(mu)}
+    s.appendChild(md)}
+  d.appendChild(s);
+  if(m.text){const t=document.createElement("div");t.textContent=m.text;d.appendChild(t)}
+  if(m.img){const im=new Image();im.alt="Picture from "+m.name;im.loading="lazy";im.src="/api/chat/img?id="+m.id;im.onclick=()=>window.open(im.src,"_blank","noopener");im.onload=()=>{if(near||mine)l.scrollTop=l.scrollHeight};d.appendChild(im)}
+  l.appendChild(d);
   if(near||mine)l.scrollTop=l.scrollHeight;
   while(l.children.length>200)l.removeChild(l.firstChild);
 }
 async function chPoll(){
   const r=await J("/api/chat?after="+chLast);if(!r.ok)return;
-  if(r.d.last<chLast){$("#chl").innerHTML="";chLast=0;return chPoll()} // the host cleared the chat
-  let n=0;for(const m of r.d.msgs){chAdd(m);if(m.name!==ME.name)n++}
+  if(r.d.last<chLast||(chGen>=0&&(r.d.gen|0)!==chGen)){$("#chl").innerHTML="";chLast=0;chFirst=true;chGen=r.d.gen|0;return chPoll()} // cleared, or a message was removed
+  chGen=r.d.gen|0;chMod=r.d.canMod;
+  let n=0;for(const m of r.d.msgs){chAdd(m);if(m.name!==ME.name&&m.k!==1)n++}
   chLast=r.d.last;
-  if(chFirst)chFirst=false;else if(!chOpen&&n){chUnread+=n;chBadge()}
+  if(chFirst)chFirst=false;else if(n){chBeep();if(!chOpen){chUnread+=n;chBadge()}}
   $("#chwho").textContent=r.d.online+" online";
+  $("#chsl").hidden=!chMod;if(chMod&&document.activeElement!==$("#chsl"))$("#chsl").value=String(r.d.slow);
 }
-function chShow(on){chOpen=on;$("#chat").classList.toggle("hide",!on);if(on){chUnread=0;chBadge();const l=$("#chl");l.scrollTop=l.scrollHeight;setTimeout(()=>$("#chi").focus(),60)}}
-function chStart(){chStop();chLast=0;chFirst=true;chUnread=0;chBadge();$("#chl").innerHTML="";$("#chc").hidden=!ME.host;chPoll();chTimer=setInterval(chPoll,2500)}
+function chDock(){const d=chOpen&&innerWidth>=900&&!$("#scr").classList.contains("hide");$("#chat").classList.toggle("dock",d);$("#scr").classList.toggle("dock",d);try{zApply()}catch(e){}}
+function chShow(on){chOpen=on;$("#chat").classList.toggle("hide",!on);chDock();if(on){chUnread=0;chBadge();const l=$("#chl");l.scrollTop=l.scrollHeight;setTimeout(()=>$("#chi").focus(),60)}}
+function chStart(){chStop();chLast=0;chFirst=true;chUnread=0;chGen=-1;chBadge();$("#chl").innerHTML="";$("#chc").hidden=!ME.host;paintChs();chPoll();chTimer=setInterval(chPoll,1500)}
 function chStop(){clearInterval(chTimer);chShow(false)}
+addEventListener("resize",chDock);
 $("#chb").onclick=()=>chShow(!chOpen);$("#chx").onclick=()=>chShow(false);$("#scrc").onclick=()=>chShow(!chOpen);
+$("#chs").onclick=()=>{store.set("ls_chs",chSnd()?"0":"1");paintChs();chBeep()};
+$("#chsl").onchange=async()=>{const r=await J("/api/chat/slow",{method:"POST",body:new URLSearchParams({s:$("#chsl").value})});toast(r.ok?($("#chsl").value==="0"?"Slow mode off":"Slow mode: one message every "+$("#chsl").value+" s"):(r.d.error||"Could not change it"))};
+async function react(e){const r=await J("/api/chat/react",{method:"POST",body:new URLSearchParams({e})});if(r.ok)floatReact(e);else if(r.status!==429)toast(r.d.error||"Could not send")}
+for(const box of ["#chrx","#scrrx"])REACT.slice(0,box==="#scrrx"?3:5).forEach(e=>{const b=document.createElement("button");b.type="button";b.textContent=e;b.setAttribute("aria-label","React "+e);b.onclick=()=>react(e);$(box).appendChild(b)});
 $("#chf").onsubmit=async e=>{
   e.preventDefault();const i=$("#chi"),v=i.value.trim();if(!v)return;
   const r=await J("/api/chat",{method:"POST",body:new URLSearchParams({text:v})});
-  if(r.ok){i.value="";chPoll()}else toast(r.status===429?"Slow down a little":(r.d.error||"Could not send"));
+  if(r.ok){i.value="";chPoll()}else toast(r.d.error||"Could not send");
+};
+/* pictures are shrunk here first (about 640 px, under 120 KB) */
+$("#cha").onclick=()=>$("#chfile").click();
+$("#chfile").onchange=async()=>{
+  const f=$("#chfile").files[0];$("#chfile").value="";if(!f)return;
+  try{
+    const bm=await createImageBitmap(f),sc=Math.min(1,640/Math.max(bm.width,bm.height)),c=document.createElement("canvas");c.width=Math.round(bm.width*sc);c.height=Math.round(bm.height*sc);
+    c.getContext("2d").drawImage(bm,0,0,c.width,c.height);
+    let q=.7,blob;do{blob=await new Promise(r=>c.toBlob(r,"image/jpeg",q));q-=.15}while(blob&&blob.size>115000&&q>.2);
+    if(!blob||blob.size>115000)return toast("That picture is too big");
+    const r=await fetch("/api/chat/img",{method:"POST",headers:{"Content-Type":"image/jpeg"},body:blob});
+    if(r.ok)chPoll();else toast((await r.json().catch(()=>({}))).error||"Could not send the picture");
+  }catch(e){toast("Could not read that picture")}
 };
 $("#chc").onclick=async()=>{if(!confirm("Clear the chat for everyone?"))return;const r=await J("/api/chat/clear",{method:"POST"});if(r.ok){$("#chl").innerHTML="";chLast=0;chPoll()}};
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&chOpen)chShow(false)});
@@ -504,7 +548,7 @@ async function zPoll(){
   else zlive=false;
   zPaint();
 }
-function openScr(){Z={z:1,x:0,y:0};zApply();zbase=0;zt0=Date.now();zage=0;zlive=true;$("#scrtxt").textContent="Connecting…";$("#scrq").className="";scrimg.src="/api/screen?"+Date.now();$("#scr").classList.remove("hide");clearInterval(zst);clearInterval(zpt);zPoll();zst=setInterval(zPoll,2000);zpt=setInterval(zPaint,1000)}
+function openScr(){Z={z:1,x:0,y:0};zApply();zbase=0;zt0=Date.now();zage=0;zlive=true;$("#scrtxt").textContent="Connecting…";$("#scrq").className="";scrimg.src="/api/screen?"+Date.now();$("#scr").classList.remove("hide");chDock();clearInterval(zst);clearInterval(zpt);zPoll();zst=setInterval(zPoll,2000);zpt=setInterval(zPaint,1000)}
 /* the phone's sound: raw 16-bit stereo PCM streamed over HTTP, played with the browser's audio engine */
 let snd=null;
 async function startSound(){
@@ -530,7 +574,7 @@ async function startSound(){
 }
 function stopSound(){const s=snd;snd=null;if(s){try{s.ab.abort()}catch(e){}try{s.ctx&&s.ctx.close()}catch(e){}}const b=$("#scrsnd");b.setAttribute("aria-pressed","false");b.textContent="🔊 Sound"}
 $("#scrsnd").onclick=()=>{if(snd){stopSound();return}const b=$("#scrsnd");b.setAttribute("aria-pressed","true");b.textContent="🔇 Mute";startSound()};
-function closeScr(){stopSound();clearInterval(zst);clearInterval(zpt);scrimg.removeAttribute("src");$("#scr").classList.add("hide");if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
+function closeScr(){stopSound();clearInterval(zst);clearInterval(zpt);scrimg.removeAttribute("src");$("#scr").classList.add("hide");chDock();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}
 $("#watch").onclick=openScr;$("#scrx").onclick=closeScr;
 $("#scrfs").onclick=()=>{const e=$("#scr");if(document.fullscreenElement)document.exitFullscreen();else if(e.requestFullscreen)e.requestFullscreen().catch(()=>toast("Full screen is not available here"))};
 $("#scrimg").onerror=()=>{if(!$("#scr").classList.contains("hide")){closeScr();toast("The host stopped sharing the screen")}};

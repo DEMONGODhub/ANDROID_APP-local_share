@@ -338,6 +338,12 @@ final class GameHub {
         return Math.max(0, (int) ((r * r - START_R * START_R) / 10));
     }
 
+    /** 1 red, 2 blue, 0 when teams are off or the player is unknown. */
+    synchronized int teamOf(String token) {
+        Player p = players.get(token);
+        return cfg.gameTeams && p != null ? p.team : 0;
+    }
+
     private double hpBase() { return cfg.gameHealth == 0 ? 60 : cfg.gameHealth == 2 ? 200 : HP; }
 
     private long shrinkMs() { return cfg.gameZone == 0 ? 90000 : cfg.gameZone == 2 ? 300000 : SHRINK_MS; }
