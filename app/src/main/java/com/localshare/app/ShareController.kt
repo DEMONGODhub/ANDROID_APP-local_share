@@ -65,7 +65,7 @@ data class UiState(
     val maxClients: Int = 5,
     val gameEnabled: Boolean = true,
     val allowUploads: Boolean = false,
-    val remoteOn: Boolean = true,
+    val remoteOn: Boolean = false,
     val allowDelete: Boolean = false,
     val gameOnly: Boolean = false,
     val gameMode: Int = 0,

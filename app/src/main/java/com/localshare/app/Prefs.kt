@@ -56,7 +56,7 @@ class Prefs(ctx: Context) {
 
     /** Guests may press the TV remote on the web page. */
     var remoteOn: Boolean
-        get() = sp.getBoolean("remote_on", true)
+        get() = sp.getBoolean("remote_on", false)
         set(v) = sp.edit().putBoolean("remote_on", v).apply()
 
     /** Use the old picture-by-picture stream (for very old browsers). The default hardware video is smoother and cooler. */

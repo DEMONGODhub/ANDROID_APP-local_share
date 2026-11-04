@@ -32,8 +32,8 @@ public final class ServerConfig {
     public volatile boolean gameEnabled = true;
     public volatile boolean allowUploads = false;
     public volatile boolean allowDelete = false;
-    /** Guests may use the TV remote on the web page (only while a LocalShare TV is connected). */
-    public volatile boolean remote = true;
+    /** Every guest may use the TV remote on the web page (only while a LocalShare TV is connected). Off by default: the host grants it per device. */
+    public volatile boolean remote = false;
     /** Game-only hosting: nobody but the host can see any file. */
     public volatile boolean gameOnly = false;
     /** 0 = PvP (endless, respawn), 1 = Battle Royale (rounds, shrinking zone). */
@@ -139,7 +139,7 @@ public final class ServerConfig {
     }
 
     /** Per-device extras the host can grant (or restrict) from the Devices tab. */
-    public static final int P_DELETE = 1, P_RENAME = 2, P_EDIT = 4, P_GAME_ONLY = 8, P_UPLOAD = 16, P_MOVE = 32, P_ALL = 63,
+    public static final int P_DELETE = 1, P_RENAME = 2, P_EDIT = 4, P_GAME_ONLY = 8, P_UPLOAD = 16, P_MOVE = 32, P_ALL = 63, P_REMOTE = 256 /* may press the TV remote */,
             P_MANAGER = 64 /* shares the host's authority */, P_TRUSTED = 128 /* already approved to join */;
     private final ConcurrentHashMap<String, Integer> perms = new ConcurrentHashMap<String, Integer>();
 
@@ -154,7 +154,7 @@ public final class ServerConfig {
     }
 
     public void setPerms(String key, int v) {
-        v &= 255; // file rights plus the manager and already-approved bits
+        v &= 511; // file rights plus the manager, already-approved and TV-remote bits
         if (v == 0) perms.remove(key); else perms.put(key, v);
         changed();
     }
@@ -165,7 +165,7 @@ public final class ServerConfig {
 
     public void loadPerms(java.util.Map<String, Integer> m) {
         perms.clear();
-        for (java.util.Map.Entry<String, Integer> e : m.entrySet()) if ((e.getValue() & 255) != 0) perms.put(e.getKey(), e.getValue() & 255);
+        for (java.util.Map.Entry<String, Integer> e : m.entrySet()) if ((e.getValue() & 511) != 0) perms.put(e.getKey(), e.getValue() & 511);
     }
     // ---- invite links: a pass that works for a set time and a set number of people, so nobody needs the password ----
     public static final class Invite {

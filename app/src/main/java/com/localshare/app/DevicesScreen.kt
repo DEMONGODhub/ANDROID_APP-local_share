@@ -83,7 +83,7 @@ private fun permsNote(p: Int, gameOnlyMode: Boolean): String {
     if (p and 64 != 0) return "  ·  manager"
     if (gameOnlyMode) return "  ·  game only"
     if (p and 8 != 0) return "  ·  game only"
-    val on = listOfNotNull(if (p and 16 != 0) "upload" else null, if (p and 1 != 0) "delete" else null, if (p and 2 != 0) "rename" else null, if (p and 32 != 0) "move" else null, if (p and 4 != 0) "edit" else null)
+    val on = listOfNotNull(if (p and 16 != 0) "upload" else null, if (p and 1 != 0) "delete" else null, if (p and 2 != 0) "rename" else null, if (p and 32 != 0) "move" else null, if (p and 4 != 0) "edit" else null, if (p and 256 != 0) "use the TV remote" else null)
     return if (on.isEmpty()) "" else "  ·  can " + on.joinToString(", ")
 }
 
@@ -116,6 +116,7 @@ private fun DevicePermsDialog(d: Device, st: UiState, onClose: () -> Unit) {
                 PermRow("Delete files and folders", "Can delete files and folders", p and 1 != 0 || (st.allowDelete && !gameOnly), enabled = !gameOnly) { set(1, it) }
                 PermRow("Rename files and folders", "Can rename them", p and 2 != 0, enabled = !gameOnly) { set(2, it) }
                 PermRow("Move files and folders", "Can move them into other folders", p and 32 != 0, enabled = !gameOnly) { set(32, it) }
+                PermRow("Use the TV remote", "Can press the remote on the web page while LocalShare TV is connected", p and 256 != 0 || (st.remoteOn && !gameOnly), enabled = !gameOnly) { set(256, it) }
                 PermRow("Edit text files", "Can change .txt, .md, .json and other text files (up to 512 KB)", p and 4 != 0, enabled = !gameOnly) { set(4, it) }
                 Text(
                     if (st.gameOnly) "Game-only mode is on for everyone."

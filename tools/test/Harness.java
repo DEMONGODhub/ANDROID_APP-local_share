@@ -502,6 +502,7 @@ public class Harness {
         ac.disconnect();
         check("stopping ends the live flag", req("GET", "/api/info", m, null).text().contains("\"live\":false"));
         System.out.println("== TV remote");
+        c.remote = true; // everyone may use it for the tests below; the per-device rules follow after
         String rg = login("dev-r1", "", "Rita");
         check("remote refused while no TV is connected", req("POST", "/api/remote", rg, "k=up", "Origin", O).code == 409);
         check("only the TV may poll", req("GET", "/api/remote/poll", rg, null).code == 403);
@@ -524,7 +525,19 @@ public class Harness {
         check("button mashing is slowed down", slow > 0);
         c.remote = false;
         check("host can turn the remote off", req("POST", "/api/remote", rg, "k=up", "Origin", O).code == 403);
+        c.remote = false;
+        String rg2 = login("dev-r2", "", "Raj");
+        Thread.sleep(1100);
+        check("with the remote off for everyone a guest is refused", req("POST", "/api/remote", rg2, "k=up", "Origin", O).code == 403);
+        check("and gets no Remote button", req("GET", "/api/info", rg2, null).text().contains("\"tv\":false"));
+        c.setPerms(ServerConfig.permKey("dev-r2", "127.0.0.1"), ServerConfig.P_REMOTE);
+        check("a device the host allowed may press keys", req("POST", "/api/remote", rg2, "k=up", "Origin", O).code == 200);
+        check("and gets the Remote button", req("GET", "/api/info", rg2, null).text().contains("\"tv\":true"));
+        check("another device is still refused", req("POST", "/api/remote", rg, "k=up", "Origin", O).code == 403);
+        c.setPerms(ServerConfig.permKey("dev-r2", "127.0.0.1"), 0);
+        check("taking the permission back works", req("POST", "/api/remote", rg2, "k=up", "Origin", O).code == 403);
         c.remote = true;
+        req("POST", "/api/logout", rg2, "", "Origin", O);
         req("POST", "/api/logout", tvt, "", "Origin", O);
         req("POST", "/api/logout", rg, "", "Origin", O);
         System.out.println("== live chat + stream stats");

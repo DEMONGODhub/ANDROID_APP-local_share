@@ -530,6 +530,11 @@ public final class MiniServer {
         return s != null && !adm(s) && (cfg.gameOnly || (permsOf(s) & ServerConfig.P_GAME_ONLY) != 0);
     }
 
+    /** The host, anyone the host allowed on the Devices tab, or everyone when the host turned the remote on for all. */
+    private boolean canRemote(Session s) {
+        return s != null && !s.pending && (adm(s) || (!gameOnly(s) && (cfg.remote || (permsOf(s) & ServerConfig.P_REMOTE) != 0)));
+    }
+
     private boolean canUpload(Session s) {
         return s != null && (adm(s) || (!gameOnly(s) && (cfg.allowUploads || (permsOf(s) & ServerConfig.P_UPLOAD) != 0)));
     }
@@ -668,6 +673,7 @@ public final class MiniServer {
             String pw = cfg.password;
             if (pw.length() > 0 && !viaInv && !Util.safeEq(pw, r.form.get("password"))) {
                 synchronized (fails) {
+                    if (fails.size() > 500) for (java.util.Iterator<long[]> it = fails.values().iterator(); it.hasNext(); ) { long[] o = it.next(); if (o[1] != 0 && o[1] <= now) it.remove(); }
                     long[] g = fails.get(r.ip);
                     if (g == null) {
                         g = new long[2];
@@ -759,7 +765,7 @@ public final class MiniServer {
             Session s = sessionOf(r);
             if (s != null && s.pending) s.lastSeen = System.currentTimeMillis();
             json(out, isHead, 200, "{\"needPassword\":" + (cfg.password.length() > 0) + ",\"gameMode\":" + cfg.gameMode + ",\"gameEnabled\":" + (cfg.gameEnabled || gameOnly(s))
-                    + ",\"tv\":" + (cfg.remote && s != null && !s.pending && !gameOnly(s) && tvHere())+ ",\"max\":" + cfg.maxClients + ",\"active\":" + activeCount(null) + ",\"authed\":" + (s != null) + ",\"pending\":" + (s != null && s.pending) + ",\"manager\":" + (mgr(s) && !s.host) + ",\"live\":" + (stream.isLive() && s != null && !s.pending && !gameOnly(s))
+                    + ",\"tv\":" + (canRemote(s) && tvHere())+ ",\"max\":" + cfg.maxClients + ",\"active\":" + activeCount(null) + ",\"authed\":" + (s != null) + ",\"pending\":" + (s != null && s.pending) + ",\"manager\":" + (mgr(s) && !s.host) + ",\"live\":" + (stream.isLive() && s != null && !s.pending && !gameOnly(s))
                     + ",\"name\":" + Util.q(s == null ? "" : s.name) + ",\"host\":" + (s != null && s.host)
                     + ",\"canUpload\":" + canUpload(s) + ",\"canDelete\":" + canDelete(s) + ",\"canRename\":" + canRename(s)
                     + ",\"canMove\":" + canMove(s) + ",\"canEdit\":" + canEdit(s) + ",\"gameOnly\":" + gameOnly(s) + ",\"maxUpload\":" + cfg.maxUploadBytes + "}");
@@ -1098,9 +1104,9 @@ public final class MiniServer {
         }
         if (post && path.equals("/api/remote")) {
             Session s = sessionOf(r);
-            if (s == null || s.pending || gameOnly(s)) { json(out, false, 401, err("Join first")); return true; }
+            if (s == null || s.pending) { json(out, false, 401, err("Join first")); return true; }
             if (!sameOrigin(r)) { json(out, false, 403, err("bad origin")); return true; }
-            if (!cfg.remote) { json(out, false, 403, err("The host turned the remote off")); return true; }
+            if (!canRemote(s)) { json(out, false, 403, err("Ask the host to allow the TV remote for you")); return true; }
             if (!tvHere()) { json(out, false, 409, err("No TV is connected")); return true; }
             long now = System.currentTimeMillis();
             if (now - s.remoteWin > 1000) { s.remoteWin = now; s.remoteCnt = 0; }
@@ -1157,6 +1163,13 @@ public final class MiniServer {
         byte[] d = name.matches("[A-Za-z0-9._-]+") ? assets.get(name) : null;
         if (d == null) {
             json(out, isHead, 404, err("not found"));
+            return true;
+        }
+        if (name.equals("index.html")) {
+            // the page may only talk to this phone: nothing is loaded from, or sent to, any other site, and it cannot be framed or given a base tag
+            send(out, isHead, 200, ctype, d, "Cache-Control: " + cache,
+                "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+                "Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()");
             return true;
         }
         send(out, isHead, 200, ctype, d, "Cache-Control: " + cache);

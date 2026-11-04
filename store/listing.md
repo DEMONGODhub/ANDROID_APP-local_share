@@ -7,7 +7,9 @@ Turn any folder on your phone into a website that every device on your Wi-Fi can
 
 • Share folders with phones, laptops and TVs through a link or QR code
 • Invite links that expire, so friends join without the password
-• Watch your screen live, with sound
+• Watch your screen live in smooth, sharp video with sound; viewers pick 480p to 1080p, pause and rewind the last 30 seconds
+• Live chat with pictures and reactions, and a TV remote on the web page (you choose who may use it)
+• Made to run for hours: the phone lowers the picture when it gets hot or the battery is low
 • Photos, music, video (resume and subtitles), PDFs and text open right in the browser
 • Orb Arena, a multiplayer game: teams, Battle Royale, host rules and a saved hall of fame
 • You choose who gets in: passwords, approval, managers, per-device permissions
@@ -16,11 +18,11 @@ Turn any folder on your phone into a website that every device on your Wi-Fi can
 
 **Category:** Tools   **Content rating:** Everyone (questionnaire: no violence beyond cartoon orbs, no user-generated content shared publicly)
 **Privacy policy URL:** https://demongodhub.github.io/android_app/privacy.html  (turn on GitHub Pages: Settings → Pages → main /docs)
-**Data safety form:** collects no data; shares no data; data stays on device.
-**Permission justifications:** RECORD_AUDIO = capture sound for screen sharing; FOREGROUND_SERVICE (special use / media projection) = keep sharing alive.
+**Data safety form:** collects no data; shares no data; data stays on device. (Screen, sound and optional microphone voice go only to devices on the same network that the user lets in, are not recorded and not sent to the developer.)
+**Permission justifications:** RECORD_AUDIO = capture the phone's sound for screen sharing and, only when the user switches it on, send their voice; FOREGROUND_SERVICE (special use / media projection / microphone) = keep file sharing and the live screen share running while the screen is off or the app is in the background; REQUEST_IGNORE_BATTERY_OPTIMIZATIONS = stop Android putting sharing to sleep.
 
 ## Screenshots to take (phone, 1080×1920, at least 2)
-1. Home with the storage ring and sharing on
+1. Home with the storage ring, the new logo and sharing on
 2. Invite link + QR
 3. Browser page showing files on a laptop
 4. Screen sharing viewer
