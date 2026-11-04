@@ -1,6 +1,9 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#C9AE00" android:pathData="M26.0,26.0 L38.0,26.0 L76.4,27.6 L136.4,87.6 L142.0,130.0 L142.0,142.0 L86.0,142.0 L26.0,82.0z" />
-    <path android:fillColor="#0D0D0D" android:pathData="M26.0,26.0h12v44h44v12H26.0z" />
-    <path android:fillColor="#0D0D0D" android:pathData="M47.0,27.6h12.4v12.4h-12.4z M64.0,27.6h12.4v12.4h-12.4z M47.0,44.6h12.4v12.4h-12.4z M64.0,44.6h12.4v12.4h-12.4z" />
+    <group android:pivotX="60" android:pivotY="60" android:scaleX="0.62" android:scaleY="0.62" android:translateX="-6" android:translateY="-6">
+        <path android:strokeColor="#0C0C0D" android:strokeWidth="7" android:strokeLineCap="round" android:strokeLineJoin="round"
+            android:pathData="M49,22h22a10,10 0 0 1 10,10v56a10,10 0 0 1 -10,10H49a10,10 0 0 1 -10,-10V32a10,10 0 0 1 10,-10z" />
+        <path android:strokeColor="#0C0C0D" android:strokeWidth="7" android:strokeLineCap="round"
+            android:pathData="M92,47a18,18 0 0 1 0,26M28,47a18,18 0 0 0 0,26" />
+    </group>
 </vector>

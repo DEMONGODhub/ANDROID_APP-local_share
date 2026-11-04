@@ -161,9 +161,20 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
         item { ScreenCard(st, onCast) }
         item { InviteCard(st) }
         if (st.running) item { ChatCard(st) }
-        item { WifiCard(st) }
-        item { JoinCard(onJoin) }
-        item { PermissionsCard(perms) { p -> notif.launch(p) } }
+        item {
+            // Wi-Fi code, join-by-code and permissions are set up once, so they fold away (open while a permission is still missing)
+            var more by rememberSaveable { mutableStateOf(!(perms.notifications && perms.unrestricted)) }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TextButton({ more = !more }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Text(if (more) "Hide set-up tools" else "Set-up tools: Wi-Fi code, join by code, permissions", fontWeight = FontWeight.SemiBold)
+                }
+                if (more) {
+                    WifiCard(st)
+                    JoinCard(onJoin)
+                    PermissionsCard(perms) { p -> notif.launch(p) }
+                }
+            }
+        }
         if (st.running) item {
             SectionCard {
                 Text("Connected: ${st.devices.size} of ${st.maxClients} devices", fontWeight = FontWeight.SemiBold)
@@ -203,15 +214,17 @@ private fun StatusCard(
     var qrFor by remember { mutableStateOf<String?>(null) }
     val brush = Brush.verticalGradient(listOf(c.surfaceContainerHigh, c.surfaceContainer))
     val fg = c.onSurface
-    val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(0.3f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "dot")
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         Modifier.fillMaxWidth().clip(MaterialTheme.shapes.extraLarge).background(brush)
             .border(1.dp, if (st.running) c.primary.copy(alpha = 0.55f) else c.outline, MaterialTheme.shapes.extraLarge).padding(22.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(12.dp).clip(CircleShape).background(if (st.running) c.primary.copy(alpha = pulse) else c.onSurfaceVariant))
-                Spacer(Modifier.width(8.dp))
+                Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(if (st.running) c.primary else c.surfaceContainerHighest), contentAlignment = Alignment.Center) {
+                    com.localshare.app.ui.LogoMark(22.dp, if (st.running) c.onPrimary else c.onSurfaceVariant, st.running)
+                }
+                Spacer(Modifier.width(10.dp))
                 Text(if (st.running) "Sharing is ON" else "Sharing is OFF", color = fg, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
             if (st.running) {
@@ -223,7 +236,7 @@ private fun StatusCard(
                 st.urls.forEach { u ->
                     Surface(color = c.surfaceContainerHighest, shape = MaterialTheme.shapes.medium) {
                         Column(Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 2.dp)) {
-                            Text(u, color = c.onSurface, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(u, color = c.onSurface, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Row(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {
                                 TextButton({ qrFor = if (qrFor == u) null else u }, colors = ButtonDefaults.textButtonColors(contentColor = c.primary)) {
                                     Text(if (qrFor == u) "Hide QR" else "QR code")
@@ -252,7 +265,7 @@ private fun StatusCard(
             }
             st.error?.let { Text(it, color = c.error) }
             Button(
-                onClick = { if (st.running) onStop() else onStart() },
+                onClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); if (st.running) onStop() else onStart() },
                 enabled = st.running || st.folders.isNotEmpty() || st.gameOnly,
                 colors = if (st.running) ButtonDefaults.buttonColors(containerColor = c.surfaceContainerHighest, contentColor = c.primary) else ButtonDefaults.buttonColors(),
                 modifier = Modifier.fillMaxWidth().height(56.dp),

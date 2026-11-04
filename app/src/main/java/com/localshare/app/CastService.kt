@@ -49,6 +49,7 @@ class CastService : Service() {
     private var handler: Handler? = null
     @Volatile private var lastJpeg: ByteArray? = null
     @Volatile private var lastAt = 0L
+    private var repeating = false
     private var rec: AudioRecord? = null
     private var audioThread: Thread? = null
     private var mic: AudioRecord? = null
@@ -74,8 +75,8 @@ class CastService : Service() {
             val h = Handler(t.looper)
             handler = h
             p.registerCallback(object : MediaProjection.Callback() { override fun onStop() { stopCast() } }, h)
-            val m = resources.displayMetrics
-            scrW = m.widthPixels; scrH = m.heightPixels; dpi = m.densityDpi
+            readScreen()
+            (getSystemService(Context.DISPLAY_SERVICE) as DisplayManager).registerDisplayListener(rotation, h)
             hub.start(24000, 2)
             jpegMode = false; hwFails = 0
             val b0 = battery(this)
@@ -90,6 +91,29 @@ class CastService : Service() {
             return START_NOT_STICKY
         }
         return START_NOT_STICKY
+    }
+
+    /** The phone's real screen size right now (it changes when the phone is turned). */
+    @Suppress("DEPRECATION")
+    private fun readScreen() {
+        val dm = android.util.DisplayMetrics()
+        (getSystemService(Context.DISPLAY_SERVICE) as DisplayManager).getDisplay(0).getRealMetrics(dm)
+        scrW = dm.widthPixels; scrH = dm.heightPixels; dpi = dm.densityDpi
+    }
+
+    /** Turning the phone: make the picture tall or wide again, so it fills the viewer's screen instead of staying small. */
+    private val rotation = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(id: Int) {}
+        override fun onDisplayRemoved(id: Int) {}
+        override fun onDisplayChanged(id: Int) {
+            val p = projection; val h = handler; val hub = ShareController.streamHub()
+            if (id != 0 || !active || p == null || h == null || hub == null) return
+            val wasWide = scrW > scrH
+            readScreen()
+            if ((scrW > scrH) == wasWide) return
+            if (jpegMode) startJpeg(p, h, hub)
+            else if (!startEncoder(p, h, hub, curShort)) encoderFailed(p, h, hub)
+        }
     }
 
     // ---------- hardware H.264 ----------
@@ -281,6 +305,7 @@ class CastService : Service() {
     private fun startJpeg(p: MediaProjection, h: Handler, hub: StreamHub) {
         jpegMode = true
         hub.clearVideo()
+        val oldReader = reader
         val scale = minOf(1f, 1280f / maxOf(scrW, scrH))
         val w = (scrW * scale).toInt() and 1.inv()
         val hh = (scrH * scale).toInt() and 1.inv()
@@ -308,6 +333,9 @@ class CastService : Service() {
         val d = display
         if (d == null) display = p.createVirtualDisplay("localshare-cast", w, hh, dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, r.surface, null, h)
         else { d.surface = r.surface; d.resize(w, hh, dpi) }
+        try { oldReader?.close() } catch (x: Exception) { }
+        if (repeating) return
+        repeating = true
         // a still screen produces no new frames, so repeat the last one for anyone who just opened the page
         h.postDelayed(object : Runnable {
             override fun run() {
@@ -374,6 +402,8 @@ class CastService : Service() {
     private fun stopCast() {
         active = false
         stopEncoder()
+        try { (getSystemService(Context.DISPLAY_SERVICE) as DisplayManager).unregisterDisplayListener(rotation) } catch (e: Exception) { }
+        repeating = false
         val r = rec; rec = null
         val mi = mic; mic = null
         try { mi?.stop() } catch (e: Exception) { }
