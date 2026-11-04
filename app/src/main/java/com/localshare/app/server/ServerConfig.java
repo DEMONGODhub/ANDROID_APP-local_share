@@ -32,6 +32,8 @@ public final class ServerConfig {
     public volatile boolean gameEnabled = true;
     public volatile boolean allowUploads = false;
     public volatile boolean allowDelete = false;
+    /** Guests may use the TV remote on the web page (only while a LocalShare TV is connected). */
+    public volatile boolean remote = true;
     /** Game-only hosting: nobody but the host can see any file. */
     public volatile boolean gameOnly = false;
     /** 0 = PvP (endless, respawn), 1 = Battle Royale (rounds, shrinking zone). */

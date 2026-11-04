@@ -54,6 +54,11 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("cast_mic", false)
         set(v) = sp.edit().putBoolean("cast_mic", v).apply()
 
+    /** Guests may press the TV remote on the web page. */
+    var remoteOn: Boolean
+        get() = sp.getBoolean("remote_on", true)
+        set(v) = sp.edit().putBoolean("remote_on", v).apply()
+
     /** Use the old picture-by-picture stream (for very old browsers). The default hardware video is smoother and cooler. */
     var castCompat: Boolean
         get() = sp.getBoolean("cast_compat", false)

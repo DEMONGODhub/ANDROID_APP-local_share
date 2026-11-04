@@ -11,7 +11,11 @@ import java.util.List;
 public final class Fmp4 {
     private static final int TIMESCALE = 90000;
     private final ByteArrayOutputStream tmp = new ByteArrayOutputStream();
-    private long seq, lastPts = -1, lastDur;
+    private long seq, lastPts = -1;
+    // each frame is held until the next one arrives, so its length is the real time to the next frame (no gaps for the browser to stall on)
+    private byte[] pendSample;
+    private long pendDts;
+    private boolean pendKey, outKey;
 
     /** Splits an Annex-B buffer (00 00 01 / 00 00 00 01 start codes) into NAL units without the start codes. */
     public static List<byte[]> splitNals(byte[] b, int off, int len) {
@@ -42,7 +46,7 @@ public final class Fmp4 {
 
     /** ftyp + moov for the given SPS/PPS (NAL units without start codes). */
     public byte[] init(byte[] sps, byte[] pps, int w, int h) {
-        seq = 0; lastPts = -1; lastDur = 0;
+        seq = 0; lastPts = -1; pendSample = null;
         ByteArrayOutputStream o = new ByteArrayOutputStream();
         w(o, box("ftyp", cat(str("isom"), i32(512), str("isom"), str("iso6"), str("avc1"), str("mp41"))));
         byte[] avcc = new byte[11 + sps.length + pps.length];
@@ -73,7 +77,8 @@ public final class Fmp4 {
 
     /**
      * One frame as moof+mdat. {@code annexB} is the encoder's output; parameter sets and SEI are dropped and the rest is
-     * written with length prefixes. Returns null when the frame holds no picture data.
+     * written with length prefixes. Returns the PREVIOUS frame's fragment (see {@link #lastKey()}), or null for the first frame
+     * and when this one holds no picture data.
      */
     public byte[] fragment(byte[] annexB, int off, int len, long ptsUs, boolean key) {
         tmp.reset();
@@ -87,9 +92,18 @@ public final class Fmp4 {
         if (tmp.size() == 0) return null;
         byte[] sample = tmp.toByteArray();
         long dts = ptsUs * TIMESCALE / 1000000L;
-        long dur = lastPts < 0 ? TIMESCALE / 30 : Math.max(1, dts - lastPts);
         if (lastPts >= 0 && dts <= lastPts) dts = lastPts + 1;
-        lastPts = dts; lastDur = dur;
+        lastPts = dts;
+        byte[] out = null;
+        if (pendSample != null) { out = emit(pendSample, pendDts, Math.max(1, dts - pendDts), pendKey); outKey = pendKey; }
+        pendSample = sample; pendDts = dts; pendKey = key;
+        return out;
+    }
+
+    /** Whether the fragment returned by the last {@link #fragment} call starts with a key frame. */
+    public boolean lastKey() { return outKey; }
+
+    private byte[] emit(byte[] sample, long dts, long dur, boolean key) {
         byte[] mfhd = full("mfhd", 0, 0, i32((int) ++seq));
         byte[] tfhd = full("tfhd", 0, 0x20000, i32(1));
         byte[] tfdt = full("tfdt", 1, 0, cat(i32((int) (dts >>> 32)), i32((int) dts)));

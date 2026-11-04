@@ -59,6 +59,8 @@ public final class MiniServer {
         final boolean host;
         volatile boolean pending;
         volatile long lastChat;
+        volatile long remoteWin;
+        volatile int remoteCnt;
         final long since = System.currentTimeMillis();
         volatile long lastSeen = since;
         volatile String avKey = "";
@@ -308,13 +310,24 @@ public final class MiniServer {
                     s.close();
                     continue;
                 }
+                final java.util.concurrent.atomic.AtomicInteger open = conns.computeIfAbsent(fip, k -> new java.util.concurrent.atomic.AtomicInteger());
+                if (open.incrementAndGet() > MAX_CONN_PER_IP && !isLoopback(fip)) { // one device cannot use up every connection
+                    open.decrementAndGet();
+                    s.close();
+                    continue;
+                }
                 try {
                     pool.execute(new Runnable() {
                         @Override public void run() {
-                            handle(s, fip);
+                            try {
+                                handle(s, fip);
+                            } finally {
+                                open.decrementAndGet();
+                            }
                         }
                     });
                 } catch (RejectedExecutionException e) {
+                    open.decrementAndGet();
                     s.close();
                 }
             } catch (IOException e) {
@@ -322,6 +335,9 @@ public final class MiniServer {
             }
         }
     }
+
+    private static final int MAX_CONN_PER_IP = 64;
+    private final Map<String, java.util.concurrent.atomic.AtomicInteger> conns = new ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>();
 
     private void handle(Socket s, String ip) {
         try {
@@ -390,9 +406,9 @@ public final class MiniServer {
         }
         parseForm(qi < 0 ? "" : target.substring(qi + 1), r.q);
         String hl;
-        int n = 0;
+        int n = 0, hb = 0;
         while ((hl = readLine(in)) != null && hl.length() > 0) {
-            if (++n > 64) throw new IOException("too many headers");
+            if (++n > 64 || (hb += hl.length()) > 32768) throw new IOException("too many headers");
             int ci = hl.indexOf(':');
             if (ci > 0) r.h.put(hl.substring(0, ci).trim().toLowerCase(), hl.substring(ci + 1).trim());
         }
@@ -595,6 +611,25 @@ public final class MiniServer {
     }
 
     /** Browsers always send Origin on POST and WebSocket; a mismatch means another site is driving the request. */
+    private static final java.util.Set<String> REMOTE_KEYS = new java.util.HashSet<String>(java.util.Arrays.asList(
+            "up", "down", "left", "right", "ok", "back", "home", "volup", "voldown", "mute", "playpause", "text", "del"));
+    private final List<String> remoteQ = new ArrayList<String>();
+    private volatile long tvSeen;
+
+    /** A LocalShare TV asked for commands within the last 30 s. */
+    private boolean tvHere() {
+        return System.currentTimeMillis() - tvSeen < 30000;
+    }
+
+    private static String join(List<String> l) {
+        StringBuilder sb = new StringBuilder();
+        for (String x : l) {
+            if (sb.length() > 0) sb.append(',');
+            sb.append(x);
+        }
+        return sb.toString();
+    }
+
     private static boolean sameOrigin(Req r) {
         String origin = r.h.get("origin"), host = r.h.get("host");
         if (origin == null) return true;
@@ -724,7 +759,7 @@ public final class MiniServer {
             Session s = sessionOf(r);
             if (s != null && s.pending) s.lastSeen = System.currentTimeMillis();
             json(out, isHead, 200, "{\"needPassword\":" + (cfg.password.length() > 0) + ",\"gameMode\":" + cfg.gameMode + ",\"gameEnabled\":" + (cfg.gameEnabled || gameOnly(s))
-                    + ",\"max\":" + cfg.maxClients + ",\"active\":" + activeCount(null) + ",\"authed\":" + (s != null) + ",\"pending\":" + (s != null && s.pending) + ",\"manager\":" + (mgr(s) && !s.host) + ",\"live\":" + (stream.isLive() && s != null && !s.pending && !gameOnly(s))
+                    + ",\"tv\":" + (cfg.remote && s != null && !s.pending && !gameOnly(s) && tvHere())+ ",\"max\":" + cfg.maxClients + ",\"active\":" + activeCount(null) + ",\"authed\":" + (s != null) + ",\"pending\":" + (s != null && s.pending) + ",\"manager\":" + (mgr(s) && !s.host) + ",\"live\":" + (stream.isLive() && s != null && !s.pending && !gameOnly(s))
                     + ",\"name\":" + Util.q(s == null ? "" : s.name) + ",\"host\":" + (s != null && s.host)
                     + ",\"canUpload\":" + canUpload(s) + ",\"canDelete\":" + canDelete(s) + ",\"canRename\":" + canRename(s)
                     + ",\"canMove\":" + canMove(s) + ",\"canEdit\":" + canEdit(s) + ",\"gameOnly\":" + gameOnly(s) + ",\"maxUpload\":" + cfg.maxUploadBytes + "}");
@@ -749,7 +784,7 @@ public final class MiniServer {
             Session s = auth(r, out, isHead);
             if (s == null) return true;
             json(out, isHead, 200, "{\"ok\":true,\"up\":" + canUpload(s) + ",\"del\":" + canDelete(s) + ",\"ren\":" + canRename(s)
-                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + "}");
+                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (cfg.remote && !gameOnly(s) && tvHere()) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + "}");
             return true;
         }
         if (get && path.equals("/api/list")) {
@@ -1060,6 +1095,49 @@ public final class MiniServer {
         if (get && path.equals("/api/screen-audio")) {
             if (authFiles(r, out, false) == null) return true;
             return streamAudio(out);
+        }
+        if (post && path.equals("/api/remote")) {
+            Session s = sessionOf(r);
+            if (s == null || s.pending || gameOnly(s)) { json(out, false, 401, err("Join first")); return true; }
+            if (!sameOrigin(r)) { json(out, false, 403, err("bad origin")); return true; }
+            if (!cfg.remote) { json(out, false, 403, err("The host turned the remote off")); return true; }
+            if (!tvHere()) { json(out, false, 409, err("No TV is connected")); return true; }
+            long now = System.currentTimeMillis();
+            if (now - s.remoteWin > 1000) { s.remoteWin = now; s.remoteCnt = 0; }
+            if (++s.remoteCnt > 12) { json(out, false, 429, err("Slow down a little")); return true; }
+            String k = r.form.get("k");
+            if (k == null || !REMOTE_KEYS.contains(k)) { json(out, false, 400, err("unknown key")); return true; }
+            String t = k.equals("text") ? r.form.get("t") : null;
+            if (k.equals("text") && (t == null || t.length() == 0 || t.length() > 80)) { json(out, false, 400, err("text 1 to 80 characters")); return true; }
+            synchronized (remoteQ) {
+                if (remoteQ.size() >= 50) remoteQ.remove(0);
+                remoteQ.add("{\"k\":" + Util.q(k) + (t == null ? "" : ",\"t\":" + Util.q(t)) + "}");
+                remoteQ.notifyAll();
+            }
+            json(out, false, 200, "{\"ok\":true}");
+            return true;
+        }
+        if (get && path.equals("/api/remote/poll")) { // the TV asks here for what was pressed; the answer waits up to 20 s
+            Session s = sessionOf(r);
+            if (s == null || s.pending || !s.name.equals("LocalShare TV")) { json(out, false, 403, err("TV only")); return true; }
+            tvSeen = System.currentTimeMillis();
+            String body;
+            synchronized (remoteQ) {
+                long end = System.currentTimeMillis() + 20000;
+                try {
+                    while (remoteQ.isEmpty() && running) {
+                        long left = end - System.currentTimeMillis();
+                        if (left <= 0) break;
+                        remoteQ.wait(left);
+                    }
+                } catch (InterruptedException ignored) {
+                }
+                body = "[" + join(remoteQ) + "]";
+                remoteQ.clear();
+            }
+            tvSeen = System.currentTimeMillis();
+            json(out, false, 200, body);
+            return true;
         }
         if (get && path.equals("/ws")) return websocket(r, sock, in, out);
         json(out, isHead, 404, err("not found"));

@@ -178,6 +178,13 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
         if (st.running) item {
             SectionCard {
                 Text("Connected: ${st.devices.size} of ${st.maxClients} devices", fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Let guests use the TV remote", fontWeight = FontWeight.SemiBold)
+                        Text("Shows a Remote button on the web page while LocalShare TV is connected.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Switch(st.remoteOn, { ShareController.setRemote(it) })
+                }
                 OutlinedButton(openBrowser, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                     Icon(Icons.Filled.PlayArrow, null)
                     Spacer(Modifier.width(8.dp))

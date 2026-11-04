@@ -65,6 +65,7 @@ data class UiState(
     val maxClients: Int = 5,
     val gameEnabled: Boolean = true,
     val allowUploads: Boolean = false,
+    val remoteOn: Boolean = true,
     val allowDelete: Boolean = false,
     val gameOnly: Boolean = false,
     val gameMode: Int = 0,
@@ -103,6 +104,7 @@ object ShareController {
         cfg.maxClients = prefs.maxClients
         cfg.gameEnabled = prefs.gameEnabled
         cfg.allowUploads = prefs.allowUploads
+        cfg.remote = prefs.remoteOn
         cfg.allowDelete = prefs.allowDelete
         cfg.gameOnly = prefs.gameOnly
         cfg.askToJoin = prefs.askToJoin
@@ -159,6 +161,7 @@ object ShareController {
     fun setOnStopStream(r: () -> Unit) { server?.setOnStopStream(Runnable(r)) }
     fun setDevicePerms(id: String, perms: Int) { server?.setPerms(id, perms); refresh() }
     fun setPort(v: Int) { prefs.port = v; refresh() }
+    fun setRemote(v: Boolean) { prefs.remoteOn = v; cfg.remote = v; refresh() }
     fun setUploads(v: Boolean) { prefs.allowUploads = v; cfg.allowUploads = v; refresh() }
     fun setDelete(v: Boolean) { prefs.allowDelete = v; cfg.allowDelete = v; refresh() }
     fun setSessionHours(v: Int) { prefs.sessionHours = v; cfg.sessionMs = v * 3600000L; refresh() }
@@ -302,6 +305,7 @@ object ShareController {
             maxClients = cfg.maxClients,
             gameEnabled = cfg.gameEnabled,
             allowUploads = cfg.allowUploads,
+            remoteOn = cfg.remote,
             allowDelete = cfg.allowDelete,
             gameOnly = cfg.gameOnly,
             gameMode = cfg.gameMode,

@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
-/** Feeds an Annex-B H.264 file through Fmp4 and writes the result as an .mp4 for ffmpeg to decode. args: in.h264 out.mp4 */
+/** Feeds an Annex-B H.264 file through Fmp4 and writes the result as an .mp4 for ffmpeg to decode. args: in.h264 out.mp4 [jitter]  (jitter = uneven frame times, like a screen that stops and starts) */
 public class Fmp4Test {
     public static void main(String[] a) throws Exception {
         byte[] src = Files.readAllBytes(Paths.get(a[0]));
@@ -21,7 +21,7 @@ public class Fmp4Test {
         for (byte[] n : nals) {
             int t = n[0] & 31;
             if (t == 9) { // access unit delimiter: the previous frame is complete
-                if (cur.size() > 0 && wrote) { byte[] f = m.fragment(cur.toByteArray(), 0, cur.size(), pts, key); out.write(f); frames++; pts += 33333; }
+                if (cur.size() > 0 && wrote) { byte[] f = m.fragment(cur.toByteArray(), 0, cur.size(), pts, key); if (f != null) out.write(f); frames++; pts += a.length > 2 ? (frames % 7 == 0 ? 150000 : 33333) : 33333; }
                 cur.reset(); key = false;
                 continue;
             }
@@ -32,7 +32,7 @@ public class Fmp4Test {
             cur.write(new byte[]{0, 0, 0, 1}, 0, 4);
             cur.write(n, 0, n.length);
         }
-        if (cur.size() > 0) { out.write(m.fragment(cur.toByteArray(), 0, cur.size(), pts, key)); frames++; }
+        if (cur.size() > 0) { byte[] f = m.fragment(cur.toByteArray(), 0, cur.size(), pts, key); if (f != null) out.write(f); frames++; }
         out.close();
         System.out.println("FRAMES " + frames + " CODEC " + Fmp4.codecString(sps));
     }

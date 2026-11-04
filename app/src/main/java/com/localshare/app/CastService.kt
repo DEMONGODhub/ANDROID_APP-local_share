@@ -231,7 +231,7 @@ class CastService : Service() {
                                 if (announced) {
                                     val key = info.flags and MediaCodec.BUFFER_FLAG_KEY_FRAME != 0
                                     val frag = fm.fragment(d, 0, d.size, info.presentationTimeUs, key)
-                                    if (frag != null) { hub.pushVideo(frag, key); hwFrames++; hwBytes += frag.size }
+                                    if (frag != null) { hub.pushVideo(frag, fm.lastKey()); hwFrames++; hwBytes += frag.size }
                                 }
                             }
                         }
@@ -267,7 +267,8 @@ class CastService : Service() {
             val want = shortSide(hub.quality())
             val hl = health()
             val target = minOf(want, hl.cap)
-            if (target != curShort) startEncoder(p, h, hub, target)
+            // a phone with a small screen cannot make a bigger picture: compare what it really makes, or it would restart every 3 s
+            if (minOf(target, minOf(scrW, scrH)) != curShort) startEncoder(p, h, hub, target)
             else if (hub.pressure() > 0) {
                 bps = maxOf(500_000, bps * 7 / 10); setBitrate(bps); hub.clearPressure(); lastDown = now
             } else if (bps < baseBps && now - lastDown > 15000) { bps = minOf(baseBps, bps * 11 / 10); setBitrate(bps); lastDown = now }

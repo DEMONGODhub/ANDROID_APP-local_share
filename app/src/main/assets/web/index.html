@@ -46,6 +46,7 @@ header{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:max(
 #crumbs i{color:var(--muted);font-style:normal}
 #bar{display:flex;align-items:center;gap:8px;padding:2px 12px 8px;flex-wrap:wrap}
 #count{color:var(--muted);flex:1;min-width:80px}
+#rem{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}#rem.hide{display:none}.remc{width:min(420px,100%);background:var(--surface);border:1px solid var(--outline);border-radius:28px 28px 0 0;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:grid;gap:12px;animation:up .22s var(--ease)}.remh{display:flex;align-items:center;justify-content:space-between}.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.pad .btn{height:64px;justify-content:center;font-size:20px;border-radius:20px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.row3 .btn{justify-content:center;padding:0 6px}#remf{padding:4px}#remf .btn{min-height:40px}#remn{margin:0;text-align:center}
 #selbar{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:40;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;padding:10px 14px;border-radius:26px;background:var(--surface2);border:1px solid var(--primary);box-shadow:0 8px 30px #000a;max-width:calc(100vw - 24px)}#selbar.hide{display:none}#selbar b{padding:0 6px}
 .card.picked{outline:3px solid var(--primary);outline-offset:-3px}.card.picked .thumb::after{content:"\2713";position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#000;font-weight:900;display:grid;place-items:center}.card .thumb{position:relative}
 #bar select{background:var(--surface2);color:var(--text);border:1px solid var(--outline);border-radius:18px;height:40px;padding:0 10px;font:inherit}
@@ -280,6 +281,7 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
     <button class="ib" id="vtog" aria-label="Switch grid and list"></button>
     <label id="sw"><span id="sico"></span><input id="q" placeholder="Search" aria-label="Search this folder" autocomplete="off"></label>
     <button class="btn hide" id="watch">Watch screen</button>
+    <button class="btn hide" id="rmt">TV remote</button>
     <button class="btn hide" id="selb">Select</button>
     <button class="btn" id="zipb"></button>
     <button class="btn pri" id="upb"></button>
@@ -290,6 +292,12 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
   <button id="totop" aria-label="Back to top" hidden></button>
 </div>
 
+<div id="rem" class="hide" role="dialog" aria-label="TV remote"><div class="remc"><div class="remh"><b>TV remote</b><button class="ib" id="remx" aria-label="Close"></button></div>
+<div class="pad"><i></i><button class="btn" data-k="up" aria-label="Up">&#9650;</button><i></i><button class="btn" data-k="left" aria-label="Left">&#9664;</button><button class="btn pri" data-k="ok">OK</button><button class="btn" data-k="right" aria-label="Right">&#9654;</button><i></i><button class="btn" data-k="down" aria-label="Down">&#9660;</button><i></i></div>
+<div class="row3"><button class="btn" data-k="back">Back</button><button class="btn" data-k="home">Home</button><button class="btn" data-k="playpause">Play / Pause</button></div>
+<div class="row3"><button class="btn" data-k="voldown">Vol &minus;</button><button class="btn" data-k="mute">Mute</button><button class="btn" data-k="volup">Vol +</button></div>
+<form id="remf" class="field" autocomplete="off"><input id="remt" placeholder="Type on the TV" maxlength="80" aria-label="Text to type on the TV"><button class="btn pri" type="submit">Send</button><button class="btn" type="button" data-k="del" aria-label="Delete a letter">&#9003;</button></form>
+<p id="remn" class="err"></p></div></div>
 <button id="fab" class="hide" aria-label="Play Orb Arena"></button>
 <div id="ups"></div>
 <div id="scr" class="hide"><div id="scrv"><img id="scrimg" alt="The host's screen" draggable="false"><video id="scrvid" muted autoplay playsinline hidden aria-label="The host's screen"></video></div><div id="dvr" hidden><button class="btn" id="dvrp" aria-label="Pause">&#10074;&#10074;</button><input type="range" id="dvrs" min="0" max="1" step="0.1" value="1" aria-label="Rewind the live picture"><button class="btn" id="dvrl" aria-label="Back to live">&#9679; LIVE</button></div><div id="scrinfo" aria-live="off"><i id="scrq"></i><span id="scrtxt">Connecting…</span><span id="scrsns"></span></div><div class="t"><select id="scrqs" hidden aria-label="Picture quality"><option value="0">Auto</option><option value="1">480p</option><option value="2">720p</option><option value="3">1080p</option></select><div id="vol" hidden><button class="btn" id="volb" aria-label="Sound off. Tap to turn on"></button><input type="range" id="scrvol" min="0" max="1" step="0.02" aria-label="Volume"><i id="vlv"></i></div><button class="btn" id="scrm" aria-label="Zoom out">−</button><button class="btn" id="scrz" aria-label="Reset zoom">1×</button><button class="btn" id="scrp" aria-label="Zoom in">+</button><span id="scrrx"></span><button class="btn" id="scrc">Chat</button><button class="btn" id="scrfs">Full screen</button><button class="btn pri" id="scrx">Close</button></div></div>
@@ -382,7 +390,7 @@ const COL={pdf:"#E5584A",zip:"#E8A93B",rar:"#E8A93B","7z":"#E8A93B",apk:"#3DBB8F
 const set=(s,p,z)=>{$(s).innerHTML=svg(p,z)};
 const logoA=z=>'<svg class="lga" width="'+z+'" height="'+z+'" viewBox="20 12 80 96" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" aria-hidden="true"><rect x="39" y="22" width="42" height="76" rx="10"/><path class="w" d="M92 47a18 18 0 0 1 0 26"/><path class="w w2" d="M28 47a18 18 0 0 0 0 26"/></svg>';
 for(const [s,z] of [["#logo1",40],["#logo3",24],["#logo5",40]])$(s).innerHTML=logoA(z);
-set("#logo4",P.pad,32);set("#logo2",P.x,32);set("#sico",P.search,20);set("#help",P.help);set("#lo",P.out);set("#chb",P.chat);set("#chx",P.x,20);set("#fab",P.pad,30);set("#vx",P.x);set("#vdl",P.dl);set("#gx",P.x);set("#gfs",P.full);set("#eye",P.eye);
+set("#logo4",P.pad,32);set("#remx",P.x,20);set("#logo2",P.x,32);set("#sico",P.search,20);set("#help",P.help);set("#lo",P.out);set("#chb",P.chat);set("#chx",P.x,20);set("#fab",P.pad,30);set("#vx",P.x);set("#vdl",P.dl);set("#gx",P.x);set("#gfs",P.full);set("#eye",P.eye);
 $("#zipb").innerHTML=svg(P.zip,20)+"<span>ZIP</span>";$("#upb").innerHTML=svg(P.up,20)+"<span>Upload</span>";
 
 const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
@@ -598,6 +606,9 @@ function startVideo(mime){
   v.timer=setInterval(()=>{
     if(vp!==v||!v.sb)return;const b=scrvid.buffered;if(!b.length)return;
     const st=b.start(0),end=b.end(b.length-1),lag=end-scrvid.currentTime;
+    if(!scrvid.paused&&!scrvid.seeking){ // never sit in a hole between pieces of video: hop to the next piece
+      let inr=false,nx=-1;for(let i=0;i<b.length;i++){if(scrvid.currentTime>=b.start(i)-.02&&scrvid.currentTime<=b.end(i)+.02){inr=true;break}if(b.start(i)>scrvid.currentTime){nx=b.start(i);break}}
+      if(!inr&&nx>=0)scrvid.currentTime=nx+.01}
     if(!v.dvr){
       if(scrvid.paused)scrvid.play().catch(()=>{});
       if(scrvid.currentTime<st-.05||lag>1.2)scrvid.currentTime=Math.max(st,end-.15); // stay at the live edge
@@ -669,9 +680,15 @@ function closeScr(){stopSound();stopVideo();$("#vol").classList.remove("open");c
 $("#watch").onclick=openScr;$("#scrx").onclick=closeScr;
 $("#scrfs").onclick=()=>{const e=$("#scr");if(document.fullscreenElement)document.exitFullscreen();else if(e.requestFullscreen)e.requestFullscreen().catch(()=>toast("Full screen is not available here"))};
 $("#scrimg").onerror=()=>{if(!$("#scr").classList.contains("hide")){closeScr();toast("The host stopped sharing the screen")}};
+let remTV=false;
+function remBtn(on){remTV=on;$("#rmt").classList.toggle("hide",!on);if(!on)$("#rem").classList.add("hide")}
+async function rk(k,t){const b=new URLSearchParams({k});if(t)b.set("t",t);const r=await J("/api/remote",{method:"POST",body:b});$("#remn").textContent=r.ok?"":(r.d.error||"Could not send");if(r.ok&&navigator.vibrate)navigator.vibrate(12);return r.ok}
+$("#rmt").onclick=()=>{$("#rem").classList.remove("hide")};$("#remx").onclick=()=>$("#rem").classList.add("hide");$("#rem").addEventListener("click",e=>{if(e.target.id==="rem")$("#rem").classList.add("hide")});
+$("#rem").addEventListener("click",e=>{const k=e.target.closest("[data-k]");if(k)rk(k.dataset.k)});
+$("#remf").addEventListener("submit",async e=>{e.preventDefault();const v=$("#remt").value;if(v&&await rk("text",v))$("#remt").value=""});
 function liveBtn(on){$("#watch").classList.toggle("hide",!on);if(!on&&!$("#scr").classList.contains("hide"))closeScr()}
 function enter(){
-  clearInterval(pinger);pinger=setInterval(ping,10000);liveBtn(!!INFO.live);
+  clearInterval(pinger);pinger=setInterval(ping,10000);liveBtn(!!INFO.live);remBtn(!!INFO.tv);
   if(window.AV&&AV.sync)AV.sync();
   if(INFO.gameOnly){show("gonly");return}
   show("app");chStart();set("#vtog",view==="grid"?P.list:P.grid);
@@ -681,7 +698,7 @@ async function ping(){
   const r=await J("/api/ping");
   if(r.status===429)return showLogin("The room is full right now. Try again soon.");
   if(r.ok&&r.d.go!==!!INFO.gameOnly){location.reload();return}
-  if(r.ok){liveBtn(!!r.d.live);ME.mgr=!!r.d.mgr&&!ME.host}
+  if(r.ok){liveBtn(!!r.d.live);remBtn(!!r.d.tv);ME.mgr=!!r.d.mgr&&!ME.host}
   if(r.ok&&(r.d.up!==INFO.canUpload||r.d.del!==INFO.canDelete||r.d.ren!==INFO.canRename||r.d.edt!==INFO.canEdit||r.d.mov!==INFO.canMove)){INFO.canUpload=r.d.up;INFO.canDelete=r.d.del;INFO.canRename=r.d.ren;INFO.canEdit=r.d.edt;INFO.canMove=r.d.mov;toolbar()}
 }
 $("#lo").onclick=async()=>{INV="";try{sessionStorage.removeItem("ls_inv")}catch(e){}await J("/api/logout",{method:"POST"});ME.name="";const r=await J("/api/info");INFO=r.d||{};showLogin()};
