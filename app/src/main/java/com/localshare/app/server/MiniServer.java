@@ -768,7 +768,8 @@ public final class MiniServer {
                     + ",\"tv\":" + (canRemote(s) && tvHere())+ ",\"max\":" + cfg.maxClients + ",\"active\":" + activeCount(null) + ",\"authed\":" + (s != null) + ",\"pending\":" + (s != null && s.pending) + ",\"manager\":" + (mgr(s) && !s.host) + ",\"live\":" + (stream.isLive() && s != null && !s.pending && !gameOnly(s))
                     + ",\"name\":" + Util.q(s == null ? "" : s.name) + ",\"host\":" + (s != null && s.host)
                     + ",\"canUpload\":" + canUpload(s) + ",\"canDelete\":" + canDelete(s) + ",\"canRename\":" + canRename(s)
-                    + ",\"canMove\":" + canMove(s) + ",\"canEdit\":" + canEdit(s) + ",\"gameOnly\":" + gameOnly(s) + ",\"maxUpload\":" + cfg.maxUploadBytes + "}");
+                    + ",\"canMove\":" + canMove(s) + ",\"canEdit\":" + canEdit(s) + ",\"gameOnly\":" + gameOnly(s) + ",\"maxUpload\":" + cfg.maxUploadBytes
+                    + (s != null && !s.pending ? ",\"hostName\":" + Util.q(cfg.hostName) + ",\"hostPic\":" + (cfg.hostPic == null ? 0 : cfg.hostPicVer) : "") + "}");
             return true;
         }
         if (post && path.equals("/api/login")) {
@@ -790,7 +791,7 @@ public final class MiniServer {
             Session s = auth(r, out, isHead);
             if (s == null) return true;
             json(out, isHead, 200, "{\"ok\":true,\"up\":" + canUpload(s) + ",\"del\":" + canDelete(s) + ",\"ren\":" + canRename(s)
-                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (cfg.remote && !gameOnly(s) && tvHere()) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + "}");
+                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (canRemote(s) && tvHere()) + ",\"hp\":" + (cfg.hostPic == null ? 0 : cfg.hostPicVer) + ",\"hn\":" + Util.q(cfg.hostName) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + "}");
             return true;
         }
         if (get && path.equals("/api/list")) {
@@ -1121,6 +1122,13 @@ public final class MiniServer {
                 remoteQ.notifyAll();
             }
             json(out, false, 200, "{\"ok\":true}");
+            return true;
+        }
+        if (get && path.equals("/api/host/pic")) { // the host's picture, for people who joined
+            Session s = sessionOf(r);
+            byte[] pic = cfg.hostPic;
+            if (s == null || s.pending || pic == null) { json(out, isHead, 404, err("none")); return true; }
+            send(out, isHead, 200, "image/png", pic, "Cache-Control: private, max-age=86400");
             return true;
         }
         if (get && path.equals("/api/remote/poll")) { // the TV asks here for what was pressed; the answer waits up to 20 s

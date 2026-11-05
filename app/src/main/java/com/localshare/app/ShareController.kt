@@ -50,6 +50,9 @@ data class UiState(
     val castSilent: Boolean = false,
     val castMic: Boolean = false,
     val castCompat: Boolean = false,
+    val hostName: String = "Host",
+    val hostPicVer: Int = 0,
+    val hostPicKind: String = "logo:0",
     /** Live line for the screen card: "720p · 30 fps · 2.6 Mbps · 36 °C · battery 71% (-6%/h)". Empty when not casting. */
     val castMeter: String = "",
     val castNote: String = "",
@@ -105,6 +108,7 @@ object ShareController {
         cfg.gameEnabled = prefs.gameEnabled
         cfg.allowUploads = prefs.allowUploads
         cfg.remote = prefs.remoteOn
+        loadHost()
         cfg.allowDelete = prefs.allowDelete
         cfg.gameOnly = prefs.gameOnly
         cfg.askToJoin = prefs.askToJoin
@@ -142,6 +146,34 @@ object ShareController {
     fun setWifi(ssid: String, pass: String) { prefs.wifiSsid = ssid; prefs.wifiPass = pass; refresh() }
     fun setCastMic(v: Boolean) { prefs.castMic = v; refresh() }
     fun setCastCompat(v: Boolean) { prefs.castCompat = v; refresh() }
+
+    // ---- the host's profile: a name and a picture (a built-in logo or a photo), shown to guests who joined ----
+    @Volatile private var hostBmp: android.graphics.Bitmap? = null
+    fun hostBitmap(): android.graphics.Bitmap? = hostBmp
+
+    private fun loadHost() {
+        val f = java.io.File(app.filesDir, "host_pic.png")
+        var bytes: ByteArray? = try { if (f.exists()) f.readBytes() else null } catch (e: Exception) { null }
+        if (bytes == null) { // first start: the app's own logo
+            bytes = HostProfile.png(HostProfile.logoBitmap(0))
+            try { f.writeBytes(bytes) } catch (e: Exception) { }
+        }
+        hostBmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        cfg.setHostProfile(prefs.hostName, bytes)
+    }
+
+    fun setHostName(n: String) { prefs.hostName = n.trim().take(24).ifEmpty { "Host" }; cfg.setHostProfile(prefs.hostName, null); refresh() }
+    fun setHostLogo(kind: Int) = saveHostPic(HostProfile.logoBitmap(kind), "logo:$kind")
+    fun setHostPhoto(uri: android.net.Uri) { HostProfile.photoBitmap(app, uri)?.let { saveHostPic(it, "photo") } }
+
+    private fun saveHostPic(b: android.graphics.Bitmap, kind: String) {
+        val bytes = HostProfile.png(b)
+        try { java.io.File(app.filesDir, "host_pic.png").writeBytes(bytes) } catch (e: Exception) { }
+        prefs.hostPicKind = kind
+        hostBmp = b
+        cfg.setHostProfile(prefs.hostName, bytes)
+        refresh()
+    }
 
     private fun meter(ctx: Context, s: com.localshare.app.server.StreamHub?): String {
         if (!CastService.active || s == null) return ""
@@ -290,6 +322,9 @@ object ShareController {
             castSilent = CastService.active && CastService.silent,
             castMic = prefs.castMic,
             castCompat = prefs.castCompat,
+            hostName = prefs.hostName,
+            hostPicVer = cfg.hostPicVer,
+            hostPicKind = prefs.hostPicKind,
             castMeter = meter(app, s?.stream()),
             castNote = if (CastService.active) s?.stream()?.note() ?: "" else "",
             castSince = if (CastService.active) s?.stream()?.startedAt() ?: 0L else 0L,

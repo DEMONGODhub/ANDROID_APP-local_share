@@ -59,6 +59,16 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("remote_on", false)
         set(v) = sp.edit().putBoolean("remote_on", v).apply()
 
+    /** The host's name as guests see it. */
+    var hostName: String
+        get() = sp.getString("host_name", "Host") ?: "Host"
+        set(v) = sp.edit().putString("host_name", v).apply()
+
+    /** "logo:N" for a built-in logo, or "photo". The picture itself is kept as a file. */
+    var hostPicKind: String
+        get() = sp.getString("host_pic", "logo:0") ?: "logo:0"
+        set(v) = sp.edit().putString("host_pic", v).apply()
+
     /** Use the old picture-by-picture stream (for very old browsers). The default hardware video is smoother and cooler. */
     var castCompat: Boolean
         get() = sp.getBoolean("cast_compat", false)

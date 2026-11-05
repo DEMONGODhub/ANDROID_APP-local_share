@@ -34,6 +34,7 @@ svg{display:block;flex:none}
 #app{display:flex;flex-direction:column;height:100%}
 header{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--outline)}
 #brand{display:flex;align-items:center;gap:8px;background:none;border:0;font-weight:800;font-size:17px;padding:0 8px 0 4px;min-height:44px;border-radius:22px}
+#hostchip{display:flex;align-items:center;gap:6px;min-width:0;margin-left:2px;color:var(--muted);font-size:13px}#hostchip img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--surface2)}#hostchip b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}@media(max-width:560px){#hostchip b{display:none}}
 #brand i{width:32px;height:32px;border-radius:10px;background:var(--primary);color:var(--onprimary);display:grid;place-items:center}
 #sw{flex:1;min-width:0;display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--outline);border-radius:22px;padding:0 12px;height:44px;color:var(--muted)}
 #bar #sw{flex:1 1 150px;height:40px;order:0}
@@ -120,7 +121,7 @@ kbd{background:var(--surface2);border:1px solid var(--outline);border-bottom-wid
 #chat .ch{display:flex;align-items:center;gap:8px;padding:12px 12px 12px 16px;border-bottom:1px solid var(--outline)}#chat .ch b{font-size:16px}#chwho{flex:1;color:var(--muted);font-size:12px}
 #chl{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
 .cm{max-width:86%;align-self:flex-start;background:var(--surface2);border-radius:16px 16px 16px 4px;padding:8px 12px;word-break:break-word;animation:chin .18s ease-out}.cm.me{align-self:flex-end;background:rgba(255,214,10,.14);color:var(--text);box-shadow:inset 0 0 0 1px rgba(255,214,10,.35);border-radius:16px 16px 4px 16px}
-.cm small{display:block;font-size:11px;opacity:.75;margin-bottom:2px}.cm small i{font-style:normal;color:var(--primary);font-weight:700}.cm.me small i{color:var(--primary)}.cm.cont{margin-top:-6px}.cm.cont small i{display:none}
+.cm small{display:block;font-size:11px;opacity:.75;margin-bottom:2px}.cm small i{font-style:normal;color:var(--primary);font-weight:700}.cm.me small i{color:var(--primary)}.cm.cont{margin-top:-6px}#chl .cm small img.hav{display:inline-block;width:18px;height:18px;max-height:none;margin:0 6px 0 0;border-radius:50%;object-fit:cover;vertical-align:-4px;cursor:default}.cm.cont small i{display:none}
 #chf{display:flex;gap:8px;padding:10px;border-top:1px solid var(--outline)}#chi{flex:1;min-width:0;background:var(--bg);color:var(--text);border:1px solid var(--outline);border-radius:22px;padding:10px 14px;font:inherit}#chi:focus{outline:2px solid var(--primary)}
 @media(max-width:560px){#chat{left:0;right:0;bottom:0;width:100%;height:68vh;border-radius:20px 20px 0 0}}
 #toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:22px;padding:11px 20px;z-index:60;max-width:90%;box-shadow:var(--shadow)}
@@ -269,6 +270,7 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
 <div id="app" class="hide">
   <header>
     <button id="brand" aria-label="Home, choose a folder"><i id="logo3"></i><span>LocalShare</span></button>
+    <span id="hostchip" hidden><img alt=""><b></b></span>
     <button class="ib avme" id="avb" aria-label="Your picture. Tap to change it."><img alt=""></button>
     <button class="ib" id="chb" aria-label="Live chat" style="position:relative"></button>
     <button class="ib" id="help" aria-label="Help for this device"></button>
@@ -456,7 +458,8 @@ function chAdd(m){
   const l=$("#chl"),near=l.scrollHeight-l.scrollTop-l.clientHeight<80,d=document.createElement("div"),mine=m.name===ME.name;
   d.className="cm"+(mine?" me":"");
   if(chPrev&&chPrev.n===m.name&&m.t-chPrev.t<120000&&l.lastElementChild&&l.lastElementChild.classList.contains("cm"))d.classList.add("cont");chPrev={n:m.name,t:m.t};
-  const s=document.createElement("small"),n=document.createElement("i");n.textContent=m.name+(m.host?" · host":m.mgr?" · manager":"")+(m.mu?" · muted":"");
+  const s=document.createElement("small"),n=document.createElement("i");n.textContent=(m.host&&INFO.hostName?INFO.hostName:m.name)+(m.host?" · host":m.mgr?" · manager":"")+(m.mu?" · muted":"");
+  if(m.host&&INFO.hostPic){const hi=document.createElement("img");hi.className="hav";hi.alt="";hi.src="/api/host/pic?v="+INFO.hostPic;s.appendChild(hi)}
   if(TEAM[m.team])n.style.color=TEAM[m.team];
   s.appendChild(n);s.appendChild(document.createTextNode("  "+new Date(m.t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})));
   if(chMod){const md=document.createElement("span");md.className="mod";
@@ -688,17 +691,22 @@ $("#rem").addEventListener("click",e=>{const k=e.target.closest("[data-k]");if(k
 $("#remf").addEventListener("submit",async e=>{e.preventDefault();const v=$("#remt").value;if(v&&await rk("text",v))$("#remt").value=""});
 function liveBtn(on){$("#watch").classList.toggle("hide",!on);if(!on&&!$("#scr").classList.contains("hide"))closeScr()}
 function enter(){
-  clearInterval(pinger);pinger=setInterval(ping,10000);liveBtn(!!INFO.live);remBtn(!!INFO.tv);
+  clearInterval(pinger);pinger=setInterval(ping,10000);liveBtn(!!INFO.live);remBtn(!!INFO.tv);hostChip();
   if(window.AV&&AV.sync)AV.sync();
   if(INFO.gameOnly){show("gonly");return}
   show("app");chStart();set("#vtog",view==="grid"?P.list:P.grid);
   go(hashPath(),true);
 }
+function hostChip(){ // who is sharing: the host's picture and name, once a guest is in
+  const el=$("#hostchip");if(!el)return;const ok=!!(INFO&&INFO.hostPic);el.hidden=!ok;if(!ok)return;
+  const im=el.querySelector("img");const u="/api/host/pic?v="+INFO.hostPic;if(im.getAttribute("src")!==u)im.src=u;
+  im.alt="Hosted by "+INFO.hostName;el.title="Hosted by "+INFO.hostName;el.querySelector("b").textContent=INFO.hostName||"";
+}
 async function ping(){
   const r=await J("/api/ping");
   if(r.status===429)return showLogin("The room is full right now. Try again soon.");
   if(r.ok&&r.d.go!==!!INFO.gameOnly){location.reload();return}
-  if(r.ok){liveBtn(!!r.d.live);remBtn(!!r.d.tv);ME.mgr=!!r.d.mgr&&!ME.host}
+  if(r.ok){liveBtn(!!r.d.live);remBtn(!!r.d.tv);ME.mgr=!!r.d.mgr&&!ME.host;if(r.d.hp!==INFO.hostPic||r.d.hn!==INFO.hostName){INFO.hostPic=r.d.hp;INFO.hostName=r.d.hn;hostChip()}}
   if(r.ok&&(r.d.up!==INFO.canUpload||r.d.del!==INFO.canDelete||r.d.ren!==INFO.canRename||r.d.edt!==INFO.canEdit||r.d.mov!==INFO.canMove)){INFO.canUpload=r.d.up;INFO.canDelete=r.d.del;INFO.canRename=r.d.ren;INFO.canEdit=r.d.edt;INFO.canMove=r.d.mov;toolbar()}
 }
 $("#lo").onclick=async()=>{INV="";try{sessionStorage.removeItem("ls_inv")}catch(e){}await J("/api/logout",{method:"POST"});ME.name="";const r=await J("/api/info");INFO=r.d||{};showLogin()};

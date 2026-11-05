@@ -145,7 +145,7 @@ private fun App() {
     BackHandler(enabled = tab != 0) { tab = 0 } // Back from any other tab goes to Share first
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { AppBar(st.running, st.devices.size) },
+        topBar = { if (tab != 0) AppBar(st.running, st.devices.size) }, // the Share tab has its own rail and profile bar
         bottomBar = {
           Column {
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)

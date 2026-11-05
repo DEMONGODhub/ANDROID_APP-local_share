@@ -125,88 +125,98 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
 
     LaunchedEffect(Unit) { ShareController.measure() }
     val ls = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    var chip by remember { mutableStateOf(0) }
-    LazyColumn(
-        Modifier.fillMaxSize().statusBarsPadding(),
-        state = ls,
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            // YouTube-style chip row: tap one to jump to that part of the page
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("All", "Sharing", "Folders", "Access", "Support").forEachIndexed { i, label ->
-                    FilterChip(
-                        selected = chip == i,
-                        onClick = {
-                            chip = i
-                            scope.launch { ls.animateScrollToItem(if (i == 4) maxOf(0, ls.layoutInfo.totalItemsCount - 1) else intArrayOf(0, 1, 3, 4)[i]) }
-                        },
-                        label = { Text(label, fontWeight = FontWeight.SemiBold) },
-                        shape = RoundedCornerShape(50),
-                        border = null,
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    )
-                }
-            }
-        }
-        item { StatusCard(st, ::start, { if (st.devices.isEmpty()) ShareService.stop(ctx) else confirmStop = true }, { u -> clip.setText(AnnotatedString(u)); android.widget.Toast.makeText(ctx, "Link copied", android.widget.Toast.LENGTH_SHORT).show() }) }
-        item { StorageCard(st) }
-        item { FoldersCard(st, { picker.launch(null) }) }
-        item { ScreenCard(st, onCast) }
-        item { InviteCard(st) }
-        if (st.running) item { ChatCard(st) }
-        item {
-            // Wi-Fi code, join-by-code and permissions are set up once, so they fold away (open while a permission is still missing)
-            var more by rememberSaveable { mutableStateOf(!(perms.notifications && perms.unrestricted)) }
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                TextButton({ more = !more }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(if (more) "Hide set-up tools" else "Set-up tools: Wi-Fi code, join by code, permissions", fontWeight = FontWeight.SemiBold)
-                }
-                if (more) {
-                    WifiCard(st)
-                    JoinCard(onJoin)
-                    PermissionsCard(perms) { p -> notif.launch(p) }
-                }
-            }
-        }
-        if (st.running) item {
-            SectionCard {
-                Text("Connected: ${st.devices.size} of ${st.maxClients} devices", fontWeight = FontWeight.SemiBold)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Let every guest use the TV remote", fontWeight = FontWeight.SemiBold)
-                        Text("Off: only you and devices you allow on the Devices tab get a Remote button while LocalShare TV is connected.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+    var sec by rememberSaveable { mutableStateOf(0) } // 0 all, 1 sharing, 2 folders, 3 access, 4 support, 5 chat
+    var showProfile by remember { mutableStateOf(false) }
+    if (showProfile) ProfileDialog(st) { showProfile = false }
+    var seenChat by remember { mutableStateOf<ChatRow?>(null) }
+    val lastChat = st.chat.lastOrNull()
+    LaunchedEffect(sec, lastChat) { if (sec == 5) seenChat = lastChat }
+    LaunchedEffect(sec) { ls.scrollToItem(0) }
+    val copy: (String) -> Unit = { u: String -> clip.setText(AnnotatedString(u)); android.widget.Toast.makeText(ctx, "Link copied", android.widget.Toast.LENGTH_SHORT).show() }
+    val stop: () -> Unit = { if (st.devices.isEmpty()) ShareService.stop(ctx) else confirmStop = true }
+    Row(Modifier.fillMaxSize().statusBarsPadding()) {
+        HomeRail(
+            st, sec, lastChat != null && lastChat != seenChat && sec != 5, { sec = it },
+            { if (st.running) stop() else start() },
+            {
+                if (!st.running) android.widget.Toast.makeText(ctx, "Start sharing first", android.widget.Toast.LENGTH_SHORT).show()
+                else if (st.casting) CastService.stop(ctx) else onCast()
+            },
+        )
+        Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(topStart = 24.dp)).background(MaterialTheme.colorScheme.background)) {
+            SectionHeader(sec, st)
+            LazyColumn(
+                Modifier.weight(1f), state = ls,
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                if (sec == 0 || sec == 1) item(key = "status") { StatusCard(st, ::start, stop, copy) }
+                if (sec == 0 || sec == 2) item(key = "storage") { StorageCard(st) }
+                if (sec == 0 || sec == 2) item(key = "folders") { FoldersCard(st, { picker.launch(null) }) }
+                if (sec == 0 || sec == 1) item(key = "screen") { ScreenCard(st, onCast) }
+                if (sec == 0 || sec == 3) item(key = "invite") { InviteCard(st) }
+                if ((sec == 0 || sec == 5) && st.running) item(key = "chat") { ChatCard(st) }
+                if (sec == 5 && !st.running) item(key = "nochat") {
+                    SectionCard {
+                        Text("Start sharing to use live chat", fontWeight = FontWeight.SemiBold)
+                        Text("Guests chat from the web page and you answer here.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                        Button(::start, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.folders.isNotEmpty() || st.gameOnly) { Text("Start sharing") }
                     }
-                    Switch(st.remoteOn, { ShareController.setRemote(it) })
                 }
-                OutlinedButton(openBrowser, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Icon(Icons.Filled.PlayArrow, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Open the page here (files and game)")
+                if (sec == 3) {
+                    item(key = "wifi") { WifiCard(st) }
+                    item(key = "join") { JoinCard(onJoin) }
                 }
-                OutlinedButton({ SendToTv.scan(ctx, st) { tvNote = it } }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text("Send to TV (scan the code on your TV)")
-                }
-                tvNote?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall) }
-            }
-        }
-        item {
-            SectionCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Enjoying LocalShare?", fontWeight = FontWeight.SemiBold)
-                        Text("Even ₹1 helps me keep building it", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                if (sec == 0) item(key = "setup") {
+                    // Wi-Fi code, join-by-code and permissions are set up once, so they fold away (open while a permission is still missing)
+                    var more by rememberSaveable { mutableStateOf(!(perms.notifications && perms.unrestricted)) }
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TextButton({ more = !more }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                            Text(if (more) "Hide set-up tools" else "Set-up tools: Wi-Fi code, join by code, permissions", fontWeight = FontWeight.SemiBold)
+                        }
+                        if (more) {
+                            WifiCard(st)
+                            JoinCard(onJoin)
+                            PermissionsCard(perms) { p -> notif.launch(p) }
+                        }
                     }
-                    Spacer(Modifier.width(12.dp))
-                    Button({ showDonate = true }, Modifier.heightIn(min = 48.dp)) { Text("Donate") }
+                }
+                if (sec == 4) item(key = "perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
+                if ((sec == 0 || sec == 1) && st.running) item(key = "connected") {
+                    SectionCard {
+                        Text("Connected: ${st.devices.size} of ${st.maxClients} devices", fontWeight = FontWeight.SemiBold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Let every guest use the TV remote", fontWeight = FontWeight.SemiBold)
+                                Text("Off: only you and devices you allow on the Devices tab get a Remote button while LocalShare TV is connected.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            }
+                            Switch(st.remoteOn, { ShareController.setRemote(it) })
+                        }
+                        OutlinedButton(openBrowser, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                            Icon(Icons.Filled.PlayArrow, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Open the page here (files and game)")
+                        }
+                        OutlinedButton({ SendToTv.scan(ctx, st) { tvNote = it } }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                            Text("Send to TV (scan the code on your TV)")
+                        }
+                        tvNote?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall) }
+                    }
+                }
+                if (sec == 0 || sec == 4) item(key = "donate") {
+                    SectionCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Enjoying LocalShare?", fontWeight = FontWeight.SemiBold)
+                                Text("Even ₹1 helps me keep building it", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Button({ showDonate = true }, Modifier.heightIn(min = 48.dp)) { Text("Donate") }
+                        }
+                    }
                 }
             }
+            ProfileBar(st) { showProfile = true }
         }
     }
 }

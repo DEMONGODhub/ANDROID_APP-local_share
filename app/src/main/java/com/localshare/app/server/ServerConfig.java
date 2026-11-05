@@ -32,6 +32,17 @@ public final class ServerConfig {
     public volatile boolean gameEnabled = true;
     public volatile boolean allowUploads = false;
     public volatile boolean allowDelete = false;
+    /** How the host shows up to guests: a name and a small PNG picture (null = none). Only people who joined can fetch it. */
+    public volatile String hostName = "Host";
+    public volatile byte[] hostPic;
+    public volatile int hostPicVer;
+
+    public void setHostProfile(String name, byte[] png) {
+        String n = name == null ? "" : name.trim();
+        hostName = n.length() == 0 ? "Host" : n.substring(0, Math.min(24, n.length()));
+        if (png != null && png.length > 0 && png.length <= 200 * 1024) { hostPic = png; hostPicVer++; }
+    }
+
     /** Every guest may use the TV remote on the web page (only while a LocalShare TV is connected). Off by default: the host grants it per device. */
     public volatile boolean remote = false;
     /** Game-only hosting: nobody but the host can see any file. */

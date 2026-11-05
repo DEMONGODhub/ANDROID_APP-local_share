@@ -205,6 +205,16 @@ public class Harness {
                     } catch (Exception e) { }
                 } }).start();
             }
+            { // a yellow round picture for the host, so the page shows its profile chip
+                java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(96, 96, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+                java.awt.Graphics2D g = bi.createGraphics();
+                g.setColor(new java.awt.Color(0xFFD60A)); g.fillRoundRect(0, 0, 96, 96, 28, 28);
+                g.setColor(new java.awt.Color(0x0C0C0D)); g.setStroke(new java.awt.BasicStroke(6f)); g.drawRoundRect(33, 18, 30, 60, 8, 8);
+                g.dispose();
+                java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                javax.imageio.ImageIO.write(bi, "png", bo);
+                cfg.setHostProfile("Demon God", bo.toByteArray());
+            }
             if (System.getProperty("video") != null) { // play a fragmented mp4 as the phone's hardware-encoded screen
                 final com.localshare.app.server.StreamHub hub = s.stream();
                 if (!hub.isLive()) hub.start(24000, 2);
@@ -501,6 +511,19 @@ public class Harness {
         hub.stop();
         ac.disconnect();
         check("stopping ends the live flag", req("GET", "/api/info", m, null).text().contains("\"live\":false"));
+        System.out.println("== host profile");
+        String hp = login("dev-hp", "", "Hana");
+        check("no picture yet answers 404", req("GET", "/api/host/pic", hp, null).code == 404);
+        c.setHostProfile("Demon God", new byte[]{(byte) 0x89, 'P', 'N', 'G', 1, 2, 3});
+        check("the periodic check carries the picture version and name", req("GET", "/api/ping", hp, null).text().contains("\"hn\":\"Demon God\""));
+        check("guests get the host's name", req("GET", "/api/info", hp, null).text().contains("\"hostName\":\"Demon God\""));
+        check("and the picture version", req("GET", "/api/info", hp, null).text().contains("\"hostPic\":1"));
+        check("a joined guest can fetch the picture", req("GET", "/api/host/pic", hp, null).code == 200);
+        check("someone not signed in cannot", req("GET", "/api/host/pic", "", null).code == 404);
+        check("not-signed-in info hides the host name", !req("GET", "/api/info", "", null).text().contains("hostName"));
+        c.setHostProfile("   ", null);
+        check("an empty name falls back to Host and the old picture stays", req("GET", "/api/info", hp, null).text().contains("\"hostName\":\"Host\"") && req("GET", "/api/host/pic", hp, null).code == 200);
+        req("POST", "/api/logout", hp, "", "Origin", O);
         System.out.println("== TV remote");
         c.remote = true; // everyone may use it for the tests below; the per-device rules follow after
         String rg = login("dev-r1", "", "Rita");
@@ -533,6 +556,8 @@ public class Harness {
         c.setPerms(ServerConfig.permKey("dev-r2", "127.0.0.1"), ServerConfig.P_REMOTE);
         check("a device the host allowed may press keys", req("POST", "/api/remote", rg2, "k=up", "Origin", O).code == 200);
         check("and gets the Remote button", req("GET", "/api/info", rg2, null).text().contains("\"tv\":true"));
+        check("the periodic check keeps the button too", req("GET", "/api/ping", rg2, null).text().contains("\"tv\":true"));
+        check("and still hides it from others", req("GET", "/api/ping", rg, null).text().contains("\"tv\":false"));
         check("another device is still refused", req("POST", "/api/remote", rg, "k=up", "Origin", O).code == 403);
         c.setPerms(ServerConfig.permKey("dev-r2", "127.0.0.1"), 0);
         check("taking the permission back works", req("POST", "/api/remote", rg2, "k=up", "Origin", O).code == 403);
