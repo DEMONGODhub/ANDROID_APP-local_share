@@ -33,6 +33,9 @@ public final class ServerConfig {
     public volatile boolean allowUploads = false;
     public volatile boolean allowDelete = false;
     /** How the host shows up to guests: a name and a small PNG picture (null = none). Only people who joined can fetch it. */
+    /** The host's accent colour as #RRGGBB; the guest page uses it for buttons and highlights. */
+    public volatile String accent = "#FFD60A";
+    public void setAccent(String a) { if (a != null && a.matches("#[0-9A-Fa-f]{6}")) accent = a.toUpperCase(); }
     public volatile String hostName = "Host";
     public volatile byte[] hostPic;
     public volatile int hostPicVer;

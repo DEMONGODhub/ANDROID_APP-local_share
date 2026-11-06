@@ -108,6 +108,8 @@ object ShareController {
         cfg.gameEnabled = prefs.gameEnabled
         cfg.allowUploads = prefs.allowUploads
         cfg.remote = prefs.remoteOn
+        try { com.localshare.app.ui.Accent.argb = android.graphics.Color.parseColor(prefs.accent) } catch (e: Exception) { }
+        cfg.setAccent(prefs.accent)
         loadHost()
         cfg.allowDelete = prefs.allowDelete
         cfg.gameOnly = prefs.gameOnly
@@ -160,6 +162,16 @@ object ShareController {
         }
         hostBmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         cfg.setHostProfile(prefs.hostName, bytes)
+    }
+
+    /** Changes the accent colour everywhere: this app, the guest page, and the host's built-in logo picture. */
+    fun setAccent(argb: Int) {
+        val c = argb or 0xFF000000.toInt()
+        val hex = "#%06X".format(c and 0xFFFFFF)
+        com.localshare.app.ui.Accent.argb = c
+        prefs.accent = hex; cfg.setAccent(hex)
+        val k = prefs.hostPicKind
+        if (k.startsWith("logo:")) setHostLogo(k.removePrefix("logo:").toIntOrNull() ?: 0) else refresh()
     }
 
     fun setHostName(n: String) { prefs.hostName = n.trim().take(24).ifEmpty { "Host" }; cfg.setHostProfile(prefs.hostName, null); refresh() }

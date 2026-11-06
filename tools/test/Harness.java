@@ -520,6 +520,9 @@ public class Harness {
         check("and the picture version", req("GET", "/api/info", hp, null).text().contains("\"hostPic\":1"));
         check("a joined guest can fetch the picture", req("GET", "/api/host/pic", hp, null).code == 200);
         check("someone not signed in cannot", req("GET", "/api/host/pic", "", null).code == 404);
+        check("the accent colour defaults to yellow and reaches guests", req("GET", "/api/info", "", null).text().contains("\"ac\":\"#FFD60A\""));
+        c.setAccent("#a855f7"); c.setAccent("red"); c.setAccent("#12345");
+        check("a new accent shows on info and ping, bad values are ignored", req("GET", "/api/info", hp, null).text().contains("\"ac\":\"#A855F7\"") && req("GET", "/api/ping", hp, null).text().contains("\"ac\":\"#A855F7\""));
         check("not-signed-in info hides the host name", !req("GET", "/api/info", "", null).text().contains("hostName"));
         c.setHostProfile("   ", null);
         check("an empty name falls back to Host and the old picture stays", req("GET", "/api/info", hp, null).text().contains("\"hostName\":\"Host\"") && req("GET", "/api/host/pic", hp, null).code == 200);

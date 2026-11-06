@@ -6,17 +6,32 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Onyx and yellow. The web page uses the same family (assets/web/index.html).
-private val Dark = darkColorScheme(
-    primary = Color(0xFFFFD60A), onPrimary = Color(0xFF1A1400),
-    primaryContainer = Color(0xFF2E2A10), onPrimaryContainer = Color(0xFFFFE680),
-    secondary = Color(0xFFFFC400), onSecondary = Color(0xFF000000),
+/** The host's accent colour (yellow unless changed in Settings). Everything that was yellow follows it. */
+object Accent {
+    const val DEFAULT = 0xFFFFD60A.toInt()
+    var argb by mutableIntStateOf(DEFAULT)
+}
+
+/** Black or white text, whichever reads better on [c]. */
+fun onAccent(c: Color): Color = if (c.luminance() > 0.5f) Color.Black else Color.White
+
+// Onyx plus one accent colour. The web page uses the same family (assets/web/index.html).
+private fun dark(a: Color) = darkColorScheme(
+    primary = a, onPrimary = onAccent(a),
+    primaryContainer = lerp(Color(0xFF111113), a, 0.2f), onPrimaryContainer = lerp(a, Color.White, 0.5f),
+    secondary = a, onSecondary = onAccent(a),
     background = Color(0xFF0C0C0D), onBackground = Color(0xFFF2F2F0),
     surface = Color(0xFF111113), onSurface = Color(0xFFF2F2F0),
     surfaceVariant = Color(0xFF1E1E21), onSurfaceVariant = Color(0xFF9B9BA2),
@@ -39,7 +54,7 @@ private val Type = Typography(
 @Composable
 fun LocalShareTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = Dark, // black and yellow, always
+        colorScheme = remember(Accent.argb) { dark(Color(Accent.argb)) },
         typography = Type,
         shapes = Shapes(
             small = RoundedCornerShape(14.dp),

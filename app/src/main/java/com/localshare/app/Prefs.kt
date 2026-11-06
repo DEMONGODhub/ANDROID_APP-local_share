@@ -59,6 +59,11 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("remote_on", false)
         set(v) = sp.edit().putBoolean("remote_on", v).apply()
 
+    /** Accent colour as #RRGGBB (default yellow). */
+    var accent: String
+        get() = sp.getString("accent", "#FFD60A") ?: "#FFD60A"
+        set(v) = sp.edit().putString("accent", v).apply()
+
     /** The host's name as guests see it. */
     var hostName: String
         get() = sp.getString("host_name", "Host") ?: "Host"

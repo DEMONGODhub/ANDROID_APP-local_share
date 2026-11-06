@@ -764,7 +764,7 @@ public final class MiniServer {
         if (get && path.equals("/api/info")) {
             Session s = sessionOf(r);
             if (s != null && s.pending) s.lastSeen = System.currentTimeMillis();
-            json(out, isHead, 200, "{\"needPassword\":" + (cfg.password.length() > 0) + ",\"gameMode\":" + cfg.gameMode + ",\"gameEnabled\":" + (cfg.gameEnabled || gameOnly(s))
+            json(out, isHead, 200, "{\"ac\":" + Util.q(cfg.accent) + ",\"needPassword\":" + (cfg.password.length() > 0) + ",\"gameMode\":" + cfg.gameMode + ",\"gameEnabled\":" + (cfg.gameEnabled || gameOnly(s))
                     + ",\"tv\":" + (canRemote(s) && tvHere())+ ",\"max\":" + cfg.maxClients + ",\"active\":" + activeCount(null) + ",\"authed\":" + (s != null) + ",\"pending\":" + (s != null && s.pending) + ",\"manager\":" + (mgr(s) && !s.host) + ",\"live\":" + (stream.isLive() && s != null && !s.pending && !gameOnly(s))
                     + ",\"name\":" + Util.q(s == null ? "" : s.name) + ",\"host\":" + (s != null && s.host)
                     + ",\"canUpload\":" + canUpload(s) + ",\"canDelete\":" + canDelete(s) + ",\"canRename\":" + canRename(s)
@@ -791,7 +791,7 @@ public final class MiniServer {
             Session s = auth(r, out, isHead);
             if (s == null) return true;
             json(out, isHead, 200, "{\"ok\":true,\"up\":" + canUpload(s) + ",\"del\":" + canDelete(s) + ",\"ren\":" + canRename(s)
-                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (canRemote(s) && tvHere()) + ",\"hp\":" + (cfg.hostPic == null ? 0 : cfg.hostPicVer) + ",\"hn\":" + Util.q(cfg.hostName) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + "}");
+                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (canRemote(s) && tvHere()) + ",\"ac\":" + Util.q(cfg.accent) + ",\"hp\":" + (cfg.hostPic == null ? 0 : cfg.hostPicVer) + ",\"hn\":" + Util.q(cfg.hostName) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + "}");
             return true;
         }
         if (get && path.equals("/api/list")) {

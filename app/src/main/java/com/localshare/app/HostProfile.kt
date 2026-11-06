@@ -13,7 +13,7 @@ import java.io.ByteArrayOutputStream
 /** The host's picture: one of a few built-in logos, or a photo from the phone. Always kept as a small PNG, which guests can also see. */
 object HostProfile {
     const val LOGOS = 8
-    private const val Y = 0xFFFFD60A.toInt()
+    private val Y get() = com.localshare.app.ui.Accent.argb
     private const val K = 0xFF0C0C0D.toInt()
 
     /** Draws logo [kind] (0 is the app's own logo) into a square of side [s]. */
