@@ -51,6 +51,23 @@ private val PRESETS = listOf(
     "Green" to 0xFF22C55E, "Mint" to 0xFF34D399, "Lime" to 0xFFA3E635,
 ).map { (n, v) -> n to Color(v) }
 
+private val ICONS = listOf(
+    "Yellow" to Color(0xFFFFD60A), "White" to Color(0xFFFFFFFF), "Purple" to Color(0xFFA855F7),
+    "Blue" to Color(0xFF3B82F6), "Silver" to Color(0xFFC0C0C8), "Green" to Color(0xFF22C55E),
+)
+
+private fun alias(ctx: android.content.Context, n: String) = android.content.ComponentName(ctx, "com.localshare.app.Icon$n")
+
+private fun iconNow(ctx: android.content.Context): String =
+    ICONS.firstOrNull { ctx.packageManager.getComponentEnabledSetting(alias(ctx, it.first)) == android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED }?.first ?: "Yellow"
+
+/** Enables the chosen launcher alias first, then disables the others, so the app never vanishes from the home screen. */
+private fun setIcon(ctx: android.content.Context, name: String) {
+    val pm = ctx.packageManager
+    pm.setComponentEnabledSetting(alias(ctx, name), android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+    ICONS.forEach { if (it.first != name) pm.setComponentEnabledSetting(alias(ctx, it.first), android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP) }
+}
+
 private fun hexOf(c: Color) = "#%06X".format(c.toArgb() and 0xFFFFFF)
 
 /** Settings card: pick the colour that replaces yellow everywhere (not the files, not the stream). */
@@ -77,6 +94,22 @@ internal fun AccentCard() {
                         .clickable { ShareController.setAccent(c.toArgb()) }
                         .semantics { contentDescription = name + if (on) ", selected" else "" },
                 )
+            }
+        }
+        Text("Home-screen icon", fontWeight = FontWeight.SemiBold)
+        Text("Pick the launcher icon colour. Your phone's home screen may take a few seconds to update.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        var icon by remember { mutableStateOf(iconNow(ctx)) }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            ICONS.forEach { (name, c) ->
+                val on = name == icon
+                Box(
+                    Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(c)
+                        .border(if (on) 3.dp else 1.dp, if (on) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+                        .clickable { setIcon(ctx, name); icon = name }
+                        .semantics { contentDescription = "$name icon" + if (on) ", selected" else "" },
+                    contentAlignment = Alignment.Center,
+                ) { LogoMark(26.dp, onAccent(c), false) }
             }
         }
         Text("Custom colour", fontWeight = FontWeight.SemiBold)
