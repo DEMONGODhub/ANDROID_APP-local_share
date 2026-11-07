@@ -39,8 +39,8 @@ body.sepia .pg canvas{filter:sepia(.55) brightness(.97)}
 body.dark .pg canvas{filter:invert(.92) hue-rotate(180deg)}
 .textLayer{position:absolute;inset:0;overflow:hidden;line-height:1;opacity:1}
 .textLayer span,.textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%}
-.textLayer ::selection{background:rgba(255,227,59,.4)}
-.textLayer .hit{background:rgba(255,220,0,.45);border-radius:2px}
+.textLayer ::selection{background:color-mix(in srgb,var(--primary) 40%,transparent)}
+.textLayer .hit{background:color-mix(in srgb,var(--primary) 45%,transparent);border-radius:2px}
 .textLayer .cur{background:rgba(247,120,0,.6);outline:2px solid rgba(247,120,0,.9)}
 #msg{margin:auto;text-align:center;color:var(--muted);padding:24px;max-width:420px}
 #msg a{color:var(--primary);font-weight:600}
@@ -48,6 +48,8 @@ body.dark .pg canvas{filter:invert(.92) hue-rotate(180deg)}
 @media print{body>*:not(#printarea){display:none!important}#printarea{display:block}#printarea img{display:block;width:100%;page-break-after:always}}
 @media (max-width:640px){#side{width:96px}.hm{display:none}}
 </style>
+<script>/* use the host's accent colour (the main page saves it as ls_ac) */
+try{const h=localStorage.getItem("ls_ac");if(/^#[0-9a-f]{6}$/i.test(h||"")){const n=parseInt(h.slice(1),16),l=(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255,r=document.documentElement.style;r.setProperty("--primary",h);r.setProperty("--onprimary",l>.55?"#000000":"#FFFFFF")}}catch(e){}</script>
 </head>
 <body>
 <header>
