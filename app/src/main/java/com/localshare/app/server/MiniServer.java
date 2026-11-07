@@ -129,6 +129,7 @@ public final class MiniServer {
     private ServerSocket ss;
     private ThreadPoolExecutor pool;
     private GameHub game;
+    private PartyHub party;
     private final StreamHub stream = new StreamHub();
 
     private static final class ChatMsg {
@@ -224,6 +225,7 @@ public final class MiniServer {
         this.port = s.getLocalPort();
         pool = new ThreadPoolExecutor(4, 160, 30, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
         game = new GameHub(cfg, pool, true);
+        party = new PartyHub(cfg, pool);
         running = true;
         Thread t = new Thread(new Runnable() {
             @Override public void run() {
@@ -242,6 +244,7 @@ public final class MiniServer {
         }
         stream.stop();
         if (game != null) game.shutdown();
+        if (party != null) party.shutdown();
         if (pool != null) pool.shutdownNow();
         sessions.clear();
     }
@@ -1154,7 +1157,8 @@ public final class MiniServer {
             json(out, false, 200, body);
             return true;
         }
-        if (get && path.equals("/ws")) return websocket(r, sock, in, out);
+        if (get && path.equals("/ws")) return websocket(r, sock, in, out, false);
+        if (get && path.equals("/wsp")) return websocket(r, sock, in, out, true);
         json(out, isHead, 404, err("not found"));
         return true;
     }
@@ -1999,7 +2003,7 @@ public final class MiniServer {
 
     private static final byte[] CRLF = {13, 10};
 
-    private boolean websocket(Req r, Socket sock, InputStream in, OutputStream out) throws IOException {
+    private boolean websocket(Req r, Socket sock, InputStream in, OutputStream out, boolean arcade) throws IOException {
         String up = r.h.get("upgrade");
         String key = r.h.get("sec-websocket-key");
         if (up == null || !up.equalsIgnoreCase("websocket") || key == null) {
@@ -2019,9 +2023,13 @@ public final class MiniServer {
         } catch (Exception e) {
             throw new IOException(e);
         }
+        if (arcade && !(cfg.gameEnabled || gameOnly(s))) {
+            json(out, false, 403, err("games are off"));
+            return false;
+        }
         out.write(("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + acc + "\r\n\r\n").getBytes(LATIN1));
         out.flush();
-        game.run(s.token, s.id, s.name, s.avKey, sock, in, out);
+        if (arcade) party.run(s.id, s.name, sock, in, out); else game.run(s.token, s.id, s.name, s.avKey, sock, in, out);
         return false;
     }
 }

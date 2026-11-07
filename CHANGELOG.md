@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.24.0** — Arcade: Tic-Tac-Toe, Connect 4, Pong, Snake Battle and Draw & Guess in the browser (multiplayer rooms)
 - **v2.23.0** — faster file sending (bigger read buffer and socket send buffer)
 - **v2.22.0** — first-run guide, friendlier empty state, Undo snackbars for stop-sharing and block, buzz on join request
 - **v2.21.0** — choose the home-screen icon colour
