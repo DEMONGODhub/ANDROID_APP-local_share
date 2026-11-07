@@ -1,0 +1,33 @@
+# Changelog
+
+Every release is a git tag (vX.Y.Z). Newest first.
+
+- **v2.22.0** — first-run guide, friendlier empty state, Undo snackbars for stop-sharing and block, buzz on join request
+- **v2.21.0** — choose the home-screen icon colour
+- **v2.20.0** — choose the accent colour (presets + hex picker) for the app, logo and guest page
+- **v2.19.1** — fix missing import in the profile dialog
+- **v2.19.0** — Discord-style Home tab (rail, sections, quick actions), host profile with picture and logos, remote button fix
+- **v2.18.0** — TV remote permission per device, page security policy, privacy and store text updated
+- **v2.17.1** — fix frozen frames in the live stream (continuous video timeline, no encoder restart loop on small screens)
+- **v2.17.0** — new animated logo, follow phone rotation in live stream, UI polish
+- **v2.16.0** — hardware H.264 screen share, YouTube-style volume, quality menu, rewind live, battery and heat meter
+- **v2.15.0** — sound button shows a speaker while playing
+- **v2.15.0** — sound fixes (starts inside the tap, status and level, volume), silence notice, optional microphone
+- **v2.14.0** — chat upgrades (docked panel, unread badge, moderation, reactions, pictures, slow mode, team colours, ping, phone chat card)
+- **v2.13.0** — multi-select on the web page (download as ZIP, delete together)
+- **v2.12.0** — screen sound, invite links, Wi-Fi QR, tile and shortcuts, game teams/rules/hall of fame, release prep
+- **v2.11.0** — zoom, quality badge and live timer on the screen viewer, live chat
+- **v2.10.2** — fix build error (animateFloat import)
+- **v2.10.1** — fix build errors (StorageRing import, HostBrowser parameter order)
+- **v2.10.0** — onyx and yellow look, soft cards, shared-storage circle, animations
+- **v2.9.0** — share your screen, ask-before-joining approvals, manager role for the game, join another share inside the app
+- **v2.8.0** — remove duplicate Settings button, stop-sharing confirmation, link-copied toast, Back goes to Share tab, name-taken suggestion and clearer handling on reconnect
+- **v2.7.1** — QR/copy/share on every link, file-manager folder rows, softer gold on black
+- **v2.7.0** — video-app style layout (top bar, chip row, video-style folder cards, flat bottom bar) in black and yellow
+- **v2.6.1** — comfortable host sheet while playing (side sheet in landscape, one-tap heroes, toast, swipe to close)
+- **v2.6.0** — modern look for the Android app (type, shapes, cards, nav bar, animated status)
+- **v2.5.1** — ball follows the cursor on desktop, bigger map, automatic APK build
+- **v2.5.0** — unique names, search next to ZIP, Game control center tab, black and yellow theme
+- **v2.4.0** — one-stick phone controls, pumpkin ammo, host observer and spectators, blessing heroes drawn on the sphere, new logo, battery prompt only when disabled
+- **v2.3.0** — folder rename/move/delete, upload+move permissions, Orb Arena v2 (gun, modes, blessings, avatars), PDF reader upgrade
+- **v2.2.0** — per-device permissions (delete, rename, edit, game only) and game-only hosting mode
