@@ -1,0 +1,23 @@
+name: Tag versions
+# Run by hand once (Actions tab -> Tag versions -> Run workflow). Makes a vX.Y.Z tag for every commit
+# whose message starts with "vX.Y.Z:" and does nothing for tags that already exist.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git config user.name DEMON_GOD
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git log --format='%H %s' | while read -r sha subj; do
+            v=$(echo "$subj" | sed -nE 's/^(v[0-9]+\.[0-9]+\.[0-9]+): .*/\1/p')
+            [ -z "$v" ] && continue
+            git rev-parse -q --verify "refs/tags/$v" >/dev/null || git tag -a "$v" "$sha" -m "LocalShare $v"
+          done
+          git push origin --tags
