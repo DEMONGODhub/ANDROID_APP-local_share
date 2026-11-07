@@ -218,13 +218,22 @@ object ShareController {
         applyFolders()
     }
 
-    fun removeFolder(uri: String) {
+    fun guideSeen() = prefs.guideSeen
+    fun markGuideSeen() { prefs.guideSeen = true }
+
+    /** [release] false keeps Android's access to the folder so an Undo still works; call releaseFolder later. */
+    fun removeFolder(uri: String, release: Boolean = true) {
         prefs.folders = prefs.folders - uri
+        if (release) releaseFolder(uri)
+        applyFolders()
+    }
+
+    fun releaseFolder(uri: String) {
+        if (uri in prefs.folders) return // it was added back
         try {
             app.contentResolver.releasePersistableUriPermission(
                 Uri.parse(uri), android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         } catch (e: Exception) { }
-        applyFolders()
     }
 
     private fun applyFolders() {

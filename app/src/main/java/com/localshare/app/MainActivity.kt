@@ -56,6 +56,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -142,9 +143,29 @@ private fun App() {
         HostBrowser(st.port, st.hostToken, mode) { browser = null }
         return
     }
+    val snackState = remember { androidx.compose.material3.SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        com.localshare.app.ui.Snack.flow.collect { m ->
+            snackState.currentSnackbarData?.dismiss()
+            val r = snackState.showSnackbar(m.text, "Undo", duration = androidx.compose.material3.SnackbarDuration.Long)
+            if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) m.onUndo() else m.onDone()
+        }
+    }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    LaunchedEffect(st.waiting.size) { // a small buzz when someone new asks to join
+        if (st.waiting.isNotEmpty()) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+    }
+    var guide by rememberSaveable { mutableStateOf(!ShareController.guideSeen()) }
+    if (guide) AlertDialog(
+        onDismissRequest = { },
+        title = { Text("Share a folder in 3 steps") },
+        text = { Text("1. Tap Add a folder and pick one.\n2. Tap Start sharing.\n3. On another device on the same Wi-Fi, scan the QR code or type the address.\n\nNo internet and no account needed.") },
+        confirmButton = { TextButton({ ShareController.markGuideSeen(); guide = false }) { Text("Got it") } },
+    )
     BackHandler(enabled = tab != 0) { tab = 0 } // Back from any other tab goes to Share first
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackState) },
         topBar = { if (tab != 0) AppBar(st.running, st.devices.size) }, // the Share tab has its own rail and profile bar
         bottomBar = {
           Column {

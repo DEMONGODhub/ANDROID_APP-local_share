@@ -59,6 +59,11 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("remote_on", false)
         set(v) = sp.edit().putBoolean("remote_on", v).apply()
 
+    /** The first-run guide has been shown. */
+    var guideSeen: Boolean
+        get() = sp.getBoolean("guideSeen", false)
+        set(v) = sp.edit().putBoolean("guideSeen", v).apply()
+
     /** Accent colour as #RRGGBB (default yellow). */
     var accent: String
         get() = sp.getString("accent", "#FFD60A") ?: "#FFD60A"

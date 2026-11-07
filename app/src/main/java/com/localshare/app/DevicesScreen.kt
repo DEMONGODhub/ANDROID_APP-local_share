@@ -26,7 +26,6 @@ import com.localshare.app.ui.SectionCard
 @Composable
 fun DevicesScreen(st: UiState) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    var confirm by remember { mutableStateOf<Device?>(null) }
     var editing by remember { mutableStateOf<String?>(null) }
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
@@ -50,7 +49,7 @@ fun DevicesScreen(st: UiState) {
             DeviceRow(d.name, d.ip + permsNote(d.perms, st.gameOnly)) {
                 IconButton({ editing = d.id }, Modifier.size(48.dp)) { Icon(Icons.Filled.Settings, "Settings for ${d.name}") }
                 TextButton({ ShareController.kick(d.id) }, Modifier.heightIn(min = 48.dp)) { Text("Kick") }
-                Button({ confirm = d }, Modifier.heightIn(min = 48.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)) { Text("Block") }
+                Button({ ShareController.block(d.id); com.localshare.app.ui.Snack.show("Blocked ${d.name}", { ShareController.unblock(d.id) }) }, Modifier.heightIn(min = 48.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)) { Text("Block") }
             }
         }
         item { Spacer(Modifier.height(10.dp)); Text("Blocked", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() }) }
@@ -68,15 +67,6 @@ fun DevicesScreen(st: UiState) {
         }
     }
     st.devices.firstOrNull { it.id == editing }?.let { d -> DevicePermsDialog(d, st) { editing = null } }
-    confirm?.let { d ->
-        AlertDialog(
-            onDismissRequest = { confirm = null },
-            title = { Text("Block ${d.name}?") },
-            text = { Text("They will be disconnected and cannot rejoin from ${d.ip}. You can unblock them any time.") },
-            confirmButton = { TextButton({ ShareController.block(d.id); confirm = null }) { Text("Block", color = MaterialTheme.colorScheme.error) } },
-            dismissButton = { TextButton({ confirm = null }) { Text("Cancel") } },
-        )
-    }
 }
 
 private fun permsNote(p: Int, gameOnlyMode: Boolean): String {

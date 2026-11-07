@@ -293,11 +293,14 @@ private fun StatusCard(
 
 @Composable
 private fun FoldersCard(st: UiState, onAdd: () -> Unit) {
-    var removing by remember { mutableStateOf<SharedFolder?>(null) }
     SectionCard {
         Text("Shared folders", fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
         Text("People who join pick which of these to open.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-        if (st.folders.isEmpty()) Text("None yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (st.folders.isEmpty()) Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(painterResource(R.drawable.ic_folder), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
+            Text("Nothing shared yet", style = MaterialTheme.typography.titleMedium)
+            Text("Pick a folder and anyone on your Wi-Fi can open it in a browser.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
         st.folders.forEachIndexed { i, f ->
             var menu by remember { mutableStateOf(false) }
             val c = MaterialTheme.colorScheme
@@ -314,7 +317,11 @@ private fun FoldersCard(st: UiState, onAdd: () -> Unit) {
                 Box {
                     IconButton({ menu = true }) { Icon(Icons.Filled.MoreVert, "Options for ${f.name}", tint = c.onSurfaceVariant) }
                     DropdownMenu(menu, { menu = false }) {
-                        DropdownMenuItem({ Text("Stop sharing") }, { menu = false; removing = f })
+                        DropdownMenuItem({ Text("Stop sharing") }, {
+                            menu = false
+                            ShareController.removeFolder(f.uri, release = false)
+                            com.localshare.app.ui.Snack.show("Stopped sharing ${f.name}", { ShareController.addFolder(Uri.parse(f.uri)) }, { ShareController.releaseFolder(f.uri) })
+                        })
                     }
                 }
             }
@@ -324,15 +331,6 @@ private fun FoldersCard(st: UiState, onAdd: () -> Unit) {
             Spacer(Modifier.width(8.dp))
             Text(if (st.folders.isEmpty()) "Add a folder" else "Add another folder")
         }
-    }
-    removing?.let { f ->
-        AlertDialog(
-            onDismissRequest = { removing = null },
-            title = { Text("Stop sharing ${f.name}?") },
-            text = { Text("Your files stay where they are. Only the sharing stops.") },
-            confirmButton = { TextButton({ ShareController.removeFolder(f.uri); removing = null }) { Text("Stop sharing") } },
-            dismissButton = { TextButton({ removing = null }) { Text("Cancel") } },
-        )
     }
 }
 
