@@ -250,6 +250,8 @@ private fun StatusCard(
                     if (st.urls.size > 1) "${st.urls.size} ways to connect (Wi-Fi and hotspot). Use any one." else "Open this address on any device on the same network.",
                     color = c.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
                 )
+                if (st.speedLine.isNotEmpty()) Text(st.speedLine, color = c.primary, fontWeight = FontWeight.SemiBold)
+                if (st.wifiNote.isNotEmpty()) Text(st.wifiNote, color = c.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 st.urls.forEach { u ->
                     Surface(color = c.surfaceContainerHighest, shape = MaterialTheme.shapes.medium) {
                         Column(Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 2.dp)) {

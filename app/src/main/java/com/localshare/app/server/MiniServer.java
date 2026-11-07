@@ -130,6 +130,12 @@ public final class MiniServer {
     private ThreadPoolExecutor pool;
     private GameHub game;
     private PartyHub party;
+    private final java.util.concurrent.atomic.AtomicLong fileOut = new java.util.concurrent.atomic.AtomicLong();
+
+    /** Total file bytes sent to guests so far; the app turns the change into MB/s. */
+    public long fileBytes() {
+        return fileOut.get();
+    }
     private final StreamHub stream = new StreamHub();
 
     private static final class ChatMsg {
@@ -1322,6 +1328,7 @@ public final class MiniServer {
                 int n = is.read(buf, 0, (int) Math.min(buf.length, left));
                 if (n < 0) break;
                 out.write(buf, 0, n);
+                fileOut.addAndGet(n);
                 left -= n;
             }
             return left == 0;

@@ -87,7 +87,7 @@ class ShareService : Service() {
         }
         if (wifi == null) {
             val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            wifi = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "localshare:wifi").apply { setReferenceCounted(false); acquire() }
+            wifi = wm.createWifiLock(if (android.os.Build.VERSION.SDK_INT >= 29) WifiManager.WIFI_MODE_FULL_LOW_LATENCY else WifiManager.WIFI_MODE_FULL_HIGH_PERF, "localshare:wifi").apply { setReferenceCounted(false); acquire() }
         }
     }
 

@@ -56,6 +56,10 @@ data class UiState(
     /** Live line for the screen card: "720p · 30 fps · 2.6 Mbps · 36 °C · battery 71% (-6%/h)". Empty when not casting. */
     val castMeter: String = "",
     val castNote: String = "",
+    /** "Sending 6.2 MB/s" while guests download, else empty. */
+    val speedLine: String = "",
+    /** Advice shown when the phone is on slow 2.4 GHz Wi-Fi, else empty. */
+    val wifiNote: String = "",
     val storage: StorageInfo = StorageInfo(),
     val invites: List<InviteInfo> = emptyList(),
     val chat: List<ChatRow> = emptyList(),
@@ -186,6 +190,28 @@ object ShareController {
         cfg.setHostProfile(prefs.hostName, bytes)
         refresh()
     }
+
+    private var lastBytes = 0L
+    private var lastAt = 0L
+    private var lastSpeed = ""
+
+    private fun speed(s: com.localshare.app.server.MiniServer?): String {
+        val now = System.currentTimeMillis()
+        if (lastAt > 0 && now - lastAt < 1000) return lastSpeed // refresh() also runs on events; measure over at least a second
+        val b = s?.fileBytes() ?: 0L
+        val mbps = if (lastAt > 0 && now > lastAt && b >= lastBytes) (b - lastBytes) / 1048576.0 / ((now - lastAt) / 1000.0) else 0.0
+        lastBytes = b
+        lastAt = now
+        lastSpeed = if (mbps >= 0.1) String.format(java.util.Locale.US, "Sending %.1f MB/s", mbps) else ""
+        return lastSpeed
+    }
+
+    @Suppress("DEPRECATION")
+    private fun wifiNote(): String = try {
+        val wm = app.applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+        val f = wm.connectionInfo?.frequency ?: 0
+        if (f in 2400..2500) "This phone is on 2.4 GHz Wi-Fi, which is slower. For faster file transfers use a 5 GHz network or this phone's hotspot." else ""
+    } catch (e: Exception) { "" }
 
     private fun meter(ctx: Context, s: com.localshare.app.server.StreamHub?): String {
         if (!CastService.active || s == null) return ""
@@ -347,6 +373,8 @@ object ShareController {
             hostPicVer = cfg.hostPicVer,
             hostPicKind = prefs.hostPicKind,
             castMeter = meter(app, s?.stream()),
+            speedLine = speed(s),
+            wifiNote = wifiNote(),
             castNote = if (CastService.active) s?.stream()?.note() ?: "" else "",
             castSince = if (CastService.active) s?.stream()?.startedAt() ?: 0L else 0L,
             storage = storage,

@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.25.0** — live "Sending MB/s" on Home, 2.4 GHz Wi-Fi advice, low-latency Wi-Fi lock on Android 10+
 - **v2.24.0** — Arcade: Tic-Tac-Toe, Connect 4, Pong, Snake Battle and Draw & Guess in the browser (multiplayer rooms)
 - **v2.23.0** — faster file sending (bigger read buffer and socket send buffer)
 - **v2.22.0** — first-run guide, friendlier empty state, Undo snackbars for stop-sharing and block, buzz on join request
