@@ -343,6 +343,7 @@ public final class MiniServer {
         try {
             s.setSoTimeout(20000);
             s.setTcpNoDelay(true);
+            try { s.setSendBufferSize(262144); } catch (Exception ignored) { } // lets big files keep the Wi-Fi busy between reads
             InputStream in = new BufferedInputStream(s.getInputStream(), 8192);
             OutputStream out = new BufferedOutputStream(s.getOutputStream(), 32768);
             while (running) {
@@ -1311,7 +1312,7 @@ public final class MiniServer {
             return false; // headers are already sent; closing the connection is the only honest signal
         }
         try {
-            byte[] buf = new byte[65536];
+            byte[] buf = new byte[262144];
             long left = len;
             while (left > 0) {
                 int n = is.read(buf, 0, (int) Math.min(buf.length, left));

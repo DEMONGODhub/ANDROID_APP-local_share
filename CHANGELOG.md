@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.23.0** — faster file sending (bigger read buffer and socket send buffer)
 - **v2.22.0** — first-run guide, friendlier empty state, Undo snackbars for stop-sharing and block, buzz on join request
 - **v2.21.0** — choose the home-screen icon colour
 - **v2.20.0** — choose the accent colour (presets + hex picker) for the app, logo and guest page
