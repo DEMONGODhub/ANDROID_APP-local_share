@@ -1141,7 +1141,7 @@ function focusMove(dx,dy){
   const n=Math.max(0,Math.min(cs.length-1,i+dx+dy*cols));cs[n].focus();cs[n].scrollIntoView({block:"nearest"});
 }
 addEventListener("keydown",e=>{
-  if(G.on||!ME.name||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(G.on||(window.ARC&&ARC.on)||!ME.name||e.ctrlKey||e.metaKey||e.altKey)return;
   const open=!$("#viewer").classList.contains("hide");
   if(open){if(e.key==="Escape")closeViewer();else if(e.key==="ArrowLeft")step(-1);else if(e.key==="ArrowRight")step(1);return}
   if(document.querySelector(".dlg")||$("#menu")||$("#app").classList.contains("hide"))return;

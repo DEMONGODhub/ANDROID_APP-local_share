@@ -203,23 +203,25 @@ const WORDS="apple house tree car sun moon star fish cat dog bird flower boat tr
 function draw_(){
  const ROUND=60;let S=null,cv,ctx,msg,chat,inp,pl,tools,word="",cur=null,last=0,tm=0,strokes=[];
  const fresh=()=>({ph:"lobby",order:[],i:0,sc:{},end:0,hint:"",got:[],rounds:0});
+ function pub(){S.lf=S.ph==="draw"?Math.max(0,Math.ceil((S.end-Date.now())/1000)):0;bc({k:"s",s:S})}
+ const endAt=()=>isHost()?S.end:S.endLocal;
  const myTurn=()=>S&&S.ph==="draw"&&S.order[S.i]===A.me;
  function begin(){ // host
   S.order=A.ps.map(p=>p.id);S.i=-1;S.sc={};S.rounds=0;S.ph="draw";next();
  }
  function next(){
-  S.i++;if(S.i>=S.order.length){S.ph="over";S.hint="";word="";bc({k:"s",s:S});bc({k:"w",w:""});paint();return}
+  S.i++;if(S.i>=S.order.length){S.ph="over";S.hint="";word="";pub();bc({k:"w",w:""});paint();return}
   while(S.i<S.order.length&&seat(S.order[S.i])<0)S.i++;
-  if(S.i>=S.order.length){S.ph="over";S.hint="";bc({k:"s",s:S});paint();return}
+  if(S.i>=S.order.length){S.ph="over";S.hint="";pub();paint();return}
   S.revealing=false;
   word=WORDS[Math.floor(Math.random()*WORDS.length)];S.hint=word.replace(/[a-z]/g,"_ ").trim();S.end=Date.now()+ROUND*1000;S.got=[];
-  bc({k:"clear"});clear();bc({k:"s",s:S});const d=S.order[S.i];if(d===A.me)paint();else to(d,{k:"w",w:word});paint();
+  bc({k:"clear"});clear();pub();const d=S.order[S.i];if(d===A.me)paint();else to(d,{k:"w",w:word});paint();
  }
  function say(n,t,ok){const d=el("div",ok?"ok":"",`<b>${esc(n)}</b> ${esc(t)}`);chat.append(d);chat.scrollTop=1e9}
  function guess(id,t){ // host
   if(!S||S.ph!=="draw"||id===S.order[S.i]||S.got.includes(id))return;
   if(t.trim().toLowerCase()===word){const left=Math.max(0,Math.round((S.end-Date.now())/1000));S.sc[id]=(S.sc[id]||0)+10+left;const dr=S.order[S.i];S.sc[dr]=(S.sc[dr]||0)+5;S.got.push(id);
-   bc({k:"c",n:nameOf(id),t:"guessed the word! 🎉",ok:1});say(nameOf(id),"guessed the word! 🎉",1);bc({k:"s",s:S});paint();
+   bc({k:"c",n:nameOf(id),t:"guessed the word! 🎉",ok:1});say(nameOf(id),"guessed the word! 🎉",1);pub();paint();
    if(S.got.length>=S.order.length-1)setTimeout(()=>{if(S&&S.ph==="draw")reveal()},800)}
   else{bc({k:"c",n:nameOf(id),t:t.slice(0,40)});say(nameOf(id),t.slice(0,40))}
  }
@@ -228,7 +230,7 @@ function draw_(){
   if(!S)return;const mine=myTurn(),dr=S.order[S.i];
   tools.classList.toggle("hide",!mine);inp.parentNode.classList.toggle("hide",mine||S.ph!=="draw");
   startB.classList.toggle("hide",!(isHost()&&(S.ph==="lobby"||S.ph==="over")&&A.ps.length>=2));
-  const left=S.ph==="draw"?Math.max(0,Math.ceil((S.end-Date.now())/1000)):0;
+  const left=S.ph==="draw"?Math.max(0,Math.ceil((endAt()-Date.now())/1000)):0;
   const sc=Object.entries(S.sc).sort((a,b)=>b[1]-a[1]).map(([id,v])=>esc(nameOf(id))+" "+v).join(" · ");
   msg.innerHTML=(S.ph==="lobby"?(A.ps.length<2?"Waiting for friends to join…":isHost()?"Everyone here? Press Start.":"Waiting for the host to start…"):S.ph==="over"?"Game over! "+(sc?"🏆 "+sc:""):(mine?"Draw: <b>"+esc(word)+"</b>":esc(nameOf(dr))+" is drawing: <b>"+esc(S.hint)+"</b>")+" · "+left+"s")+(S.ph==="draw"&&sc?"<br><small>"+sc+"</small>":"");
  }
@@ -246,11 +248,11 @@ function draw_(){
    cv.onpointerdown=e=>{if(!myTurn())return;cv.setPointerCapture(e.pointerId);cur=pt(e);line(cur,cur,color,color==="#fff"?18:4);bc({k:"d",a:cur,b:cur,c:color})};
    cv.onpointermove=e=>{if(!cur||!myTurn())return;const p=pt(e);line(cur,p,color,color==="#fff"?18:4);bc({k:"d",a:cur,b:p,c:color});cur=p};
    cv.onpointerup=()=>{cur=null};
-   A.tick=setInterval(()=>{if(S){paint();if(isHost()&&S.ph==="draw"&&Date.now()>S.end+300)reveal()}},500)},
+   A.tick=setInterval(()=>{if(S){paint();if(isHost()){if(S.ph==="draw"&&Date.now()>S.end+300)reveal();else if(S.ph==="draw")pub()}}},1000)},
   room(hc){pl.replaceWith(pl=players());
-   if(isHost()){if(!S||hc){S=fresh()}if(S.ph==="draw"&&S.order[S.i]&&seat(S.order[S.i])<0)next();bc({k:"s",s:S})}else if(hc)S=null;paint()},
+   if(isHost()){if(!S||hc){S=fresh()}if(S.ph==="draw"&&S.order[S.i]&&seat(S.order[S.i])<0)next();pub()}else if(hc)S=null;paint()},
   msg(f,d){
-   if(d.k==="s"&&!isHost()){S=d.s;paint()}
+   if(d.k==="s"&&!isHost()){S=d.s;S.endLocal=Date.now()+(S.lf||0)*1000;paint()}
    else if(d.k==="w"){word=d.w;paint()}
    else if(d.k==="clear"){clear()}
    else if(d.k==="d"&&S&&S.order[S.i]===f){line(d.a,d.b,d.c,d.c==="#fff"?18:4)}

@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.25.2** — keyboard shortcuts no longer fire behind the Arcade; Draw & Guess timer is correct on every phone
 - **v2.25.1** — the PDF viewer now follows the host's accent colour
 - **v2.25.0** — live "Sending MB/s" on Home, 2.4 GHz Wi-Fi advice, low-latency Wi-Fi lock on Android 10+
 - **v2.24.0** — Arcade: Tic-Tac-Toe, Connect 4, Pong, Snake Battle and Draw & Guess in the browser (multiplayer rooms)
