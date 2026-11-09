@@ -12,8 +12,8 @@ android {
         applicationId = "com.localshare.app"
         minSdk = 21            // Android 5.0+ (covers ~99% of devices)
         targetSdk = 35
-        versionCode = 37
-        versionName = "2.26.0"
+        versionCode = 38
+        versionName = "2.27.0"
     }
 
     // Release signing comes from environment variables (GitHub secrets); without them the release build is simply unsigned.

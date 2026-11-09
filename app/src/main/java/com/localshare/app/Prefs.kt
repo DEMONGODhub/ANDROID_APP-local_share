@@ -59,6 +59,14 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("remote_on", false)
         set(v) = sp.edit().putBoolean("remote_on", v).apply()
 
+    /** Custom colours the host saved with the + tile (hex codes, newest first, up to 12). */
+    var savedAccents: String
+        get() = sp.getString("savedAccents", "") ?: ""
+        set(v) = sp.edit().putString("savedAccents", v).apply()
+    var savedIcons: String
+        get() = sp.getString("savedIcons", "") ?: ""
+        set(v) = sp.edit().putString("savedIcons", v).apply()
+
     /** The first-run guide has been shown. */
     var guideSeen: Boolean
         get() = sp.getBoolean("guideSeen", false)

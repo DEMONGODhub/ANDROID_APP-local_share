@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
@@ -120,6 +121,7 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
         RailTile("Folders", sec == 2, { onSec(2) }) { fg -> Icon(painterResource(R.drawable.ic_folder), null, tint = fg) }
         RailTile("Access", sec == 3, { onSec(3) }) { fg -> Icon(Icons.Filled.Lock, null, tint = fg) }
         RailTile("Support", sec == 4, { onSec(4) }) { fg -> Icon(Icons.Filled.Favorite, null, tint = fg) }
+        RailTile("Look", sec == 6, { onSec(6) }) { fg -> Icon(Icons.Filled.Edit, null, tint = fg) }
     }
 }
 
@@ -130,6 +132,7 @@ internal fun SectionHeader(sec: Int, st: UiState) {
         2 -> "Folders" to "${st.folders.size} shared from this phone"
         3 -> "Access" to "Who can join, and how"
         4 -> "Support" to "Keep it running, and say thanks"
+        6 -> "Appearance" to "Colours for the app, icon and games"
         5 -> "Live chat" to (if (st.running) "Everyone who joined can see this" else "Start sharing to chat")
         else -> "LocalShare" to "Everything in one place"
     }

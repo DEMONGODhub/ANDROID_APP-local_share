@@ -171,6 +171,20 @@ object ShareController {
         cfg.setHostProfile(prefs.hostName, bytes)
     }
 
+    /** Saved custom colours for the accent (icons=false) or the home-screen icon (icons=true). */
+    fun savedColors(icons: Boolean): List<String> =
+        (if (icons) prefs.savedIcons else prefs.savedAccents).split(",").filter { Regex("#[0-9A-F]{6}").matches(it) }
+
+    fun saveColor(icons: Boolean, hex: String) {
+        val l = (listOf(hex.uppercase()) + savedColors(icons).filter { !it.equals(hex, true) }).take(12).joinToString(",")
+        if (icons) prefs.savedIcons = l else prefs.savedAccents = l
+    }
+
+    fun forgetColor(icons: Boolean, hex: String) {
+        val l = savedColors(icons).filter { !it.equals(hex, true) }.joinToString(",")
+        if (icons) prefs.savedIcons = l else prefs.savedAccents = l
+    }
+
     /** Changes the accent colour everywhere: this app, the guest page, and the host's built-in logo picture. */
     fun setAccent(argb: Int) {
         val c = argb or 0xFF000000.toInt()

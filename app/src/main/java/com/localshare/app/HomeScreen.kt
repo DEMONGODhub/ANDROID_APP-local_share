@@ -181,6 +181,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                         }
                     }
                 }
+                if (sec == 6) item(key = "look") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { AppearanceCard() } }
                 if (sec == 4) item(key = "perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
                 if ((sec == 0 || sec == 1) && st.running) item(key = "connected") {
                     SectionCard {

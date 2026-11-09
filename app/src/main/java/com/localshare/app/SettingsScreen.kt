@@ -74,7 +74,6 @@ fun SettingsScreen(st: UiState) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item { Text("Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() }) }
-        item { AccentCard() }
         item {
             SectionCard {
                 Text("Password", fontWeight = FontWeight.SemiBold)
