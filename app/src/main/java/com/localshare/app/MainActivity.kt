@@ -166,13 +166,9 @@ private fun App() {
     LaunchedEffect(st.waiting.size) { // a small buzz when someone new asks to join
         if (st.waiting.isNotEmpty()) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
     }
-    var guide by rememberSaveable { mutableStateOf(!ShareController.guideSeen()) }
-    if (guide) AlertDialog(
-        onDismissRequest = { },
-        title = { Text("Share a folder in 3 steps") },
-        text = { Text("1. Tap Add a folder and pick one.\n2. Tap Start sharing.\n3. On another device on the same Wi-Fi, scan the QR code or type the address.\n\nNo internet and no account needed.") },
-        confirmButton = { TextButton({ ShareController.markGuideSeen(); guide = false }) { Text("Got it") } },
-    )
+    val setupCtx = androidx.compose.ui.platform.LocalContext.current
+    var setup by rememberSaveable { mutableStateOf(setupMode(setupCtx)) } // 1 first launch, 2 a needed setting is off, 0 hidden
+    if (setup != 0) SetupFlow(setup) { ShareController.markGuideSeen(); setup = 0 }
     BackHandler(enabled = tab != 0) { tab = 0 } // Back from any other tab goes to Share first
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

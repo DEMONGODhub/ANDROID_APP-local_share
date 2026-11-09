@@ -64,7 +64,7 @@ import com.localshare.app.ui.StorageRing
 
 /** Asks Android, with one tap, to stop limiting this app's battery use so sharing survives the screen turning off. */
 @android.annotation.SuppressLint("BatteryLife")
-private fun requestUnrestricted(ctx: android.content.Context) {
+internal fun requestUnrestricted(ctx: android.content.Context) {
     try {
         ctx.startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${ctx.packageName}")))
     } catch (e: Exception) {
