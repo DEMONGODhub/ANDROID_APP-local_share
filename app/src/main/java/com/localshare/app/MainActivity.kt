@@ -85,6 +85,17 @@ class MainActivity : ComponentActivity() {
         setContent { LocalShareTheme { App() } }
     }
 
+    override fun onStart() {
+        super.onStart()
+        ShareController.visible = true
+        ShareController.refresh()
+    }
+
+    override fun onStop() {
+        ShareController.visible = false
+        super.onStop()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handle(intent)

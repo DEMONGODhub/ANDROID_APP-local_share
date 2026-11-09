@@ -95,10 +95,13 @@ object ShareController {
     @Volatile private var storage = StorageInfo()
     @Volatile private var measuring = false
 
+    /** False while the app is not on screen: the status then refreshes far less often, which saves battery and CPU. */
+    @Volatile var visible = true
+
     private val ticker = object : Runnable {
         override fun run() {
             refresh()
-            if (server != null) main.postDelayed(this, 2000)
+            if (server != null) main.postDelayed(this, if (visible) 2000L else 15000L)
         }
     }
 

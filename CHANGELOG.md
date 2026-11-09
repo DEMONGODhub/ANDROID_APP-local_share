@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.25.3** — less background work: Home status refreshes every 15 s while the app is off screen
 - **v2.25.2** — keyboard shortcuts no longer fire behind the Arcade; Draw & Guess timer is correct on every phone
 - **v2.25.1** — the PDF viewer now follows the host's accent colour
 - **v2.25.0** — live "Sending MB/s" on Home, 2.4 GHz Wi-Fi advice, low-latency Wi-Fi lock on Android 10+
