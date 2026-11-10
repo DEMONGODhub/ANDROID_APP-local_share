@@ -1,5 +1,8 @@
 package com.localshare.app
 
+import com.localshare.app.ui.Button
+import com.localshare.app.ui.OutlinedButton
+import com.localshare.app.ui.TextButton
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -10,6 +13,13 @@ import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,11 +32,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -97,7 +105,11 @@ fun SetupFlow(mode: Int, onDone: () -> Unit) {
                     }
                     TextButton(onDone, Modifier.heightIn(min = 48.dp)) { Text("Skip") }
                 }
-                Column(Modifier.weight(1f).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                AnimatedContent(
+                    step, Modifier.weight(1f).fillMaxWidth(), label = "step",
+                    transitionSpec = { (slideInHorizontally(tween(260)) { it / 4 } + fadeIn(tween(260))) togetherWith (slideOutHorizontally(tween(180)) { -it / 4 } + fadeOut(tween(180))) },
+                ) { step ->
+                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     val (icon, title, body) = when (step) {
                         Step.Welcome -> Triple("📡", "Share your phone's folders", "LocalShare turns a folder on this phone into a website anyone on your Wi-Fi or hotspot can open. No internet and no account. Let's set it up in a few taps.")
                         Step.Notify -> Triple("🔔", "Allow the small notice", "Android needs a notice in the status bar to let sharing keep running while the screen is off. You can stop sharing from it.")
@@ -115,6 +127,7 @@ fun SetupFlow(mode: Int, onDone: () -> Unit) {
                         Spacer(Modifier.size(12.dp))
                         Text("✓ Done", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
+                }
                 }
                 val done = (step == Step.Notify && notif) || (step == Step.Battery && battery)
                 Button(

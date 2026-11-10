@@ -1,5 +1,8 @@
 package com.localshare.app
 
+import com.localshare.app.ui.Button
+import com.localshare.app.ui.OutlinedButton
+import com.localshare.app.ui.TextButton
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -25,6 +28,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -82,6 +86,9 @@ private fun readPerms(ctx: android.content.Context): Perms {
     val battery = Build.VERSION.SDK_INT < 23 || pm.isIgnoringBatteryOptimizations(ctx.packageName)
     return Perms(notif, battery)
 }
+
+/** A keyed list item that slides to its new place, and fades in or out when it appears or goes. */
+private fun LazyListScope.anim(key: String, content: @Composable () -> Unit) = item(key = key) { Box(Modifier.fillMaxWidth().animateItem()) { content() } }
 
 @Composable
 fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin: (String) -> Unit) {
@@ -150,13 +157,13 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                if (sec == 0 || sec == 1) item(key = "status") { StatusCard(st, ::start, stop, copy) }
-                if (sec == 0 || sec == 2) item(key = "storage") { StorageCard(st) }
-                if (sec == 0 || sec == 2) item(key = "folders") { FoldersCard(st, { picker.launch(null) }) }
-                if (sec == 0 || sec == 1) item(key = "screen") { ScreenCard(st, onCast) }
-                if (sec == 0 || sec == 3) item(key = "invite") { InviteCard(st) }
-                if ((sec == 0 || sec == 5) && st.running) item(key = "chat") { ChatCard(st) }
-                if (sec == 5 && !st.running) item(key = "nochat") {
+                if (sec == 0 || sec == 1) anim("status") { StatusCard(st, ::start, stop, copy) }
+                if (sec == 0 || sec == 2) anim("storage") { StorageCard(st) }
+                if (sec == 0 || sec == 2) anim("folders") { FoldersCard(st, { picker.launch(null) }) }
+                if (sec == 0 || sec == 1) anim("screen") { ScreenCard(st, onCast) }
+                if (sec == 0 || sec == 3) anim("invite") { InviteCard(st) }
+                if ((sec == 0 || sec == 5) && st.running) anim("chat") { ChatCard(st) }
+                if (sec == 5 && !st.running) anim("nochat") {
                     SectionCard {
                         Text("Start sharing to use live chat", fontWeight = FontWeight.SemiBold)
                         Text("Guests chat from the web page and you answer here.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
@@ -164,10 +171,10 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                     }
                 }
                 if (sec == 3) {
-                    item(key = "wifi") { WifiCard(st) }
-                    item(key = "join") { JoinCard(onJoin) }
+                    anim("wifi") { WifiCard(st) }
+                    anim("join") { JoinCard(onJoin) }
                 }
-                if (sec == 0) item(key = "setup") {
+                if (sec == 0) anim("setup") {
                     // Wi-Fi code, join-by-code and permissions are set up once, so they fold away (open while a permission is still missing)
                     var more by rememberSaveable { mutableStateOf(!(perms.notifications && perms.unrestricted)) }
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -181,9 +188,9 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                         }
                     }
                 }
-                if (sec == 6) item(key = "look") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { AppearanceCard() } }
-                if (sec == 4) item(key = "perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
-                if ((sec == 0 || sec == 1) && st.running) item(key = "connected") {
+                if (sec == 6) anim("look") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { AppearanceCard() } }
+                if (sec == 4) anim("perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
+                if ((sec == 0 || sec == 1) && st.running) anim("connected") {
                     SectionCard {
                         Text("Connected: ${st.devices.size} of ${st.maxClients} devices", fontWeight = FontWeight.SemiBold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -204,7 +211,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                         tvNote?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall) }
                     }
                 }
-                if (sec == 0 || sec == 4) item(key = "donate") {
+                if (sec == 0 || sec == 4) anim("donate") {
                     SectionCard {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {

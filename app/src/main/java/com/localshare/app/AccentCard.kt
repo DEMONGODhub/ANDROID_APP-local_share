@@ -1,5 +1,9 @@
 package com.localshare.app
 
+import com.localshare.app.ui.Button
+import com.localshare.app.ui.OutlinedButton
+import com.localshare.app.ui.pressFeel
+import com.localshare.app.ui.TextButton
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,16 +23,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -149,7 +150,7 @@ private fun Swatch(c: Color, shape: androidx.compose.ui.graphics.Shape, on: Bool
     Box(
         Modifier.size(44.dp).clip(shape).background(c)
             .border(if (on) 3.dp else 1.dp, if (on) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outline, shape)
-            .combinedClickable(onLongClick = onLong, onClick = onClick)
+            .pressFeel(haptic = true).combinedClickable(onLongClick = onLong, onClick = onClick)
             .semantics { contentDescription = label + if (on) ", selected" else "" },
         contentAlignment = Alignment.Center,
     ) { if (logo) LogoMark(26.dp, onAccent(c), false) }
@@ -158,7 +159,7 @@ private fun Swatch(c: Color, shape: androidx.compose.ui.graphics.Shape, on: Bool
 @Composable
 private fun PlusTile(shape: androidx.compose.ui.graphics.Shape, label: String, onClick: () -> Unit) {
     Box(
-        Modifier.size(44.dp).clip(shape).border(1.5.dp, MaterialTheme.colorScheme.primary, shape).clickable(onClick = onClick).semantics { contentDescription = label },
+        Modifier.size(44.dp).clip(shape).border(1.5.dp, MaterialTheme.colorScheme.primary, shape).pressFeel(haptic = true).clickable(onClick = onClick).semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) { Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary) }
 }

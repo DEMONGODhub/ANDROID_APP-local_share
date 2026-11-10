@@ -53,8 +53,10 @@ private val Type = Typography(
 
 @Composable
 fun LocalShareTheme(content: @Composable () -> Unit) {
+    // a new accent colour fades in over a third of a second instead of snapping
+    val acc by androidx.compose.animation.animateColorAsState(Color(Accent.argb), androidx.compose.animation.core.tween(320), label = "accent")
     MaterialTheme(
-        colorScheme = remember(Accent.argb) { dark(Color(Accent.argb)) },
+        colorScheme = remember(acc) { dark(acc) },
         typography = Type,
         shapes = Shapes(
             small = RoundedCornerShape(14.dp),

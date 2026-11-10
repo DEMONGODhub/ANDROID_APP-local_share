@@ -1,5 +1,9 @@
 package com.localshare.app
 
+import com.localshare.app.ui.Button
+import com.localshare.app.ui.OutlinedButton
+import com.localshare.app.ui.pressFeel
+import com.localshare.app.ui.TextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
@@ -37,10 +41,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,7 +81,7 @@ private fun RailTile(
     val pill by animateDpAsState(if (selected) 32.dp else 0.dp, label = "pill")
     val lit = selected || active
     Column(
-        Modifier.fillMaxWidth().alpha(if (dim) 0.45f else 1f)
+        Modifier.fillMaxWidth().alpha(if (dim) 0.45f else 1f).pressFeel(haptic = true)
             .clickable(onClickLabel = label, role = Role.Tab, onClick = onClick)
             .semantics { contentDescription = label; this.selected = selected },
         horizontalAlignment = Alignment.CenterHorizontally,
