@@ -31,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
@@ -119,22 +120,18 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
         }
         RailTile("Chat", sec == 5, { onSec(5) }, dot = chatDot) { fg -> Icon(Icons.Filled.Email, null, tint = fg) }
         HorizontalDivider(Modifier.width(36.dp), color = c.outlineVariant)
-        RailTile("Sharing", sec == 1, { onSec(1) }) { fg -> Icon(Icons.Filled.Share, null, tint = fg) }
-        RailTile("Folders", sec == 2, { onSec(2) }) { fg -> Icon(painterResource(R.drawable.ic_folder), null, tint = fg) }
+        RailTile("Share", sec == 1, { onSec(1) }) { fg -> Icon(Icons.Filled.Share, null, tint = fg) }
         RailTile("Access", sec == 3, { onSec(3) }) { fg -> Icon(Icons.Filled.Lock, null, tint = fg) }
-        RailTile("Support", sec == 4, { onSec(4) }) { fg -> Icon(Icons.Filled.Favorite, null, tint = fg) }
-        RailTile("Look", sec == 6, { onSec(6) }) { fg -> Icon(Icons.Filled.Edit, null, tint = fg) }
+        RailTile("More", sec == 4, { onSec(4) }) { fg -> Icon(Icons.Filled.MoreVert, null, tint = fg) }
     }
 }
 
 @Composable
 internal fun SectionHeader(sec: Int, st: UiState) {
     val (title, sub) = when (sec) {
-        1 -> "Sharing" to (if (st.running) "On · ${st.devices.size} connected" else "Off")
-        2 -> "Folders" to "${st.folders.size} shared from this phone"
+        1 -> "Share" to (if (st.running) "On · ${st.devices.size} connected · ${st.folders.size} folders" else "Off · ${st.folders.size} folders")
         3 -> "Access" to "Who can join, and how"
-        4 -> "Support" to "Keep it running, and say thanks"
-        6 -> "Appearance" to "Colours for the app, icon and games"
+        4 -> "More" to "Look, keep it running, and say thanks"
         5 -> "Live chat" to (if (st.running) "Everyone who joined can see this" else "Start sharing to chat")
         else -> "LocalShare" to "Everything in one place"
     }

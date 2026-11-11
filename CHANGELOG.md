@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.28.0** — simpler Home rail: Share (folders, address, live screen), Access, More (look, keep-alive, support); Folders, Sharing, Support and Look tiles merged
 - **v2.27.1** — smoother: Android back-swipe preview (predictive back), slide transition between set-up steps
 - **v2.27.0** — Appearance tab (rail "Look"): saved custom colours with a + tile, custom home-screen icon colours, accent now colours Orb Arena highlights and your own orb
 - **v2.26.0** — set-up tour: step-by-step cards on first launch (notice, battery, brand switch, first folder); returns while a needed setting is off

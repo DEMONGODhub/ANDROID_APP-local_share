@@ -133,6 +133,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
     LaunchedEffect(Unit) { ShareController.measure() }
     val ls = rememberLazyListState()
     var sec by rememberSaveable { mutableStateOf(0) } // 0 all, 1 sharing, 2 folders, 3 access, 4 support, 5 chat
+    LaunchedEffect(Unit) { if (sec == 2) sec = 1 else if (sec == 6) sec = 4 } // sections that moved in v2.28
     var showProfile by remember { mutableStateOf(false) }
     if (showProfile) ProfileDialog(st) { showProfile = false }
     var seenChat by remember { mutableStateOf<ChatRow?>(null) }
@@ -158,8 +159,8 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 if (sec == 0 || sec == 1) anim("status") { StatusCard(st, ::start, stop, copy) }
-                if (sec == 0 || sec == 2) anim("storage") { StorageCard(st) }
-                if (sec == 0 || sec == 2) anim("folders") { FoldersCard(st, { picker.launch(null) }) }
+                if (sec == 0 || sec == 1) anim("storage") { StorageCard(st) }
+                if (sec == 0 || sec == 1) anim("folders") { FoldersCard(st, { picker.launch(null) }) }
                 if (sec == 0 || sec == 1) anim("screen") { ScreenCard(st, onCast) }
                 if (sec == 0 || sec == 3) anim("invite") { InviteCard(st) }
                 if ((sec == 0 || sec == 5) && st.running) anim("chat") { ChatCard(st) }
@@ -188,7 +189,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                         }
                     }
                 }
-                if (sec == 6) anim("look") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { AppearanceCard() } }
+                if (sec == 4) anim("look") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { AppearanceCard() } }
                 if (sec == 4) anim("perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
                 if ((sec == 0 || sec == 1) && st.running) anim("connected") {
                     SectionCard {
