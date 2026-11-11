@@ -1,7 +1,6 @@
 name: Build APK
+# Runs only when you start it by hand (Actions tab -> Build APK -> Run workflow), not on every push.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 jobs:
   apk:
