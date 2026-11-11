@@ -59,6 +59,11 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("remote_on", false)
         set(v) = sp.edit().putBoolean("remote_on", v).apply()
 
+    /** Phones joined before, one per line as "name|url", newest first (up to 12). */
+    var friends: String
+        get() = sp.getString("friends", "") ?: ""
+        set(v) = sp.edit().putString("friends", v).apply()
+
     /** Custom colours the host saved with the + tile (hex codes, newest first, up to 12). */
     var savedAccents: String
         get() = sp.getString("savedAccents", "") ?: ""

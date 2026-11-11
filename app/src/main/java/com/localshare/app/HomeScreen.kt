@@ -171,6 +171,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                         Button(::start, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.folders.isNotEmpty() || st.gameOnly) { Text("Start sharing") }
                     }
                 }
+                if (sec == 3) anim("nearby") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { NearbyCard(st, onJoin) } }
                 if (sec == 3) {
                     anim("wifi") { WifiCard(st) }
                     anim("join") { JoinCard(onJoin) }

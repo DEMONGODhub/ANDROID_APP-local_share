@@ -121,7 +121,7 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
         RailTile("Chat", sec == 5, { onSec(5) }, dot = chatDot) { fg -> Icon(Icons.Filled.Email, null, tint = fg) }
         HorizontalDivider(Modifier.width(36.dp), color = c.outlineVariant)
         RailTile("Share", sec == 1, { onSec(1) }) { fg -> Icon(Icons.Filled.Share, null, tint = fg) }
-        RailTile("Access", sec == 3, { onSec(3) }) { fg -> Icon(Icons.Filled.Lock, null, tint = fg) }
+        RailTile("Connect", sec == 3, { onSec(3) }) { fg -> Icon(Icons.Filled.Lock, null, tint = fg) }
         RailTile("More", sec == 4, { onSec(4) }) { fg -> Icon(Icons.Filled.MoreVert, null, tint = fg) }
     }
 }
@@ -130,7 +130,7 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
 internal fun SectionHeader(sec: Int, st: UiState) {
     val (title, sub) = when (sec) {
         1 -> "Share" to (if (st.running) "On · ${st.devices.size} connected · ${st.folders.size} folders" else "Off · ${st.folders.size} folders")
-        3 -> "Access" to "Who can join, and how"
+        3 -> "Connect" to "Find phones nearby, invite and join"
         4 -> "More" to "Look, keep it running, and say thanks"
         5 -> "Live chat" to (if (st.running) "Everyone who joined can see this" else "Start sharing to chat")
         else -> "LocalShare" to "Everything in one place"

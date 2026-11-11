@@ -202,6 +202,7 @@ private fun App() {
                     0 -> HomeScreen(st, { browser = "" }, startCast) { l ->
                         val t = l.trim()
                         joinUrl = if (t.startsWith("http://") || t.startsWith("https://")) t else "http://$t"
+                        ShareController.rememberFriend((joinUrl ?: t).substringAfter("//").substringBefore("/").substringBefore(":"), joinUrl ?: t)
                     }
                     1 -> DevicesScreen(st)
                     2 -> GameScreen(st) { browser = it }

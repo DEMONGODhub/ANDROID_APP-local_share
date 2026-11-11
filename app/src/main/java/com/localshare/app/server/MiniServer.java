@@ -319,9 +319,15 @@ public final class MiniServer {
                     s.close();
                     continue;
                 }
-                final java.util.concurrent.atomic.AtomicInteger open = conns.computeIfAbsent(fip, k -> new java.util.concurrent.atomic.AtomicInteger());
-                if (open.incrementAndGet() > MAX_CONN_PER_IP && !isLoopback(fip)) { // one device cannot use up every connection
-                    open.decrementAndGet();
+                java.util.concurrent.atomic.AtomicInteger open = conns.get(fip); // not computeIfAbsent: that needs Android 7
+                if (open == null) {
+                    java.util.concurrent.atomic.AtomicInteger fresh = new java.util.concurrent.atomic.AtomicInteger();
+                    open = ((ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>) conns).putIfAbsent(fip, fresh);
+                    if (open == null) open = fresh;
+                }
+                final java.util.concurrent.atomic.AtomicInteger cnt = open;
+                if (cnt.incrementAndGet() > MAX_CONN_PER_IP && !isLoopback(fip)) { // one device cannot use up every connection
+                    cnt.decrementAndGet();
                     s.close();
                     continue;
                 }
@@ -331,12 +337,12 @@ public final class MiniServer {
                             try {
                                 handle(s, fip);
                             } finally {
-                                open.decrementAndGet();
+                                cnt.decrementAndGet();
                             }
                         }
                     });
                 } catch (RejectedExecutionException e) {
-                    open.decrementAndGet();
+                    cnt.decrementAndGet();
                     s.close();
                 }
             } catch (IOException e) {

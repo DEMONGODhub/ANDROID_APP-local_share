@@ -171,6 +171,20 @@ object ShareController {
         cfg.setHostProfile(prefs.hostName, bytes)
     }
 
+    /** Phones joined before: (name, link), newest first. */
+    fun friends(): List<Pair<String, String>> = prefs.friends.lines().mapNotNull {
+        val i = it.indexOf('|')
+        if (i > 0 && it.startsWith("http", i + 1)) it.substring(0, i) to it.substring(i + 1) else null
+    }
+
+    fun rememberFriend(name: String, url: String) {
+        val clean = name.replace("|", " ").replace("\n", " ").trim().take(30).ifEmpty { "Phone" }
+        val base = url.substringBefore("/#").substringBefore("?")
+        prefs.friends = (listOf("$clean|$base") + friends().filter { it.second != base }.map { "${it.first}|${it.second}" }).take(12).joinToString("\n")
+    }
+
+    fun forgetFriend(url: String) { prefs.friends = friends().filter { it.second != url }.joinToString("\n") { "${it.first}|${it.second}" } }
+
     /** Saved custom colours for the accent (icons=false) or the home-screen icon (icons=true). */
     fun savedColors(icons: Boolean): List<String> =
         (if (icons) prefs.savedIcons else prefs.savedAccents).split(",").filter { Regex("#[0-9A-F]{6}").matches(it) }
