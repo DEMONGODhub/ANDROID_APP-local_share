@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.30.2** — bigger, longer insect legs
 - **v2.30.1** — insects now walk on real stepping legs: each foot plants on the ground and steps forward when the body moves away, two-joint legs with knees
 - **v2.30.0** — Orb Arena is now an insect food chain: pick Aphid, Ant, Beetle, Spider, Mantis or Hornet (bigger tier eats smaller), giant boss bugs with attack patterns, coloured smoke for each super power, seven-sins bot gets a sin power
 - **v2.29.0** — Connect: phones with LocalShare find each other automatically, scan-a-QR join, joined-before list; fixes a crash on Android 5 and 6 (Map.computeIfAbsent)

@@ -32,17 +32,17 @@ function bugFeel(c,r,hx,w,t,col){ // two antennae that sway
 /* stepping legs: every foot is planted on the ground; when the body moves too far from it the foot steps forward (opposite groups take turns) and a two-bone leg bends to reach it */
 const LEGN=[3,3,3,4,3,3],LEGL=[.35,.65,.45,1.05,.8,.4];
 function ikLegs(c,o,n,len,r,h,col){
-  const ch=Math.cos(h),sh=Math.sin(h),L=r*(.45+len*.5),dt=o.dt||.016,W=(lx,ly)=>[o.x+lx*ch-ly*sh,o.y+lx*sh+ly*ch];
+  const ch=Math.cos(h),sh=Math.sin(h),K=1.45,L=r*(.45+len*.5)*1.5,dt=o.dt||.016,W=(lx,ly)=>[o.x+lx*ch-ly*sh,o.y+lx*sh+ly*ch];
   const AX=i=>r*(n>1?.4-(i>>1)*.8/(n-1):0),SD=i=>i&1?1:-1;
-  if(!o.ft||o.ft.length!==n*2){o.ft=[];for(let i=0;i<n*2;i++){const f=W(AX(i),SD(i)*r*(.7+len));o.ft.push({x:f[0],y:f[1],st:-1,fx:0,fy:0,tx:0,ty:0})}}
-  c.strokeStyle=col;c.lineWidth=Math.max(1.3,r*.09);c.lineCap=c.lineJoin="round";
+  if(!o.ft||o.ft.length!==n*2){o.ft=[];for(let i=0;i<n*2;i++){const f=W(AX(i),SD(i)*r*(.7+len)*K);o.ft.push({x:f[0],y:f[1],st:-1,fx:0,fy:0,tx:0,ty:0})}}
+  c.strokeStyle=col;c.lineWidth=Math.max(1.5,r*.11);c.lineCap=c.lineJoin="round";
   const lead=Math.min(r*.9,(o.sv||0)*.1),gp=i=>((i>>1)+(i&1))&1;
   for(let i=0;i<n*2;i++){
-    const s=SD(i),a=W(AX(i),s*r*.22),rest=W(AX(i)+lead,s*r*(.7+len)),f=o.ft[i];
+    const s=SD(i),a=W(AX(i),s*r*.22),rest=W(AX(i)+lead,s*r*(.7+len)*K),f=o.ft[i];
     if(f.st<0){
       const far=Math.hypot(f.x-rest[0],f.y-rest[1]);
-      if(far>2.5*r){f.x=rest[0];f.y=rest[1]}
-      else if(far>r*.45&&!o.ft.some((g,j)=>g.st>=0&&gp(j)!==gp(i))){f.st=0;f.fx=f.x;f.fy=f.y;f.tx=rest[0];f.ty=rest[1]}
+      if(far>3.5*r){f.x=rest[0];f.y=rest[1]}
+      else if(far>r*.6&&!o.ft.some((g,j)=>g.st>=0&&gp(j)!==gp(i))){f.st=0;f.fx=f.x;f.fy=f.y;f.tx=rest[0];f.ty=rest[1]}
     }else{f.st+=dt*(7+(o.sv||0)/r);const u=Math.min(1,f.st),e=u*u*(3-2*u);f.x=f.fx+(f.tx-f.fx)*e;f.y=f.fy+(f.ty-f.fy)*e;if(u>=1)f.st=-1}
     let dx=f.x-a[0],dy=f.y-a[1],d=Math.hypot(dx,dy)||1;if(d>L*1.98){dx*=L*1.98/d;dy*=L*1.98/d;d=L*1.98}
     let nx=-dy/d,ny=dx/d;if((nx*-sh+ny*ch)*s<0){nx=-nx;ny=-ny}const q=Math.sqrt(Math.max(0,L*L-d*d/4)),kx=a[0]+dx/2+nx*q,ky=a[1]+dy/2+ny*q;
