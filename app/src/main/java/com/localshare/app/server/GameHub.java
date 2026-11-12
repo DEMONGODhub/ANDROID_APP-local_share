@@ -49,6 +49,22 @@ final class GameHub {
         int i = rnd.nextInt(SINS.length);
         b.name = SINS[i];
         b.av = "s" + (i + 1);
+        b.sin = i;
+        b.want = rnd.nextInt(SPECIES.length);
+    }
+
+    /** Food chain, small to big: Aphid, Ant, Beetle, Spider, Mantis, Hornet. Bigger tiers eat smaller ones at the same size. */
+    static final String[] SPECIES = {"Aphid", "Ant", "Beetle", "Spider", "Mantis", "Hornet"};
+    private static final double[] SP_SPD = {1.2, 1.1, 0.9, 1.0, 0.95, 1.0};
+    private static final double[] SP_HP = {0.7, 1.0, 1.5, 1.0, 1.2, 1.0};
+    /** Each sin has a super power (bits: 1 speed, 2 rapid, 4 power, 8 shield, 16 invincible) and its smoke colour. */
+    private static final int[] SIN_MASK = {16, 2, 1, 4, 8, 6, 8};
+    static final String[] BOSSES = {"", "Giant Scorpion", "Queen Hornet", "King Beetle"};
+    private static final double[] BOSS_SPD = {0, 150, 210, 110};
+    private static final double BOSS_R = 65, BOSS_HP = 300;
+
+    private static double eff(Player p) {
+        return p.boss > 0 ? p.r * 3.0 : p.r * Math.pow(1.2, p.sp);
     }
 
     interface Out {
@@ -114,7 +130,9 @@ final class GameHub {
         double hp = HP, hpMax = HP;
         boolean dead;
         long respawnAt, nextShot, lastHurt, spawnUntil, speedUntil, rapidUntil, powerUntil, invUntil;
-        int kills;
+        int kills, sp = 1, boss, sin = -1;
+        volatile int want = 1;
+        long nextAtk, nextDash, dashUntil, nextPow;
         volatile int team; // 0 = no teams, 1 = red, 2 = blue
         volatile double dx, dy, aim;
         volatile boolean boost, fire, pending, spec;
@@ -270,7 +288,7 @@ final class GameHub {
                 case 1: p.rapidUntil = clock + 15000; break;
                 case 2: p.powerUntil = clock + 15000; break;
                 case 3:
-                    p.hpMax = Math.max(150, hpBase() * 1.5);
+                    p.hpMax = Math.max(150, baseHp(p) * 1.5);
                     p.hp = p.hpMax;
                     break;
                 default: p.invUntil = clock + 8000;
@@ -297,6 +315,15 @@ final class GameHub {
                 boolean on = s.charAt(2) == '1';
                 p.fire = on;
                 if (on) p.pending = true; // even a very short click fires once
+            } else if (s.startsWith("s ")) {
+                int n = Integer.parseInt(s.substring(2).trim());
+                if (n >= 0 && n < SPECIES.length) synchronized (this) {
+                    p.want = n;
+                    if (p.dead || score(p.r) <= 3) { // just spawned: switch at once, otherwise next life
+                        p.sp = n;
+                        p.hp = p.hpMax = baseHp(p);
+                    }
+                }
             } else if (s.equals("r")) {
                 synchronized (this) {
                     if (p.dead && players.get(p.token) == p && (cfg.gameMode != 1 || phase <= PH_COUNT) && !p.spec) spawn(p);
@@ -314,8 +341,13 @@ final class GameHub {
     }
 
     private void spawn(Player p) {
-        p.r = START_R;
-        p.hp = p.hpMax = hpBase();
+        p.sp = p.boss > 0 ? 5 : p.want;
+        p.r = p.boss > 0 ? BOSS_R : START_R;
+        p.hp = p.hpMax = baseHp(p);
+        if (p.out == null && p.boss == 0 && p.sin >= 0) {
+            p.nextPow = clock + 4000;
+            if ((SIN_MASK[p.sin] & 8) != 0) p.hp = p.hpMax = baseHp(p) * 1.5;
+        }
         p.dead = false;
         p.dx = p.dy = 0;
         p.boost = false;
@@ -343,6 +375,8 @@ final class GameHub {
         Player p = players.get(token);
         return cfg.gameTeams && p != null ? p.team : 0;
     }
+
+    private double baseHp(Player p) { return p.boss > 0 ? BOSS_HP : hpBase() * SP_HP[p.sp]; }
 
     private double hpBase() { return cfg.gameHealth == 0 ? 60 : cfg.gameHealth == 2 ? 200 : HP; }
 
@@ -372,7 +406,7 @@ final class GameHub {
 
     private void fillBots(int humans) {
         int want = humans > 0 ? cfg.gameBots : 0, have = 0; // one sparring bot; everyone else is a connected device
-        for (Player p : players.values()) if (p.out == null) have++;
+        for (Player p : players.values()) if (p.out == null && p.boss == 0) have++;
         while (have < want) {
             String id = "b" + (++botSeq);
             Player b = new Player(id, "Pride", id, null, rnd.nextInt(360));
@@ -383,7 +417,8 @@ final class GameHub {
             have++;
         }
         for (Iterator<Player> it = players.values().iterator(); it.hasNext() && have > want; ) {
-            if (it.next().out == null) {
+            Player q = it.next();
+            if (q.out == null && q.boss == 0) {
                 it.remove();
                 have--;
             }
@@ -402,10 +437,10 @@ final class GameHub {
                 target = o;
                 gd = d;
             }
-            if (o.r > b.r * 1.12 && d < 330 + o.r && d < td) {
+            if (eff(o) > eff(b) * 1.12 && d < 330 + o.r && d < td) {
                 threat = o;
                 td = d;
-            } else if (b.r > o.r * 1.2 && d < 380 && d < pd) {
+            } else if (eff(b) > eff(o) * 1.2 && d < 380 && d < pd) {
                 prey = o;
                 pd = d;
             }
@@ -528,6 +563,10 @@ final class GameHub {
             by.r = Math.sqrt(by.r * by.r + v.r * v.r * 0.7);
             by.kills++;
         }
+        if (v.boss > 0 && by != null && by.out != null) { // the prize for a giant bug: a random super power
+            by.notes.add("You beat " + v.name + "!");
+            grant(by.id, POWERS[rnd.nextInt(POWERS.length)]);
+        }
         if (v.out != null) cfg.record(v.name, sc, 0, 0);
         if (by != null && by.out != null) cfg.record(by.name, score(by.r), 1, 0);
         events.add("[\"k\"," + Util.q(byName) + "," + Util.q(v.name) + "," + Math.round(v.x) + "," + Math.round(v.y) + "," + hueOf(v) + "]");
@@ -563,7 +602,13 @@ final class GameHub {
             }
             p.r = Math.sqrt(p.r * p.r - SHOT_COST * 10);
         }
-        double ax = Math.cos(p.aim), ay = Math.sin(p.aim);
+        bullet(p, p.aim, clock < p.powerUntil ? POWER_DAMAGE : SHOT_DAMAGE);
+        p.nextShot = clock + (rapid ? 120 : 350);
+        p.pending = false;
+    }
+
+    private void bullet(Player p, double ang, double dmg) {
+        double ax = Math.cos(ang), ay = Math.sin(ang);
         Bullet b = new Bullet();
         b.id = ++bulletSeq;
         b.px = b.x = p.x + ax * (p.r + 6);
@@ -573,10 +618,87 @@ final class GameHub {
         b.life = BULLET_LIFE;
         b.owner = p;
         b.hue = hueOf(p);
-        b.dmg = clock < p.powerUntil ? POWER_DAMAGE : SHOT_DAMAGE;
+        b.dmg = dmg;
         bullets.add(b);
-        p.nextShot = clock + (rapid ? 120 : 350);
-        p.pending = false;
+    }
+
+    /** Boss patterns: Scorpion = 3-way fan + charge, Queen Hornet = ring of 8 + fast charge, King Beetle = ring of 12 + slow charge. */
+    private void bossAct(Player b, List<Player> ps) {
+        Player t = null;
+        double td = 1100;
+        for (Player o : ps) {
+            if (o.dead || o.boss > 0) continue;
+            double d = Math.hypot(o.x - b.x, o.y - b.y);
+            if (d < td) {
+                t = o;
+                td = d;
+            }
+        }
+        if (t == null) {
+            if (--b.think <= 0) {
+                b.think = 40;
+                double a = rnd.nextDouble() * Math.PI * 2;
+                b.dx = Math.cos(a);
+                b.dy = Math.sin(a);
+            }
+            if (b.x < 300 || b.x > W - 300 || b.y < 300 || b.y > H - 300) {
+                b.dx = W / 2 - b.x;
+                b.dy = H / 2 - b.y;
+                double l = Math.hypot(b.dx, b.dy);
+                b.dx /= l;
+                b.dy /= l;
+            }
+            return;
+        }
+        double ang = Math.atan2(t.y - b.y, t.x - b.x);
+        b.dx = Math.cos(ang);
+        b.dy = Math.sin(ang);
+        b.aim = ang;
+        if (clock >= b.nextDash) {
+            b.dashUntil = clock + 900;
+            b.nextDash = clock + 5500;
+        }
+        if (clock >= b.nextAtk && td < 800) {
+            if (b.boss == 1) {
+                for (int i = -1; i <= 1; i++) bullet(b, ang + i * 0.25, 8);
+                b.nextAtk = clock + 1800;
+            } else {
+                int n = b.boss == 2 ? 8 : 12;
+                double off = rnd.nextDouble();
+                for (int i = 0; i < n; i++) bullet(b, off + i * Math.PI * 2 / n, 8);
+                b.nextAtk = clock + (b.boss == 2 ? 2500 : 3200);
+            }
+        }
+    }
+
+    private long bossAt = 8000;
+    boolean bosses = true;
+
+    /** One giant bug at a time in PvP; it comes back 40 s after it falls. */
+    private void bosses(int humans) {
+        boolean have = false;
+        for (Player p : players.values()) if (p.boss > 0) have = true;
+        if (have || clock < bossAt || humans == 0) return;
+        int k = 1 + rnd.nextInt(3);
+        String id = "z" + (++botSeq);
+        Player b = new Player(id, BOSSES[k], id, null, new int[]{0, 28, 48, 120}[k]);
+        b.boss = k;
+        b.av = "s6";
+        b.nextDash = clock + 4000;
+        b.nextAtk = clock + 2000;
+        spawn(b);
+        players.put(id, b);
+        for (Player p : players.values()) if (p.out != null) p.notes.add(BOSSES[k] + " has appeared!");
+    }
+
+    private void sinPower(Player p) {
+        if (clock < p.nextPow) return;
+        int m = SIN_MASK[p.sin];
+        if ((m & 1) != 0) p.speedUntil = clock + 6000;
+        if ((m & 2) != 0) p.rapidUntil = clock + 6000;
+        if ((m & 4) != 0) p.powerUntil = clock + 6000;
+        if ((m & 16) != 0) p.invUntil = clock + 3000;
+        p.nextPow = clock + 18000;
     }
 
     /** True when the segment from (x1,y1) to (x2,y2) passes within rad of (cx,cy). */
@@ -600,7 +722,7 @@ final class GameHub {
                 continue;
             }
             for (Player q : ps) {
-                if (q == b.owner || q.dead || mates(q, b.owner) || !sweeps(b.px, b.py, b.x, b.y, q.x, q.y, q.r + 4)) continue;
+                if (q == b.owner || q.dead || (q.boss > 0 && b.owner != null && b.owner.boss > 0) || mates(q, b.owner) || !sweeps(b.px, b.py, b.x, b.y, q.x, q.y, q.r + 4)) continue;
                 damage(q, b.owner, b.dmg, b.x, b.y);
                 it.remove();
                 break;
@@ -636,23 +758,33 @@ final class GameHub {
             }
             events.clear();
             outbox.clear();
+            if (mode == 0 && bosses) bosses(humans);
+            else for (Iterator<Player> it = players.values().iterator(); it.hasNext(); ) if (it.next().boss > 0) it.remove();
             List<Player> ps = new ArrayList<Player>(players.values());
             balance(ps);
             if (mode == 1) royale();
             boolean live = mode == 0 || phase == PH_RUN;
             for (Player p : ps) {
                 if (p.dead) {
+                    if (p.boss > 0) {
+                        players.remove(p.token);
+                        bossAt = clock + 40000;
+                    }
                     if (mode == 0 && p.out == null && clock >= p.respawnAt) {
                         sinify(p);
                         spawn(p);
                     }
                     continue;
                 }
-                if (p.out == null) think(p, ps);
+                if (p.boss > 0) bossAct(p, ps);
+                else if (p.out == null) {
+                    if (p.sin >= 0) sinPower(p);
+                    think(p, ps);
+                }
                 move(p);
-                eatOrbs(p);
-                shoot(p, live);
-                if (mode == 0 && clock - p.lastHurt > 4000 && p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 2 * DT);
+                if (p.boss == 0) eatOrbs(p);
+                if (p.boss == 0) shoot(p, live);
+                if (mode == 0 && p.boss == 0 && clock - p.lastHurt > 4000 && p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 2 * DT);
                 if (mode == 1 && phase == PH_RUN && !guarded(p) && Math.hypot(p.x - W / 2, p.y - H / 2) > zoneR) damage(p, null, ZONE_DPS * DT, p.x, p.y);
             }
             stepBullets(ps);
@@ -662,7 +794,9 @@ final class GameHub {
                     for (Player b : ps) {
                         if (a == b || b.dead || guarded(b) || mates(a, b)) continue;
                         double d = Math.hypot(a.x - b.x, a.y - b.y);
-                        if (a.r > b.r * 1.15 && d < a.r - b.r * 0.35) kill(b, a, a.name);
+                        if (a.boss > 0) { // a giant bug bites (50 damage a second) instead of eating you whole
+                            if (d < a.r + b.r * 0.5 && clock % 200 == 0) damage(b, a, 10, b.x, b.y);
+                        } else if (eff(a) > eff(b) * 1.15 && d < a.r - b.r * 0.35) kill(b, a, a.name);
                     }
                 }
             }
@@ -695,7 +829,7 @@ final class GameHub {
         double dx = p.dx, dy = p.dy, len = Math.sqrt(dx * dx + dy * dy);
         if (len > 0.05) {
             double k = Math.min(len, 1.0) / len;
-            double sp = Math.max(70, 230 * Math.pow(START_R / p.r, 0.35));
+            double sp = p.boss > 0 ? BOSS_SPD[p.boss] * (clock < p.dashUntil ? 2.2 : 1) : Math.max(70, 230 * Math.pow(START_R / p.r, 0.35)) * SP_SPD[p.sp];
             if (clock < p.speedUntil) sp *= 1.6;
             if (p.boost && p.r > MIN_BOOST_R) {
                 sp *= 1.7;
@@ -706,6 +840,10 @@ final class GameHub {
         }
         p.x = Math.max(p.r, Math.min(W - p.r, p.x));
         p.y = Math.max(p.r, Math.min(H - p.r, p.y));
+        if (p.boss > 0) {
+            p.r = BOSS_R;
+            return;
+        }
         double base = START_R * START_R;
         p.r = Math.sqrt(base + (p.r * p.r - base) * (1 - 0.006 * DT));
     }
@@ -759,7 +897,7 @@ final class GameHub {
     private String effAv(Player p) {
         if (p.out == null) return p.av;
         if (clock < p.invUntil) return "b5";
-        if (p.hpMax > hpBase()) return "b4";
+        if (p.hpMax > baseHp(p)) return "b4";
         if (clock < p.powerUntil) return "b3";
         if (clock < p.rapidUntil) return "b2";
         if (clock < p.speedUntil) return "b1";
@@ -768,7 +906,7 @@ final class GameHub {
 
     private int powerBits(Player p) {
         return (clock < p.speedUntil ? 1 : 0) | (clock < p.rapidUntil ? 2 : 0) | (clock < p.powerUntil ? 4 : 0)
-                | (p.hpMax > hpBase() ? 8 : 0) | (clock < p.invUntil ? 16 : 0) | (clock < p.spawnUntil ? 32 : 0);
+                | (p.hpMax > baseHp(p) ? 8 : 0) | (clock < p.invUntil ? 16 : 0) | (clock < p.spawnUntil ? 32 : 0);
     }
 
     private String snapshot(Player me, List<Player> ps, String lb, String mm, String ev) {
@@ -791,7 +929,8 @@ final class GameHub {
             first = false;
             sb.append('[').append(Util.q(p.id)).append(',').append(Util.q(p.name)).append(',')
                     .append(round(p.x)).append(',').append(round(p.y)).append(',').append(round(p.r)).append(',').append(hueOf(p)).append(',')
-                    .append(round2(p.aim)).append(',').append(Math.round(p.hp)).append(',').append(Util.q(effAv(p))).append(',').append(powerBits(p)).append(']');
+                    .append(round2(p.aim)).append(',').append(Math.round(p.hp)).append(',').append(Util.q(effAv(p))).append(',').append(powerBits(p))
+                    .append(',').append(p.sp).append(',').append(p.boss).append(',').append(Math.round(p.hpMax)).append(']');
         }
         sb.append("],\"o\":[");
         first = true;
@@ -966,19 +1105,19 @@ final class GameHub {
 
     synchronized List<String> botNames() {
         List<String> l = new ArrayList<String>();
-        for (Player p : players.values()) if (p.out == null) l.add(p.name);
+        for (Player p : players.values()) if (p.out == null && p.boss == 0) l.add(p.name);
         return l;
     }
 
     synchronized int botCount() {
         int n = 0;
-        for (Player p : players.values()) if (p.out == null) n++;
+        for (Player p : players.values()) if (p.out == null && p.boss == 0) n++;
         return n;
     }
 
     synchronized double maxBotRadius() {
         double m = 0;
-        for (Player p : players.values()) if (p.out == null && !p.dead) m = Math.max(m, p.r);
+        for (Player p : players.values()) if (p.out == null && p.boss == 0 && !p.dead) m = Math.max(m, p.r);
         return m;
     }
 

@@ -39,6 +39,7 @@ public class ArenaTest {
     static GameHub hub(ServerConfig c, int bots) {
         GameHub h = new GameHub(c, DIRECT, false);
         h.botFill = bots;
+        h.bosses = false;
         c.gameBots = bots;
         return h;
     }
@@ -323,7 +324,47 @@ public class ArenaTest {
         return pass;
     }
 
+    static void bugs() {
+        System.out.println("== arena: insects, food chain, bosses");
+        ServerConfig c = new ServerConfig();
+        GameHub h = hub(c, 0);
+        Rec ra = new Rec(), rb = new Rec();
+        GameHub.Player a = h.join("ta", "aaaa", "Alice", ra), b = h.join("tb", "bbbb", "Bob", rb);
+        h.parkOrbs();
+        h.input(a, "s 1"); // Ant
+        h.input(b, "s 0"); // Aphid
+        h.place(a, 1000, 1000, 30);
+        h.place(b, 1010, 1000, 30);
+        ticks(h, 45);
+        h.place(a, 1000, 1000, 30);
+        h.place(b, 1010, 1000, 30);
+        h.tick();
+        check("same size: the Ant eats the Aphid (food chain)", h.stateOf(b)[3] == 1 && h.stateOf(a)[3] == 0);
+        check("snapshot carries species", ra.snap().contains(",1,0,100]"));
+        h.input(b, "r");
+        h.input(b, "s 5");
+        ticks(h, 2);
+        h.place(a, 1000, 1000, 30);
+        h.place(b, 1010, 1000, 30);
+        ticks(h, 45);
+        h.place(a, 1000, 1000, 30);
+        h.place(b, 1010, 1000, 30);
+        h.tick();
+        check("same size: the Hornet is not eaten by the Ant", h.stateOf(b)[3] == 0);
+        h.input(a, "s 99");
+        h.input(a, "s x");
+        check("bad species input is ignored", true);
+        h.bosses = true;
+        h.place(a, 3000, 3000, 18);
+        h.place(b, 300, 300, 18);
+        ticks(h, 200);
+        check("a giant boss appears", ra.got("\"Giant Scorpion\"") || ra.got("\"Queen Hornet\"") || ra.got("\"King Beetle\""));
+        check("the boss is not counted as a sparring bot", h.botCount() == 0);
+        check("players are told about it", ra.got("has appeared!"));
+    }
+
     public static int run() {
+        bugs();
         pass = 0;
         fail = 0;
         ServerConfig cfg = new ServerConfig();
