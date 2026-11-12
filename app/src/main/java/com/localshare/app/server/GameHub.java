@@ -131,7 +131,7 @@ final class GameHub {
         boolean dead;
         long respawnAt, nextShot, lastHurt, spawnUntil, speedUntil, rapidUntil, powerUntil, invUntil;
         int kills, sp = 1, boss, sin = -1;
-        volatile int want = 1;
+        volatile int want = 1; // sparring bots only: their random insect
         long nextAtk, nextDash, dashUntil, nextPow;
         volatile int team; // 0 = no teams, 1 = red, 2 = blue
         volatile double dx, dy, aim;
@@ -315,15 +315,6 @@ final class GameHub {
                 boolean on = s.charAt(2) == '1';
                 p.fire = on;
                 if (on) p.pending = true; // even a very short click fires once
-            } else if (s.startsWith("s ")) {
-                int n = Integer.parseInt(s.substring(2).trim());
-                if (n >= 0 && n < SPECIES.length) synchronized (this) {
-                    p.want = n;
-                    if (p.dead || score(p.r) <= 3) { // just spawned: switch at once, otherwise next life
-                        p.sp = n;
-                        p.hp = p.hpMax = baseHp(p);
-                    }
-                }
             } else if (s.equals("r")) {
                 synchronized (this) {
                     if (p.dead && players.get(p.token) == p && (cfg.gameMode != 1 || phase <= PH_COUNT) && !p.spec) spawn(p);
@@ -341,7 +332,7 @@ final class GameHub {
     }
 
     private void spawn(Player p) {
-        p.sp = p.boss > 0 ? 5 : p.want;
+        p.sp = p.boss > 0 ? 5 : p.out != null && randomBugs ? rnd.nextInt(SPECIES.length) : p.want; // players are handed a random insect each life
         p.r = p.boss > 0 ? BOSS_R : START_R;
         p.hp = p.hpMax = baseHp(p);
         if (p.out == null && p.boss == 0 && p.sin >= 0) {
@@ -672,7 +663,13 @@ final class GameHub {
     }
 
     private long bossAt = 8000;
-    boolean bosses = true;
+    boolean bosses = true, randomBugs = true;
+
+    /** Tests: give a player a fixed insect. */
+    synchronized void species(Player p, int n) {
+        p.sp = p.want = n;
+        p.hp = p.hpMax = baseHp(p);
+    }
 
     /** One giant bug at a time in PvP; it comes back 40 s after it falls. */
     private void bosses(int humans) {

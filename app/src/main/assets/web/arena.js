@@ -32,17 +32,17 @@ function bugFeel(c,r,hx,w,t,col){ // two antennae that sway
 /* stepping legs: every foot is planted on the ground; when the body moves too far from it the foot steps forward (opposite groups take turns) and a two-bone leg bends to reach it */
 const LEGN=[3,3,3,4,3,3],LEGL=[.35,.65,.45,1.05,.8,.4];
 function ikLegs(c,o,n,len,r,h,col){
-  const ch=Math.cos(h),sh=Math.sin(h),K=1.45,L=r*(.45+len*.5)*1.5,dt=o.dt||.016,W=(lx,ly)=>[o.x+lx*ch-ly*sh,o.y+lx*sh+ly*ch];
+  const ch=Math.cos(h),sh=Math.sin(h),K=2.2,L=r*(.45+len*.5)*2.4,dt=o.dt||.016,W=(lx,ly)=>[o.x+lx*ch-ly*sh,o.y+lx*sh+ly*ch];
   const AX=i=>r*(n>1?.4-(i>>1)*.8/(n-1):0),SD=i=>i&1?1:-1;
   if(!o.ft||o.ft.length!==n*2){o.ft=[];for(let i=0;i<n*2;i++){const f=W(AX(i),SD(i)*r*(.7+len)*K);o.ft.push({x:f[0],y:f[1],st:-1,fx:0,fy:0,tx:0,ty:0})}}
-  c.strokeStyle=col;c.lineWidth=Math.max(1.5,r*.11);c.lineCap=c.lineJoin="round";
-  const lead=Math.min(r*.9,(o.sv||0)*.1),gp=i=>((i>>1)+(i&1))&1;
+  c.strokeStyle=col;c.lineWidth=Math.max(1,r*.05);c.lineCap=c.lineJoin="round";
+  const lead=Math.min(r*1.4,(o.sv||0)*.14),gp=i=>((i>>1)+(i&1))&1;
   for(let i=0;i<n*2;i++){
     const s=SD(i),a=W(AX(i),s*r*.22),rest=W(AX(i)+lead,s*r*(.7+len)*K),f=o.ft[i];
     if(f.st<0){
       const far=Math.hypot(f.x-rest[0],f.y-rest[1]);
-      if(far>3.5*r){f.x=rest[0];f.y=rest[1]}
-      else if(far>r*.6&&!o.ft.some((g,j)=>g.st>=0&&gp(j)!==gp(i))){f.st=0;f.fx=f.x;f.fy=f.y;f.tx=rest[0];f.ty=rest[1]}
+      if(far>5*r){f.x=rest[0];f.y=rest[1]}
+      else if(far>r*.9&&!o.ft.some((g,j)=>g.st>=0&&gp(j)!==gp(i))){f.st=0;f.fx=f.x;f.fy=f.y;f.tx=rest[0];f.ty=rest[1]}
     }else{f.st+=dt*(7+(o.sv||0)/r);const u=Math.min(1,f.st),e=u*u*(3-2*u);f.x=f.fx+(f.tx-f.fx)*e;f.y=f.fy+(f.ty-f.fy)*e;if(u>=1)f.st=-1}
     let dx=f.x-a[0],dy=f.y-a[1],d=Math.hypot(dx,dy)||1;if(d>L*1.98){dx*=L*1.98/d;dy*=L*1.98/d;d=L*1.98}
     let nx=-dy/d,ny=dx/d;if((nx*-sh+ny*ch)*s<0){nx=-nx;ny=-ny}const q=Math.sqrt(Math.max(0,L*L-d*d/4)),kx=a[0]+dx/2+nx*q,ky=a[1]+dy/2+ny*q;
@@ -93,15 +93,7 @@ function drawSmoke(dt){
   for(let i=G.sm.length-1;i>=0;i--){const f=G.sm[i];f.l-=dt;if(f.l<=0){G.sm.splice(i,1);continue}f.x+=f.vx*dt;f.y+=f.vy*dt;const al=f.l/f.m;
     ctx.fillStyle=`rgba(${f.c},${.38*al})`;ctx.beginPath();ctx.arc(f.x,f.y,f.s*(1.9-al),0,TAU);ctx.fill()}
 }
-/* ---- choose your insect: your pick decides your stats and where you sit in the food chain ---- */
-let SPC=+store.get("ls_sp");if(!(SPC>=0&&SPC<6))SPC=1;
-function paintPick(){
-  for(const box of document.querySelectorAll(".spk")){box.innerHTML="";
-    BUGS.forEach((b,i)=>{const e=document.createElement("button");e.className="spb"+(i===SPC?" sel":"");e.title=b.n+": "+BNOTE[i]+(i<5?" (eats smaller bugs, "+BUGS[i+1].n+" eats it)":"");e.setAttribute("aria-label",b.n);
-      const cv2=document.createElement("canvas");cv2.width=cv2.height=64;bug(cv2.getContext("2d"),i,32,32,15,-.6,0,0);e.appendChild(cv2);
-      e.onclick=()=>{SPC=i;store.set("ls_sp",String(i));if(G.ws&&G.ws.readyState===1)G.ws.send("s "+i);paintPick();toast(b.n+": "+BNOTE[i])};box.appendChild(e)})}
-}
-paintPick();G.bug=bug;G.bossBug=bossBug;
+G.bug=bug;G.bossBug=bossBug;
 
 /* ---- sound (tiny, optional) ---- */
 const SND={on:store.get("ls_snd")!=="0",c:null,t:0};
@@ -145,7 +137,7 @@ function gameConnect(){
   if(G.ws||!G.on)return;
   const ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws");G.ws=ws;
   ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}onMsg(m)};
-  ws.onopen=()=>{$("#gconn").classList.add("hide");clearInterval(G.pt);G.pt=setInterval(()=>{if(ws.readyState===1)ws.send("p")},15000);G.sent="";G.sf=0;G.sb=0;G.aimSent=9;ws.send("s "+SPC)};
+  ws.onopen=()=>{$("#gconn").classList.add("hide");clearInterval(G.pt);G.pt=setInterval(()=>{if(ws.readyState===1)ws.send("p")},15000);G.sent="";G.sf=0;G.sb=0;G.aimSent=9};
   ws.onclose=()=>{G.ws=null;clearInterval(G.pt);if(G.on){$("#gconn").classList.remove("hide");clearTimeout(G.rt);G.rt=setTimeout(recover,1200)}};
 }
 async function recover(){
@@ -192,7 +184,7 @@ function onMsg(m){
   const seen=new Set();
   for(const q of m.p){seen.add(q[0]);let o=G.pl.get(q[0]);
     if(!o){o={id:q[0],x:q[2],y:q[3],r:q[4],dx:0,dy:0,aim:q[6],rec:0,shown:q[7]};G.pl.set(q[0],o)}
-    o.name=q[1];o.tx=q[2];o.ty=q[3];o.tr=q[4];o.hue=q[5];o.taim=q[6];o.hp=q[7];o.av=q[8];o.bits=q[9];o.sp=q[10]|0;o.boss=q[11]|0;o.hpMax=q[12]||100}
+    o.name=q[1];o.tx=q[2];o.ty=q[3];o.tr=q[4];o.hue=q[5];o.taim=q[6];o.hp=q[7];o.av=q[8];o.bits=q[9];if(q[0]===G.me&&G.msp!==q[10]){G.msp=q[10];banner("You are a "+BUGS[q[10]].n,BNOTE[q[10]]+(q[10]<5?" · eats smaller bugs, a "+BUGS[q[10]+1].n+" eats you":" · top of the chain"),2600)}o.sp=q[10]|0;o.boss=q[11]|0;o.hpMax=q[12]||100}
   for(const id of[...G.pl.keys()])if(!seen.has(id))G.pl.delete(id);
   if(G.dead&&G.pl.has(G.me)&&performance.now()-G.deadAt>800){G.dead=false;$("#dead").classList.add("hide")} // alive again: a new round, or a respawn
   G.os=m.o;G.lb=m.lb;G.mm=m.mm;G.n=m.n;G.g=m.g;G.my=m.me;{const tb=$("#gtm"),tm=m.g.tm|0;tb.classList.toggle("hide",!tm);tb.className=tm?"t"+tm:"hide";tb.textContent=tm===1?"Red team":tm===2?"Blue team":""}G.camT={x:m.cx,y:m.cy};

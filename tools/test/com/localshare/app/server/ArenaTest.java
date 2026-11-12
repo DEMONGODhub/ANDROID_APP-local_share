@@ -40,6 +40,7 @@ public class ArenaTest {
         GameHub h = new GameHub(c, DIRECT, false);
         h.botFill = bots;
         h.bosses = false;
+        h.randomBugs = false;
         c.gameBots = bots;
         return h;
     }
@@ -331,8 +332,8 @@ public class ArenaTest {
         Rec ra = new Rec(), rb = new Rec();
         GameHub.Player a = h.join("ta", "aaaa", "Alice", ra), b = h.join("tb", "bbbb", "Bob", rb);
         h.parkOrbs();
-        h.input(a, "s 1"); // Ant
-        h.input(b, "s 0"); // Aphid
+        h.species(a, 1); // Ant
+        h.species(b, 0); // Aphid
         h.place(a, 1000, 1000, 30);
         h.place(b, 1010, 1000, 30);
         ticks(h, 45);
@@ -342,7 +343,7 @@ public class ArenaTest {
         check("same size: the Ant eats the Aphid (food chain)", h.stateOf(b)[3] == 1 && h.stateOf(a)[3] == 0);
         check("snapshot carries species", ra.snap().contains(",1,0,100]"));
         h.input(b, "r");
-        h.input(b, "s 5");
+        h.species(b, 5);
         ticks(h, 2);
         h.place(a, 1000, 1000, 30);
         h.place(b, 1010, 1000, 30);
@@ -351,9 +352,21 @@ public class ArenaTest {
         h.place(b, 1010, 1000, 30);
         h.tick();
         check("same size: the Hornet is not eaten by the Ant", h.stateOf(b)[3] == 0);
-        h.input(a, "s 99");
-        h.input(a, "s x");
-        check("bad species input is ignored", true);
+        GameHub h2 = hub(new ServerConfig(), 0);
+        h2.randomBugs = true;
+        boolean[] seen = new boolean[6];
+        for (int i = 0; i < 80; i++) {
+            Rec r = new Rec();
+            GameHub.Player q = h2.join("t" + i, "i" + i, "P" + i, r);
+            h2.tick();
+            String sn = r.snap();
+            int at = sn.indexOf("\"P" + i + "\"");
+            String[] f = at < 0 ? null : sn.substring(at, sn.indexOf(']', at)).split(",");
+            if (f != null && f.length >= 11) seen[Integer.parseInt(f[9])] = true;
+        }
+        int kinds = 0;
+        for (boolean v : seen) if (v) kinds++;
+        check("players are handed random insects (" + kinds + " kinds in 80 joins)", kinds >= 4);
         h.bosses = true;
         h.place(a, 3000, 3000, 18);
         h.place(b, 300, 300, 18);
