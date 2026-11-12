@@ -29,9 +29,31 @@ function bugFeel(c,r,hx,w,t,col){ // two antennae that sway
   c.strokeStyle=col;c.lineWidth=Math.max(1,r*.06);c.lineCap="round";
   for(const s of[-1,1]){const k=Math.sin(t*5+w*.5+s)*r*.12;c.beginPath();c.moveTo(hx,s*r*.1);c.quadraticCurveTo(hx+r*.45,s*r*.3+k,hx+r*.8,s*r*.55+k*1.6);c.stroke()}
 }
-function bug(c,sp,x,y,r,h,w,t,pal){
-  const P=pal||BUGS[sp],C=P.c,D=P.d;c.save();c.translate(x,y);c.rotate(h);
-  bugLegs(c,[3,3,3,4,3,3][sp],r,[.35,.65,.45,1.05,.8,.4][sp],w,D);
+/* stepping legs: every foot is planted on the ground; when the body moves too far from it the foot steps forward (opposite groups take turns) and a two-bone leg bends to reach it */
+const LEGN=[3,3,3,4,3,3],LEGL=[.35,.65,.45,1.05,.8,.4];
+function ikLegs(c,o,n,len,r,h,col){
+  const ch=Math.cos(h),sh=Math.sin(h),L=r*(.45+len*.5),dt=o.dt||.016,W=(lx,ly)=>[o.x+lx*ch-ly*sh,o.y+lx*sh+ly*ch];
+  const AX=i=>r*(n>1?.4-(i>>1)*.8/(n-1):0),SD=i=>i&1?1:-1;
+  if(!o.ft||o.ft.length!==n*2){o.ft=[];for(let i=0;i<n*2;i++){const f=W(AX(i),SD(i)*r*(.7+len));o.ft.push({x:f[0],y:f[1],st:-1,fx:0,fy:0,tx:0,ty:0})}}
+  c.strokeStyle=col;c.lineWidth=Math.max(1.3,r*.09);c.lineCap=c.lineJoin="round";
+  const lead=Math.min(r*.9,(o.sv||0)*.1),gp=i=>((i>>1)+(i&1))&1;
+  for(let i=0;i<n*2;i++){
+    const s=SD(i),a=W(AX(i),s*r*.22),rest=W(AX(i)+lead,s*r*(.7+len)),f=o.ft[i];
+    if(f.st<0){
+      const far=Math.hypot(f.x-rest[0],f.y-rest[1]);
+      if(far>2.5*r){f.x=rest[0];f.y=rest[1]}
+      else if(far>r*.45&&!o.ft.some((g,j)=>g.st>=0&&gp(j)!==gp(i))){f.st=0;f.fx=f.x;f.fy=f.y;f.tx=rest[0];f.ty=rest[1]}
+    }else{f.st+=dt*(7+(o.sv||0)/r);const u=Math.min(1,f.st),e=u*u*(3-2*u);f.x=f.fx+(f.tx-f.fx)*e;f.y=f.fy+(f.ty-f.fy)*e;if(u>=1)f.st=-1}
+    let dx=f.x-a[0],dy=f.y-a[1],d=Math.hypot(dx,dy)||1;if(d>L*1.98){dx*=L*1.98/d;dy*=L*1.98/d;d=L*1.98}
+    let nx=-dy/d,ny=dx/d;if((nx*-sh+ny*ch)*s<0){nx=-nx;ny=-ny}const q=Math.sqrt(Math.max(0,L*L-d*d/4)),kx=a[0]+dx/2+nx*q,ky=a[1]+dy/2+ny*q;
+    c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(kx,ky);c.lineTo(a[0]+dx,a[1]+dy);c.stroke();
+  }
+}
+function bug(c,sp,x,y,r,h,w,t,pal,feet){
+  const P=pal||BUGS[sp],C=P.c,D=P.d;
+  if(feet)ikLegs(c,feet,LEGN[sp],LEGL[sp],r,h,D);
+  c.save();c.translate(x,y);c.rotate(h);
+  if(!feet)bugLegs(c,LEGN[sp],r,LEGL[sp],w,D);
   if(sp===5){const f=Math.sin(t*46)*.35;for(const s of[-1,1]){c.save();c.rotate(s*(.9+f));ell(c,-r*.15,0,r*.9,r*.28,"rgba(225,240,255,.5)");c.restore()}}
   if(sp===0){ell(c,-r*.1,0,r*.85,r*.7,C);ell(c,r*.7,0,r*.33,r*.3,D);for(const s of[-1,1]){c.strokeStyle=D;c.lineWidth=r*.1;c.beginPath();c.moveTo(-r*.7,s*r*.45);c.lineTo(-r*1.05,s*r*.6);c.stroke()}ell(c,-r*.2,-r*.2,r*.25,r*.14,"rgba(255,255,255,.35)")}
   if(sp===1){ell(c,-r*.6,0,r*.5,r*.4,C);ell(c,0,0,r*.3,r*.22,D);ell(c,r*.58,0,r*.3,r*.28,C);ell(c,-r*.7,-r*.12,r*.2,r*.1,"rgba(255,255,255,.28)")}
@@ -49,10 +71,10 @@ function bug(c,sp,x,y,r,h,w,t,pal){
   c.restore();
 }
 function crown(c,x,y,r,h){c.save();c.translate(x,y);c.rotate(h);c.fillStyle="#FFD84A";c.beginPath();c.moveTo(r*.45,-r*.4);for(let i=0;i<4;i++){c.lineTo(r*.45+r*.18,-r*.4+i*r*.27+r*.14);c.lineTo(r*.78,-r*.4+(i+1)*r*.27)}c.lineTo(r*.45,r*.4);c.closePath();c.fill();c.restore()}
-function bossBug(c,k,x,y,r,h,w,t){
-  if(k===2){bug(c,5,x,y,r,h,w,t,{c:"#FFB000",d:"#2A1500"});crown(c,x,y,r,h);return}
-  if(k===3){bug(c,2,x,y,r,h,w,t,{c:"#8A6A22",d:"#2B1B05"});crown(c,x,y,r,h);c.save();c.translate(x,y);c.rotate(h);c.fillStyle="#2B1B05";c.beginPath();c.moveTo(r*.9,-r*.12);c.lineTo(r*1.6,0);c.lineTo(r*.9,r*.12);c.fill();c.restore();return}
-  c.save();c.translate(x,y);c.rotate(h);bugLegs(c,4,r,.9,w,"#3a0d0a");
+function bossBug(c,k,x,y,r,h,w,t,feet){
+  if(k===2){bug(c,5,x,y,r,h,w,t,{c:"#FFB000",d:"#2A1500"},feet);crown(c,x,y,r,h);return}
+  if(k===3){bug(c,2,x,y,r,h,w,t,{c:"#8A6A22",d:"#2B1B05"},feet);crown(c,x,y,r,h);c.save();c.translate(x,y);c.rotate(h);c.fillStyle="#2B1B05";c.beginPath();c.moveTo(r*.9,-r*.12);c.lineTo(r*1.6,0);c.lineTo(r*.9,r*.12);c.fill();c.restore();return}
+  if(feet)ikLegs(c,feet,4,.9,r,h,"#3a0d0a");c.save();c.translate(x,y);c.rotate(h);if(!feet)bugLegs(c,4,r,.9,w,"#3a0d0a");
   const wag=Math.sin(t*3)*.15;c.strokeStyle="#7A1A12";c.lineCap="round";
   c.lineWidth=r*.28;c.beginPath();c.moveTo(-r*.5,0);c.bezierCurveTo(-r*1.5,r*(.1+wag),-r*1.5,r*1.0,-r*.7,r*.95);c.stroke();
   c.fillStyle="#FF3B2B";c.beginPath();c.moveTo(-r*.7,r*.95);c.lineTo(-r*.25,r*.78);c.lineTo(-r*.5,r*1.15);c.fill();
@@ -358,7 +380,7 @@ function drawPlayer(p,k,t,now){
   ctx.save();
   ctx.shadowColor="rgba(0,0,0,.55)";ctx.shadowBlur=12;ctx.shadowOffsetY=4;
   drawGun(p,0,aim,p.rec,hue,bits);
-  if(p.boss)bossBug(ctx,p.boss,p.x,p.y,r,p.hd,p.w||0,t);else bug(ctx,p.sp|0,p.x,p.y,r,p.hd,p.w||0,t);
+  if(p.boss)bossBug(ctx,p.boss,p.x,p.y,r,p.hd,p.w||0,t,p);else bug(ctx,p.sp|0,p.x,p.y,r,p.hd,p.w||0,t,null,p);
   ctx.shadowColor="transparent";
   {const own=me&&!(G.g&&G.g.tm);ctx.lineWidth=Math.max(1.5,r*.05);ctx.strokeStyle=own?ACC():me?"#fff":`hsla(${hue} 75% 55% / .55)`;ctx.setLineDash([r*.3,r*.2]);ctx.beginPath();ctx.arc(p.x,p.y,r*1.04,0,TAU);ctx.stroke();ctx.setLineDash([])}
   // shield rings from powers and spawn protection
@@ -394,7 +416,7 @@ function frame(now){
   const dt=Math.min(.05,(now-G.last)/1000||.016),t=now/1000;G.last=now;
   resizeCv();sendInput(now);
   const a=1-Math.exp(-dt*16);
-  for(const o of G.pl.values()){o.dx=o.tx-o.x;o.dy=o.ty-o.y;o.x+=o.dx*a;o.y+=o.dy*a;o.r+=(o.tr-o.r)*a;o.aim+=angDiff(o.aim,o.taim??o.aim)*a;o.rec=Math.max(0,o.rec-dt*5);{const sv=Math.hypot(o.dx,o.dy)*16;o.hd=o.hd??o.aim;o.hd+=angDiff(o.hd,sv>25?Math.atan2(o.dy,o.dx):o.aim)*(1-Math.exp(-dt*9));o.w=(o.w||0)+sv*dt/Math.max(10,o.r)*2.4;smoke(o,dt)}o.shown=(o.shown??o.hp)+((o.hp??0)-(o.shown??o.hp))*a}
+  for(const o of G.pl.values()){o.dx=o.tx-o.x;o.dy=o.ty-o.y;o.x+=o.dx*a;o.y+=o.dy*a;o.r+=(o.tr-o.r)*a;o.aim+=angDiff(o.aim,o.taim??o.aim)*a;o.rec=Math.max(0,o.rec-dt*5);{const sv=Math.hypot(o.dx,o.dy)*16;o.hd=o.hd??o.aim;o.hd+=angDiff(o.hd,sv>25?Math.atan2(o.dy,o.dx):o.aim)*(1-Math.exp(-dt*9));o.w=(o.w||0)+sv*dt/Math.max(10,o.r)*2.4;o.sv=sv;o.dt=dt;smoke(o,dt)}o.shown=(o.shown??o.hp)+((o.hp??0)-(o.shown??o.hp))*a}
   const me=G.pl.get(G.me);
   if(me&&G.my){me.hpMax=G.my[1]}
   const sp=G.spec();
