@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.31.1** — neon-glow insects: dark bodies, bright glowing outlines, glowing eyes and legs, soft halo
 - **v2.31.0** — Orb Arena hands every player a random insect each life (no picker); long thin spider-style legs
 - **v2.30.2** — bigger, longer insect legs
 - **v2.30.1** — insects now walk on real stepping legs: each foot plants on the ground and steps forward when the body moves away, two-joint legs with knees
