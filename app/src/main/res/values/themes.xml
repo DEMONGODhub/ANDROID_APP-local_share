@@ -5,4 +5,9 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+    <!-- The share-sheet window: see-through, so only the dialog shows. -->
+    <style name="Theme.LocalShare.Dialog" parent="Theme.LocalShare">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
 </resources>

@@ -34,6 +34,8 @@ data class GameRules(val teams: Boolean = false, val shots: Boolean = true, val 
 
 data class HallRow(val name: String, val best: Int, val kills: Int, val wins: Int)
 
+data class OfferView(val id: String, val from: String, val count: Int, val bytes: Long)
+
 data class UiState(
     val running: Boolean = false,
     val port: Int = 8080,
@@ -41,6 +43,8 @@ data class UiState(
     /** "http://name.local:port" from the host name; empty unless sharing. Some Android browsers cannot open it, so the IP links stay. */
     val nameUrl: String = "",
     val hostToken: String = "",
+    /** Guests asking to send files; the host answers Accept or Decline. */
+    val offers: List<OfferView> = emptyList(),
     val folders: List<SharedFolder> = emptyList(),
     val devices: List<Device> = emptyList(),
     /** Devices waiting for the host to let them in. */
@@ -389,6 +393,11 @@ object ShareController {
 
     fun isRunning() = server != null
 
+    fun answerOffer(id: String, accept: Boolean) { server?.answerOffer(id, accept); refresh() }
+
+    /** Text from the share sheet goes onto the shared board. */
+    fun addClip(text: String): Boolean { val s = server ?: return false; s.addClip("Host", text); return true }
+
     /** Answers name.local on the Wi-Fi; failure is fine, the IP links still work. */
     private fun startName() {
         stopName()
@@ -415,6 +424,7 @@ object ShareController {
             urls = ips.map { "http://$it:${s?.port()}" },
             nameUrl = if (mdns != null) "http://${mdns!!.host()}:${s?.port()}" else "",
             hostToken = s?.hostToken() ?: "",
+            offers = s?.pendingOffers()?.map { OfferView(it.id, it.from, it.count, it.bytes) } ?: emptyList(),
             folders = prefs.folders.map { SharedFolder(it, folderName(it)) },
             devices = s?.sessions()?.filter { !it.pending }?.map { Device(it.id, it.name, it.ip, it.since, it.perms) } ?: emptyList(),
             waiting = s?.sessions()?.filter { it.pending }?.map { Device(it.id, it.name, it.ip, it.since, it.perms) } ?: emptyList(),

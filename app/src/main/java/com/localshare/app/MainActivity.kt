@@ -147,6 +147,15 @@ private fun App() {
         val have = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
         if (have || android.os.Build.VERSION.SDK_INT < 29) launchCast() else micLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
     }
+    st.offers.firstOrNull()?.let { o ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { ShareController.answerOffer(o.id, false) },
+            title = { Text("${o.from} wants to send you ${o.count} ${if (o.count == 1) "file" else "files"}") },
+            text = { Text("${android.text.format.Formatter.formatShortFileSize(ctx, o.bytes)}. Accepted files are saved in your first shared folder.") },
+            confirmButton = { TextButton({ ShareController.answerOffer(o.id, true) }) { Text("Accept") } },
+            dismissButton = { TextButton({ ShareController.answerOffer(o.id, false) }) { Text("Decline") } },
+        )
+    }
     joinUrl?.let { u ->
         HostBrowser(0, "", "", u) { joinUrl = null }
         return

@@ -180,6 +180,7 @@ public class Harness {
             cfg.askToJoin = Boolean.getBoolean("ask");
             if (Boolean.getBoolean("inv")) { cfg.password = "pw"; System.out.println("INVITE " + cfg.createInvite(3600000L, 2)); }
             s.start(18080);
+            if (Boolean.getBoolean("autoaccept")) new Thread(new Runnable() { public void run() { while (true) { try { Thread.sleep(700); for (MiniServer.OfferInfo o : s.pendingOffers()) s.answerOffer(o.id, true); } catch (Exception e) { } } } }).start();
             if (Boolean.getBoolean("live")) { // pretend the host is sharing a screen: a changing picture
                 final com.localshare.app.server.StreamHub hub = s.stream();
                 hub.start(24000, 2);
@@ -745,6 +746,38 @@ public class Harness {
         check("selection zip of one file leaves the rest out " + one.keySet(), one.keySet().equals(new TreeSet<String>(Arrays.asList("a.txt"))));
         check("zip traversal rejected", req("GET", "/api/zip?path=..%2f..", t, null).code == 400);
         check("zip of a file -> 404", req("GET", "/api/zip?path=Extra%20Files%2Ftree%2Fa.txt", t, null).code == 404);
+
+        System.out.println("== send-to-host offers + shared text");
+        String O = "http://127.0.0.1:" + port;
+        String ot = login("dev-offer", "", "Olive");
+        byte[] ob = rnd(5000);
+        check("offer needs login -> 401", req("POST", "/api/offer", null, "names=a.bin&sizes=5000", "Origin", O).code == 401);
+        check("bad size refused", req("POST", "/api/offer", ot, "names=a.bin&sizes=x", "Origin", O).code == 400);
+        String oj = req("POST", "/api/offer", ot, "names=in.bin&sizes=5000", "Origin", O).text();
+        check("offer accepted for review " + oj, oj.contains("\"id\""));
+        String oid = oj.replaceAll(".*\"id\":\"([0-9a-f]+)\".*", "$1");
+        check("shows as waiting", req("GET", "/api/offer?id=" + oid, ot, null).text().contains("pending") && s.pendingOffers().size() == 1);
+        check("no upload before the host accepts -> 403", post("/api/inbox?id=" + oid + "&i=0", ot, ob).code == 403);
+        s.answerOffer(oid, true);
+        check("accepted state", req("GET", "/api/offer?id=" + oid, ot, null).text().contains("accepted"));
+        check("wrong size refused", post("/api/inbox?id=" + oid + "&i=0", ot, rnd(10)).code == 403);
+        check("accepted file arrives", post("/api/inbox?id=" + oid + "&i=0", ot, ob).code == 200);
+        check("progress counted", req("GET", "/api/offer?id=" + oid, ot, null).text().contains("\"done\":1"));
+        String o2 = login("dev-offer2", "", "Other");
+        check("another guest cannot use my offer", post("/api/inbox?id=" + oid + "&i=0", o2, ob).code == 403);
+        String oj2 = req("POST", "/api/offer", ot, "names=no.bin&sizes=5", "Origin", O).text();
+        s.answerOffer(oj2.replaceAll(".*\"id\":\"([0-9a-f]+)\".*", "$1"), false);
+        check("declined offer cannot upload", post("/api/inbox?id=" + oj2.replaceAll(".*\"id\":\"([0-9a-f]+)\".*", "$1") + "&i=0", ot, rnd(5)).code == 403);
+        boolean landed = false;
+        for (File dd : new File[]{main, extra}) { File[] fl = dd.listFiles(); if (fl != null) for (File f : fl) if (f.getName().startsWith("in") && f.length() == 5000) landed = true; }
+        check("file saved in the first shared folder", landed);
+        check("text board starts empty", req("GET", "/api/clip", ot, null).text().equals("[]"));
+        check("a guest shares text", req("POST", "/api/clip", ot, "text=https%3A%2F%2Fexample.com", "Origin", O).code == 200);
+        s.addClip("Host", "from the host");
+        String cj = req("GET", "/api/clip", o2, null).text();
+        check("everyone sees both, newest first " + cj, cj.indexOf("from the host") > 0 && cj.indexOf("from the host") < cj.indexOf("example.com"));
+        check("empty text refused", req("POST", "/api/clip", ot, "text=%20", "Origin", O).code == 400);
+        check("foreign origin refused", raw("POST", "/api/clip", ot, "http://evil.example", "text=x") == 403);
 
         System.out.println("== uploads");
         File tree = new File(extra, "tree");

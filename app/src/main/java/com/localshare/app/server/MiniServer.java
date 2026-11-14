@@ -205,6 +205,58 @@ public final class MiniServer {
     public int chatSlow() { return chatSlowSec; }
 
     public void setChatSlow(int sec) { chatSlowSec = Math.max(0, Math.min(60, sec)); }
+    /** A guest's offer to send files to the host; nothing is stored until the host accepts. state 0 waiting, 1 accepted, 2 declined. */
+    private static final class Offer {
+        final String id, from, ip, token;
+        final String[] names;
+        final long[] sizes;
+        final long t = System.currentTimeMillis();
+        volatile int state, done;
+        Offer(String id, Session s, String[] names, long[] sizes) { this.id = id; from = s.name; ip = s.ip; token = s.token; this.names = names; this.sizes = sizes; }
+    }
+
+    public static final class OfferInfo {
+        public final String id, from, ip;
+        public final int count;
+        public final long bytes;
+        OfferInfo(Offer o) { id = o.id; from = o.from; ip = o.ip; count = o.names.length; long b = 0; for (long z : o.sizes) b += z; bytes = b; }
+    }
+
+    private final java.util.LinkedHashMap<String, Offer> offers = new java.util.LinkedHashMap<String, Offer>();
+    private final java.util.ArrayList<String[]> clips = new java.util.ArrayList<String[]>();
+    private static final long OFFER_WAIT_MS = 120000L;
+
+    /** Offers still waiting for the host's answer. */
+    public List<OfferInfo> pendingOffers() {
+        List<OfferInfo> l = new ArrayList<OfferInfo>();
+        long now = System.currentTimeMillis();
+        synchronized (offers) { for (Offer o : offers.values()) if (o.state == 0 && now - o.t < OFFER_WAIT_MS) l.add(new OfferInfo(o)); }
+        return l;
+    }
+
+    public void answerOffer(String id, boolean accept) {
+        synchronized (offers) { Offer o = offers.get(id); if (o != null && o.state == 0) o.state = accept ? 1 : 2; }
+    }
+
+    /** Puts a line of text on the shared board that every joined device can read and copy. */
+    public void addClip(String name, String text) {
+        String t = text == null ? "" : text.trim();
+        if (t.length() == 0) return;
+        if (t.length() > 4000) t = t.substring(0, 4000);
+        synchronized (clips) {
+            clips.add(0, new String[]{String.valueOf(System.currentTimeMillis()), name, t});
+            while (clips.size() > 30) clips.remove(clips.size() - 1);
+        }
+    }
+
+    /** Received files go to the first shared folder. */
+    private List<String> inboxDir() {
+        try {
+            for (FileSource.Entry e : fs.list(new ArrayList<String>())) if (e.dir) { List<String> d = new ArrayList<String>(); d.add(e.name); return d; }
+        } catch (IOException ex) { }
+        return null;
+    }
+
     private final java.util.ArrayList<ChatMsg> chat = new java.util.ArrayList<ChatMsg>();
     private long chatSeq;
     private volatile int chatGen;
@@ -436,7 +488,7 @@ public final class MiniServer {
             } catch (NumberFormatException e) {
                 return null;
             }
-            if (len >= 0 && r.method.equals("POST") && (r.path.equals("/api/upload") || r.path.equals("/api/save") || r.path.equals("/api/avatar") || r.path.equals("/api/chat/img"))) {
+            if (len >= 0 && r.method.equals("POST") && (r.path.equals("/api/upload") || r.path.equals("/api/inbox") || r.path.equals("/api/save") || r.path.equals("/api/avatar") || r.path.equals("/api/chat/img"))) {
                 r.bodyLen = len;
                 return r;
             }
@@ -828,10 +880,93 @@ public final class MiniServer {
             if (s == null) return true;
             return zip(r, s, out);
         }
+        if (post && path.equals("/api/offer")) {
+            Session s = auth(r, out, false);
+            if (s == null) return true;
+            if (!sameOrigin(r)) { json(out, false, 403, err("bad origin")); return true; }
+            if (s.host || gameOnly(s)) { json(out, false, 403, err("Not allowed here")); return true; }
+            if (inboxDir() == null) { json(out, false, 409, err("This host has no folder to receive files")); return true; }
+            String[] nm = (r.form.get("names") == null ? "" : r.form.get("names")).split("\n");
+            String[] sz = (r.form.get("sizes") == null ? "" : r.form.get("sizes")).split(",");
+            if (nm.length == 0 || nm.length > 50 || nm.length != sz.length) { json(out, false, 400, err("Pick 1 to 50 files")); return true; }
+            long[] sizes = new long[nm.length];
+            try {
+                for (int i = 0; i < nm.length; i++) {
+                    nm[i] = cleanFileName(nm[i]);
+                    sizes[i] = Long.parseLong(sz[i].trim());
+                    if (nm[i] == null || sizes[i] < 0 || sizes[i] > cfg.maxUploadBytes) throw new NumberFormatException();
+                }
+            } catch (NumberFormatException e) { json(out, false, 400, err("A file name or size is not allowed")); return true; }
+            Offer o;
+            synchronized (offers) {
+                long now = System.currentTimeMillis();
+                java.util.Iterator<Offer> it = offers.values().iterator();
+                while (it.hasNext()) if (now - it.next().t > 600000L) it.remove();
+                int waiting = 0;
+                for (Offer x : offers.values()) if (x.state == 0) waiting++;
+                if (waiting >= 5) { json(out, false, 429, err("The host has too many waiting requests")); return true; }
+                o = new Offer(hex(6), s, nm, sizes);
+                offers.put(o.id, o);
+            }
+            cfg.log.add("offer", s.name, s.ip, nm.length + " file(s) offered");
+            json(out, false, 200, "{\"ok\":true,\"id\":" + Util.q(o.id) + "}");
+            return true;
+        }
+        if (get && path.equals("/api/offer")) {
+            Session s = auth(r, out, isHead);
+            if (s == null) return true;
+            Offer o;
+            synchronized (offers) { o = offers.get(r.q.get("id")); }
+            if (o == null || !o.token.equals(s.token)) { json(out, isHead, 404, err("Unknown request")); return true; }
+            if (o.state == 0 && System.currentTimeMillis() - o.t >= OFFER_WAIT_MS) o.state = 2;
+            json(out, isHead, 200, "{\"state\":" + Util.q(o.state == 0 ? "pending" : o.state == 1 ? "accepted" : "declined") + ",\"done\":" + o.done + ",\"total\":" + o.names.length + "}");
+            return true;
+        }
+        if (post && path.equals("/api/inbox")) {
+            Session s = auth(r, out, false);
+            if (s == null) return false;
+            Offer o;
+            synchronized (offers) { o = offers.get(r.q.get("id")); }
+            int i = -1;
+            try { i = Integer.parseInt(r.q.get("i")); } catch (RuntimeException e) { }
+            List<String> d = inboxDir();
+            if (o == null || !o.token.equals(s.token) || o.state != 1 || i < 0 || i >= o.names.length || d == null || r.bodyLen != o.sizes[i]) {
+                json(out, false, 403, err("The host has not accepted this file"));
+                return false;
+            }
+            r.q.put("path", pathStr(d));
+            r.q.put("name", o.names[i]);
+            boolean ok = upload(r, s, in, out, true);
+            if (ok) o.done++;
+            return ok;
+        }
+        if (get && path.equals("/api/clip")) {
+            Session s = auth(r, out, isHead);
+            if (s == null) return true;
+            StringBuilder sb = new StringBuilder("[");
+            synchronized (clips) {
+                for (String[] c : clips) {
+                    if (sb.length() > 1) sb.append(',');
+                    sb.append("{\"t\":").append(c[0]).append(",\"name\":").append(Util.q(c[1])).append(",\"text\":").append(Util.q(c[2])).append('}');
+                }
+            }
+            json(out, isHead, 200, sb.append(']').toString());
+            return true;
+        }
+        if (post && path.equals("/api/clip")) {
+            Session s = auth(r, out, false);
+            if (s == null) return true;
+            if (!sameOrigin(r)) { json(out, false, 403, err("bad origin")); return true; }
+            String t = r.form.get("text") == null ? "" : r.form.get("text").trim();
+            if (gameOnly(s) || t.length() == 0) { json(out, false, 400, err("Nothing to share")); return true; }
+            addClip(s.host ? "Host" : s.name, t);
+            json(out, false, 200, "{\"ok\":true}");
+            return true;
+        }
         if (post && path.equals("/api/upload")) {
             Session s = authFiles(r, out, false);
             if (s == null) return false;
-            return upload(r, s, in, out);
+            return upload(r, s, in, out, false);
         }
         if (post && path.equals("/api/delete")) {
             Session s = authFiles(r, out, false);
@@ -1495,12 +1630,12 @@ public final class MiniServer {
     }
 
     /** Returns true only when the request body was fully read, so the connection can be reused. */
-    private boolean upload(Req r, Session s, InputStream in, OutputStream out) throws IOException {
+    private boolean upload(Req r, Session s, InputStream in, OutputStream out, boolean accepted) throws IOException {
         if (!sameOrigin(r)) {
             json(out, false, 403, err("origin"));
             return false;
         }
-        if (!canUpload(s)) {
+        if (!accepted && !canUpload(s)) {
             json(out, false, 403, err("Uploads are turned off by the host"));
             return false;
         }
