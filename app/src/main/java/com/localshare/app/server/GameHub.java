@@ -54,9 +54,11 @@ final class GameHub {
     }
 
     /** Food chain, small to big: Aphid, Ant, Beetle, Spider, Mantis, Hornet. Bigger tiers eat smaller ones at the same size. */
-    static final String[] SPECIES = {"Aphid", "Ant", "Beetle", "Spider", "Mantis", "Hornet"};
-    private static final double[] SP_SPD = {1.2, 1.1, 0.9, 1.0, 0.95, 1.0};
-    private static final double[] SP_HP = {0.7, 1.0, 1.5, 1.0, 1.2, 1.0};
+    static final String[] SPECIES = {"Aphid", "Ant", "Beetle", "Spider", "Mantis", "Hornet", "Ladybug", "Moth", "Centipede", "Dragonfly"};
+    /** Rank in the food chain per species id (Aphid lowest, Hornet top); each rank is 16% "bigger" when deciding who eats whom. */
+    private static final int[] TIER = {0, 2, 4, 6, 8, 9, 1, 3, 5, 7};
+    private static final double[] SP_SPD = {1.2, 1.1, 0.9, 1.0, 0.95, 1.0, 1.1, 1.15, 1.0, 1.25};
+    private static final double[] SP_HP = {0.7, 1.0, 1.5, 1.0, 1.2, 1.0, 1.2, 0.8, 1.4, 0.9};
     /** Each sin has a super power (bits: 1 speed, 2 rapid, 4 power, 8 shield, 16 invincible) and its smoke colour. */
     private static final int[] SIN_MASK = {16, 2, 1, 4, 8, 6, 8};
     static final String[] BOSSES = {"", "Giant Scorpion", "Queen Hornet", "King Beetle"};
@@ -64,7 +66,7 @@ final class GameHub {
     private static final double BOSS_R = 65, BOSS_HP = 300;
 
     private static double eff(Player p) {
-        return p.boss > 0 ? p.r * 3.0 : p.r * Math.pow(1.2, p.sp);
+        return p.boss > 0 ? p.r * 3.0 : p.r * Math.pow(1.16, TIER[p.sp]);
     }
 
     interface Out {

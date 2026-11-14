@@ -16,8 +16,9 @@ const accShade=f=>{const n=parseInt(ACC().slice(1),16),m=f>0?255:0,a=Math.abs(f)
 const angDiff=(a,b)=>{let d=(b-a)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d};
 
 /* ---- insects, drawn in code: c = context, (x,y) centre, r = body radius, h = heading, w = walking phase ---- */
-const BUGS=[{n:"Aphid",c:"#7CFF6B",d:"#0b2a0a"},{n:"Ant",c:"#FF6A3D",d:"#2a0f08"},{n:"Beetle",c:"#2DFFE0",d:"#06282a"},{n:"Spider",c:"#C77DFF",d:"#1e0b33"},{n:"Mantis",c:"#D4FF3A",d:"#1d2606"},{n:"Hornet",c:"#FFE02E",d:"#2a2204"}];
-const BNOTE=["tiny and fast","quick, balanced","slow, tough shell","long legs, eats ants","tall, hits hard","fast flyer, top of the chain"];
+const BUGS=[{n:"Aphid",c:"#7CFF6B",d:"#0b2a0a"},{n:"Ant",c:"#FF6A3D",d:"#2a0f08"},{n:"Beetle",c:"#2DFFE0",d:"#06282a"},{n:"Spider",c:"#C77DFF",d:"#1e0b33"},{n:"Mantis",c:"#D4FF3A",d:"#1d2606"},{n:"Hornet",c:"#FFE02E",d:"#2a2204"},{n:"Ladybug",c:"#FF3355",d:"#2a0710"},{n:"Moth",c:"#9BB8FF",d:"#0b1230"},{n:"Centipede",c:"#F2F7FF",d:"#121a26"},{n:"Dragonfly",c:"#3DA9FF",d:"#06182e"}];
+const ORD=[0,6,1,7,2,8,3,9,4,5]; // food chain, smallest to biggest
+const BNOTE=["tiny and fast","quick, balanced","slow, tough shell","long legs, eats ants","tall, hits hard","fast flyer, top of the chain","tough little dome","soft and quick","many legs, tough","fastest flyer"];
 /* neon look: every shape is a dark body with a bright glowing outline */
 let NC="#fff",ND="#000";
 const ell=(c,x,y,a,b,f,rot)=>{c.beginPath();c.ellipse(x,y,a,b,rot||0,0,TAU);
@@ -35,7 +36,7 @@ function bugFeel(c,r,hx,w,t,col){ // two antennae that sway
   for(const s of[-1,1]){const k=Math.sin(t*5+w*.5+s)*r*.12;c.beginPath();c.moveTo(hx,s*r*.1);c.quadraticCurveTo(hx+r*.45,s*r*.3+k,hx+r*.8,s*r*.55+k*1.6);c.stroke()}
 }
 /* stepping legs: every foot is planted on the ground; when the body moves too far from it the foot steps forward (opposite groups take turns) and a two-bone leg bends to reach it */
-const LEGN=[3,3,3,4,3,3],LEGL=[.35,.65,.45,1.05,.8,.4];
+const LEGN=[3,3,3,4,3,3,3,3,5,3],LEGL=[.35,.65,.45,1.05,.8,.4,.4,.5,.6,.3];
 function ikLegs(c,o,n,len,r,h,col){
   c.save();c.shadowColor=col;c.shadowBlur=Math.max(5,r*.35);
   const ch=Math.cos(h),sh=Math.sin(h),K=2.2,L=r*(.45+len*.5)*2.4,dt=o.dt||.016,W=(lx,ly)=>[o.x+lx*ch-ly*sh,o.y+lx*sh+ly*ch];
@@ -73,9 +74,14 @@ function bug(c,sp,x,y,r,h,w,t,pal,feet){
     for(const s of[-1,1]){c.beginPath();c.moveTo(r*.3,s*r*.12);c.lineTo(r*.9,s*(r*.45+g*r));c.lineTo(r*.62,s*r*.12);c.stroke()}}
   if(sp===5){c.save();c.beginPath();c.ellipse(-r*.55,0,r*.58,r*.36,0,0,TAU);c.clip();ell(c,-r*.55,0,r*.6,r*.4,C);c.fillStyle=C;c.globalAlpha=.85;for(let i=0;i<3;i++)c.fillRect(-r*1.1+i*r*.36,-r*.5,r*.17,r);c.globalAlpha=1;c.restore();
     c.fillStyle=C;c.beginPath();c.moveTo(-r*1.1,0);c.lineTo(-r*1.45,0);c.lineTo(-r*1.1,r*.1);c.fill();ell(c,r*.12,0,r*.3,r*.28,D);ell(c,r*.58,0,r*.26,r*.24,C)}
-  const hx=[.88,.9,1.05,.65,.95,.82][sp];
+  if(sp===6){ell(c,-r*.1,0,r*.85,r*.75,C);c.strokeStyle=ND;c.lineWidth=r*.06;c.beginPath();c.moveTo(-r*.95,0);c.lineTo(r*.7,0);c.stroke();for(const[a,b]of[[-.45,-.3],[-.45,.3],[.1,-.38],[.1,.38]])ell(c,r*a,r*b,r*.14,r*.14,ND);ell(c,r*.85,0,r*.3,r*.26,ND)}
+  if(sp===7){const f=Math.sin(t*14)*.18;for(const s of[-1,1]){c.save();c.rotate(s*(.85+f));ell(c,-r*.45,0,r*1.05,r*.55,C);c.restore()}ell(c,-r*.1,0,r*.6,r*.22,C);ell(c,r*.55,0,r*.22,r*.2,ND)}
+  if(sp===8){for(let i=5;i>=0;i--){const sw=Math.sin(w*.8+i*.9)*r*.08;ell(c,-r*.95+i*r*.38,sw,r*(.2+i*.025),r*(.24+i*.02),i===5?ND:C)}c.strokeStyle=C;c.lineWidth=r*.07;for(const s of[-1,1]){c.beginPath();c.moveTo(r*1.05,s*r*.1);c.lineTo(r*1.3,s*r*.28);c.stroke()}}
+  if(sp===9){const f=Math.sin(t*38)*.06;for(const k of[0,1])for(const s of[-1,1]){c.save();c.rotate(s*(1.35+f+k*.18));ell(c,-r*(.25+k*.2),0,r*.85,r*.17,"rgba(150,215,255,.38)");c.restore()}
+    ell(c,-r*.15,0,r*1.0,r*.12,C);ell(c,r*.75,0,r*.24,r*.21,ND);for(const s of[-1,1])ell(c,r*.82,s*r*.13,r*.1,r*.1,C)}
+  const hx=[.88,.9,1.05,.65,.95,.82,1.0,.75,1.05,.95][sp];
   if(sp!==3)bugFeel(c,r,hx,w,t,C);
-  c.fillStyle="#fff";c.shadowColor="#fff";for(const s of[-1,1]){c.beginPath();c.arc(hx*.9,s*r*.14,r*.09,0,TAU);c.fill()}
+  if(sp!==9){c.fillStyle="#fff";c.shadowColor="#fff";for(const s of[-1,1]){c.beginPath();c.arc(hx*.9,s*r*.14,r*.09,0,TAU);c.fill()}}
   c.restore();
 }
 function crown(c,x,y,r,h){c.save();c.translate(x,y);c.rotate(h);c.fillStyle="#FFD84A";c.beginPath();c.moveTo(r*.45,-r*.4);for(let i=0;i<4;i++){c.lineTo(r*.45+r*.18,-r*.4+i*r*.27+r*.14);c.lineTo(r*.78,-r*.4+(i+1)*r*.27)}c.lineTo(r*.45,r*.4);c.closePath();c.fill();c.restore()}
@@ -193,7 +199,7 @@ function onMsg(m){
   const seen=new Set();
   for(const q of m.p){seen.add(q[0]);let o=G.pl.get(q[0]);
     if(!o){o={id:q[0],x:q[2],y:q[3],r:q[4],dx:0,dy:0,aim:q[6],rec:0,shown:q[7]};G.pl.set(q[0],o)}
-    o.name=q[1];o.tx=q[2];o.ty=q[3];o.tr=q[4];o.hue=q[5];o.taim=q[6];o.hp=q[7];o.av=q[8];o.bits=q[9];if(q[0]===G.me&&G.msp!==q[10]){G.msp=q[10];banner("You are a "+BUGS[q[10]].n,BNOTE[q[10]]+(q[10]<5?" · eats smaller bugs, a "+BUGS[q[10]+1].n+" eats you":" · top of the chain"),2600)}o.sp=q[10]|0;o.boss=q[11]|0;o.hpMax=q[12]||100}
+    o.name=q[1];o.tx=q[2];o.ty=q[3];o.tr=q[4];o.hue=q[5];o.taim=q[6];o.hp=q[7];o.av=q[8];o.bits=q[9];if(q[0]===G.me&&G.msp!==q[10]){G.msp=q[10];banner("You are a "+BUGS[q[10]].n,BNOTE[q[10]]+(ORD.indexOf(q[10])<9?" · eats smaller bugs, a "+BUGS[ORD[ORD.indexOf(q[10])+1]].n+" eats you":" · top of the chain"),2600)}o.sp=q[10]|0;o.boss=q[11]|0;o.hpMax=q[12]||100}
   for(const id of[...G.pl.keys()])if(!seen.has(id))G.pl.delete(id);
   if(G.dead&&G.pl.has(G.me)&&performance.now()-G.deadAt>800){G.dead=false;$("#dead").classList.add("hide")} // alive again: a new round, or a respawn
   G.os=m.o;G.lb=m.lb;G.mm=m.mm;G.n=m.n;G.g=m.g;G.my=m.me;{const tb=$("#gtm"),tm=m.g.tm|0;tb.classList.toggle("hide",!tm);tb.className=tm?"t"+tm:"hide";tb.textContent=tm===1?"Red team":tm===2?"Blue team":""}G.camT={x:m.cx,y:m.cy};

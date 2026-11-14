@@ -354,7 +354,7 @@ public class ArenaTest {
         check("same size: the Hornet is not eaten by the Ant", h.stateOf(b)[3] == 0);
         GameHub h2 = hub(new ServerConfig(), 0);
         h2.randomBugs = true;
-        boolean[] seen = new boolean[6];
+        boolean[] seen = new boolean[10];
         for (int i = 0; i < 80; i++) {
             Rec r = new Rec();
             GameHub.Player q = h2.join("t" + i, "i" + i, "P" + i, r);
@@ -366,7 +366,7 @@ public class ArenaTest {
         }
         int kinds = 0;
         for (boolean v : seen) if (v) kinds++;
-        check("players are handed random insects (" + kinds + " kinds in 80 joins)", kinds >= 4);
+        check("players are handed random insects (" + kinds + " kinds in 80 joins)", kinds >= 7);
         h.bosses = true;
         h.place(a, 3000, 3000, 18);
         h.place(b, 300, 300, 18);
