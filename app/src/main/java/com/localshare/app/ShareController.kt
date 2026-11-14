@@ -38,6 +38,8 @@ data class UiState(
     val running: Boolean = false,
     val port: Int = 8080,
     val urls: List<String> = emptyList(),
+    /** "http://name.local:port" from the host name; empty unless sharing. Some Android browsers cannot open it, so the IP links stay. */
+    val nameUrl: String = "",
     val hostToken: String = "",
     val folders: List<SharedFolder> = emptyList(),
     val devices: List<Device> = emptyList(),
@@ -88,6 +90,8 @@ object ShareController {
     private lateinit var prefs: Prefs
     private val cfg = ServerConfig()
     private var server: MiniServer? = null
+    private var mdns: com.localshare.app.server.MdnsResponder? = null
+    private var mcLock: android.net.wifi.WifiManager.MulticastLock? = null
     private val main = Handler(Looper.getMainLooper())
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> get() = _state
@@ -209,7 +213,7 @@ object ShareController {
         if (k.startsWith("logo:")) setHostLogo(k.removePrefix("logo:").toIntOrNull() ?: 0) else refresh()
     }
 
-    fun setHostName(n: String) { prefs.hostName = n.trim().take(24).ifEmpty { "Host" }; cfg.setHostProfile(prefs.hostName, null); refresh() }
+    fun setHostName(n: String) { prefs.hostName = n.trim().take(24).ifEmpty { "Host" }; cfg.setHostProfile(prefs.hostName, null); if (server != null) startName(); refresh() }
     fun setHostLogo(kind: Int) = saveHostPic(HostProfile.logoBitmap(kind), "logo:$kind")
     fun setHostPhoto(uri: android.net.Uri) { HostProfile.photoBitmap(app, uri)?.let { saveHostPic(it, "photo") } }
 
@@ -363,6 +367,7 @@ object ShareController {
             })
             s.start(prefs.port)
             server = s
+            startName()
             main.post(ticker)
             null
         } catch (e: Exception) {
@@ -377,11 +382,29 @@ object ShareController {
         CastService.stop(app)
         server?.stop()
         server = null
+        stopName()
         main.removeCallbacks(ticker)
         refresh()
     }
 
     fun isRunning() = server != null
+
+    /** Answers name.local on the Wi-Fi; failure is fine, the IP links still work. */
+    private fun startName() {
+        stopName()
+        try {
+            val ips = localIps()
+            if (ips.isEmpty()) return
+            mcLock = (app.applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager).createMulticastLock("ls-mdns").apply { setReferenceCounted(false); acquire() }
+            mdns = com.localshare.app.server.MdnsResponder(prefs.hostName, ips).also { it.start() }
+        } catch (e: Exception) { stopName() }
+    }
+
+    private fun stopName() {
+        mdns?.stop(); mdns = null
+        try { mcLock?.release() } catch (e: Exception) { }
+        mcLock = null
+    }
 
     fun refresh() {
         val s = server
@@ -390,6 +413,7 @@ object ShareController {
             running = s != null,
             port = s?.port() ?: prefs.port,
             urls = ips.map { "http://$it:${s?.port()}" },
+            nameUrl = if (mdns != null) "http://${mdns!!.host()}:${s?.port()}" else "",
             hostToken = s?.hostToken() ?: "",
             folders = prefs.folders.map { SharedFolder(it, folderName(it)) },
             devices = s?.sessions()?.filter { !it.pending }?.map { Device(it.id, it.name, it.ip, it.since, it.perms) } ?: emptyList(),
