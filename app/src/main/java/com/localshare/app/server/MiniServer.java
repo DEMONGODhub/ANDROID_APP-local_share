@@ -872,8 +872,9 @@ public final class MiniServer {
             return true;
         }
         if (get && path.equals("/api/list")) {
-            if (authFiles(r, out, isHead) == null) return true;
-            return list(r, out, isHead);
+            Session s = authFiles(r, out, isHead);
+            if (s == null) return true;
+            return list(r, s, out, isHead);
         }
         if (get && path.equals("/api/file")) {
             Session s = authFiles(r, out, isHead);
@@ -1369,12 +1370,14 @@ public final class MiniServer {
         return p;
     }
 
-    private boolean list(Req r, OutputStream out, boolean isHead) throws IOException {
+    private boolean list(Req r, Session s, OutputStream out, boolean isHead) throws IOException {
         List<String> sg = segs(r.q.get("path"));
         if (sg == null) {
+            if (!s.host) cfg.log.add("alert", s.name, s.ip, "tried a path that escapes the shared folders: " + r.q.get("path"));
             json(out, isHead, 400, err("bad path"));
             return true;
         }
+        if (!s.host && !isHead) cfg.log.add("folder", s.name, s.ip, sg.isEmpty() ? "/" : pathStr(sg));
         List<FileSource.Entry> es;
         try {
             es = fs.list(sg);
@@ -1411,6 +1414,7 @@ public final class MiniServer {
     private boolean file(Req r, Session s, OutputStream out, boolean isHead) throws IOException {
         List<String> sg = segs(r.q.get("path"));
         if (sg == null || sg.isEmpty()) {
+            if (sg == null && !s.host) cfg.log.add("alert", s.name, s.ip, "tried a path that escapes the shared folders: " + r.q.get("path"));
             json(out, isHead, 400, err("bad path"));
             return true;
         }

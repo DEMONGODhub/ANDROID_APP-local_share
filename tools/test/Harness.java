@@ -779,6 +779,17 @@ public class Harness {
         check("empty text refused", req("POST", "/api/clip", ot, "text=%20", "Origin", O).code == 400);
         check("foreign origin refused", raw("POST", "/api/clip", ot, "http://evil.example", "text=x") == 403);
 
+        System.out.println("== host activity: folder opens and security alerts");
+        req("GET", "/api/list?path=Extra%20Files", ot, null);
+        req("GET", "/api/list?path=..%2F..%2Fetc", ot, null);
+        boolean sawFolder = false, sawAlert = false;
+        for (com.localshare.app.server.ActivityLog.Entry le : c.log.recent()) {
+            if (le.kind.equals("folder") && le.detail.contains("Extra Files")) sawFolder = true;
+            if (le.kind.equals("alert") && le.detail.contains("escapes")) sawAlert = true;
+        }
+        check("opening a folder is logged for the host", sawFolder);
+        check("a path-escape attempt raises a security alert", sawAlert);
+
         System.out.println("== uploads");
         File tree = new File(extra, "tree");
         byte[] small = rnd(200000);

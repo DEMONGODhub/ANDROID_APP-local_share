@@ -51,11 +51,10 @@ internal fun NearbyCard(st: UiState, onJoin: (String) -> Unit) {
     fun open(name: String, url: String) { ShareController.rememberFriend(name, url); friends = ShareController.friends(); onJoin(url) }
 
     SectionCard {
-        Text("Phones nearby", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(
-            "Other phones with LocalShare on this Wi-Fi or hotspot show up here while they are sharing. Tap one to open its files, chat, games and screen.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Phones nearby", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Info("Other phones with LocalShare on this Wi-Fi or hotspot show up here while they are sharing. Tap one to open its files, chat, games and screen.")
+        }
         if (found.isEmpty()) Text("Looking for phones…", color = MaterialTheme.colorScheme.onSurfaceVariant)
         found.forEach { p -> PhoneRow(p.name, p.url, "Nearby now") { open(p.name, p.url) } }
         OutlinedButton({
@@ -70,7 +69,7 @@ internal fun NearbyCard(st: UiState, onJoin: (String) -> Unit) {
                     .addOnFailureListener { note = "Could not open the scanner. Check your internet once so Google Play services can load it, or type the link below." }
             } catch (e: Exception) { note = "The scanner is not available on this phone. Type the link instead." }
         }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Scan another phone's code") }
-        Text("On the other phone, open Connect and show the QR code from Invite.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        InfoRow("On the other phone, open Connect and show the QR code from Invite.")
         if (note.isNotEmpty()) Text(note, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
     }
     if (friends.isNotEmpty()) SectionCard {

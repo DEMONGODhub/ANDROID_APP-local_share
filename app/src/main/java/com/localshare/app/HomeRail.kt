@@ -104,7 +104,7 @@ private fun RailTile(
 
 /** The left rail: the logo (everything), the quick actions (start or stop, live screen, chat) and the sections. */
 @Composable
-internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> Unit, onStartStop: () -> Unit, onLive: () -> Unit) {
+internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> Unit, onStartStop: () -> Unit) {
     val c = MaterialTheme.colorScheme
     Column(
         Modifier.width(76.dp).fillMaxHeight().background(Color.Black).verticalScroll(rememberScrollState()).padding(vertical = 10.dp),
@@ -115,23 +115,18 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
         RailTile(if (st.running) "Stop" else "Start", false, onStartStop, active = st.running) { fg ->
             Icon(if (st.running) Icons.Filled.Close else Icons.Filled.PlayArrow, null, tint = fg)
         }
-        RailTile("Live", false, onLive, active = st.casting, dim = !st.running, badge = if (st.casting && st.viewers > 0) "${st.viewers}" else null) { fg ->
-            Icon(painterResource(R.drawable.ic_eye), null, tint = fg)
-        }
         RailTile("Chat", sec == 5, { onSec(5) }, dot = chatDot) { fg -> Icon(Icons.Filled.Email, null, tint = fg) }
         HorizontalDivider(Modifier.width(36.dp), color = c.outlineVariant)
-        RailTile("Share", sec == 1, { onSec(1) }) { fg -> Icon(Icons.Filled.Share, null, tint = fg) }
+        RailTile("Shared", sec == 1, { onSec(1) }) { fg -> Icon(Icons.Filled.Share, null, tint = fg) }
         RailTile("Connect", sec == 3, { onSec(3) }) { fg -> Icon(Icons.Filled.Lock, null, tint = fg) }
-        RailTile("More", sec == 4, { onSec(4) }) { fg -> Icon(Icons.Filled.MoreVert, null, tint = fg) }
     }
 }
 
 @Composable
 internal fun SectionHeader(sec: Int, st: UiState) {
     val (title, sub) = when (sec) {
-        1 -> "Share" to (if (st.running) "On · ${st.devices.size} connected · ${st.folders.size} folders" else "Off · ${st.folders.size} folders")
+        1 -> "Shared" to (if (st.running) "On · ${st.devices.size} connected · ${st.folders.size} folders" else "Off · ${st.folders.size} folders")
         3 -> "Connect" to "Find phones nearby, invite and join"
-        4 -> "More" to "Look, keep it running, and say thanks"
         5 -> "Live chat" to (if (st.running) "Everyone who joined can see this" else "Start sharing to chat")
         else -> "LocalShare" to "Everything in one place"
     }

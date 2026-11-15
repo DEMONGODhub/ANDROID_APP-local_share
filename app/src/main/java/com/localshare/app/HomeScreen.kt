@@ -133,7 +133,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
     LaunchedEffect(Unit) { ShareController.measure() }
     val ls = rememberLazyListState()
     var sec by rememberSaveable { mutableStateOf(0) } // 0 all, 1 sharing, 2 folders, 3 access, 4 support, 5 chat
-    LaunchedEffect(Unit) { if (sec == 2) sec = 1 else if (sec == 6) sec = 4 } // sections that moved in v2.28
+    LaunchedEffect(Unit) { if (sec == 2) sec = 1 else if (sec == 4 || sec == 6) sec = 0 } // sections that moved in v2.28
     var showProfile by remember { mutableStateOf(false) }
     if (showProfile) ProfileDialog(st) { showProfile = false }
     var seenChat by remember { mutableStateOf<ChatRow?>(null) }
@@ -146,10 +146,6 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
         HomeRail(
             st, sec, lastChat != null && lastChat != seenChat && sec != 5, { sec = it },
             { if (st.running) stop() else start() },
-            {
-                if (!st.running) android.widget.Toast.makeText(ctx, "Start sharing first", android.widget.Toast.LENGTH_SHORT).show()
-                else if (st.casting) CastService.stop(ctx) else onCast()
-            },
         )
         Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(topStart = 24.dp)).background(MaterialTheme.colorScheme.background)) {
             SectionHeader(sec, st)
@@ -158,16 +154,22 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                if (sec == 0 || sec == 1) anim("status") { StatusCard(st, ::start, stop, copy) }
+                // All: the whole picture. The other sections each hold their own part, with nothing shown twice.
+                if (sec == 0) anim("status") { StatusCard(st, ::start, stop, copy) }
+                if (sec == 0 && st.running) anim("chat") { ChatCard(st) }
+                if (sec == 0 && st.running) anim("connected") { ConnectedCard(st, openBrowser) { tvNote = it } }
                 if (sec == 0 || sec == 1) anim("storage") { StorageCard(st) }
                 if (sec == 0 || sec == 1) anim("folders") { FoldersCard(st, { picker.launch(null) }) }
                 if (sec == 0 || sec == 1) anim("screen") { ScreenCard(st, onCast) }
+                if (sec == 1) anim("devices") { DevicesCard(st) }
                 if (sec == 0 || sec == 3) anim("invite") { InviteCard(st) }
-                if ((sec == 0 || sec == 5) && st.running) anim("chat") { ChatCard(st) }
+                if (sec == 5 && st.running) anim("chat2") { ChatCard(st) }
                 if (sec == 5 && !st.running) anim("nochat") {
                     SectionCard {
-                        Text("Start sharing to use live chat", fontWeight = FontWeight.SemiBold)
-                        Text("Guests chat from the web page and you answer here.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Start sharing to use live chat", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            Info("Guests chat from the web page and you answer here.")
+                        }
                         Button(::start, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.folders.isNotEmpty() || st.gameOnly) { Text("Start sharing") }
                     }
                 }
@@ -177,43 +179,19 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                     anim("join") { JoinCard(onJoin) }
                 }
                 if (sec == 0) anim("setup") {
-                    // Wi-Fi code, join-by-code and permissions are set up once, so they fold away (open while a permission is still missing)
+                    // look and permissions are set once, so they fold away (open while a permission is still missing)
                     var more by rememberSaveable { mutableStateOf(!(perms.notifications && perms.unrestricted)) }
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         TextButton({ more = !more }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                            Text(if (more) "Hide set-up tools" else "Set-up tools: Wi-Fi code, join by code, permissions", fontWeight = FontWeight.SemiBold)
+                            Text(if (more) "Hide look and permissions" else "Look and permissions", fontWeight = FontWeight.SemiBold)
                         }
                         if (more) {
-                            WifiCard(st)
-                            JoinCard(onJoin)
+                            AppearanceCard()
                             PermissionsCard(perms) { p -> notif.launch(p) }
                         }
                     }
                 }
-                if (sec == 4) anim("look") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { AppearanceCard() } }
-                if (sec == 4) anim("perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
-                if ((sec == 0 || sec == 1) && st.running) anim("connected") {
-                    SectionCard {
-                        Text("Connected: ${st.devices.size} of ${st.maxClients} devices", fontWeight = FontWeight.SemiBold)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("Let every guest use the TV remote", fontWeight = FontWeight.SemiBold)
-                                Text("Off: only you and devices you allow on the Devices tab get a Remote button while LocalShare TV is connected.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                            }
-                            Switch(st.remoteOn, { ShareController.setRemote(it) })
-                        }
-                        OutlinedButton(openBrowser, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                            Icon(Icons.Filled.PlayArrow, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Open the page here (files and game)")
-                        }
-                        OutlinedButton({ SendToTv.scan(ctx, st) { tvNote = it } }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                            Text("Send to TV (scan the code on your TV)")
-                        }
-                        tvNote?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall) }
-                    }
-                }
-                if (sec == 0 || sec == 4) anim("donate") {
+                if (sec == 0) anim("donate") {
                     SectionCard {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -252,17 +230,16 @@ private fun StatusCard(
                     com.localshare.app.ui.LogoMark(22.dp, if (st.running) c.onPrimary else c.onSurfaceVariant, st.running)
                 }
                 Spacer(Modifier.width(10.dp))
-                Text(if (st.running) "Sharing is ON" else "Sharing is OFF", color = fg, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(if (st.running) "Sharing is ON" else "Sharing is OFF", color = fg, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                if (st.running) Info(
+                    (if (st.nameUrl.isNotEmpty()) "Open the name or the IP address on any device on the same network. If the name does not open (some Android browsers), use the IP." else if (st.urls.size > 1) "${st.urls.size} ways to connect (Wi-Fi and hotspot). Use any one." else "Open this address on any device on the same network.") +
+                        "\n\nSharing stops when the phone sleeps? Open Settings > Apps > LocalShare > Battery and choose Unrestricted. The wording differs on some phones.",
+                )
             }
             if (st.running) {
                 if (st.urls.isEmpty()) Text("No network found. Connect to Wi-Fi or turn on your hotspot.", color = fg)
-                Text(
-                    if (st.nameUrl.isNotEmpty()) "Open the name or the IP address on any device on the same network. If the name does not open (some Android browsers), use the IP." else if (st.urls.size > 1) "${st.urls.size} ways to connect (Wi-Fi and hotspot). Use any one." else "Open this address on any device on the same network.",
-                    color = c.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
-                )
                 if (st.speedLine.isNotEmpty()) Text(st.speedLine, color = c.primary, fontWeight = FontWeight.SemiBold)
                 if (st.wifiNote.isNotEmpty()) Text(st.wifiNote, color = c.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                Text("Sharing stops when the phone sleeps? Open Settings > Apps > LocalShare > Battery and choose Unrestricted. The wording differs on some phones.", color = c.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 (listOfNotNull(st.nameUrl.ifEmpty { null }) + st.urls).forEach { u ->
                     Surface(color = c.surfaceContainerHighest, shape = MaterialTheme.shapes.medium) {
                         Column(Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 2.dp)) {
@@ -308,7 +285,7 @@ private fun StatusCard(
 private fun FoldersCard(st: UiState, onAdd: () -> Unit) {
     SectionCard {
         Text("Shared folders", fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
-        Text("People who join pick which of these to open.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        InfoRow("People who join pick which of these to open.")
         if (st.folders.isEmpty()) Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(painterResource(R.drawable.ic_folder), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
             Text("Nothing shared yet", style = MaterialTheme.typography.titleMedium)
@@ -352,10 +329,7 @@ private fun PermissionsCard(perms: Perms, askNotifications: (String) -> Unit) {
     val ctx = LocalContext.current
     SectionCard {
         Text("Keep sharing when the screen is locked", fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
-        Text(
-            "LocalShare only needs these so Android does not put it to sleep. It never reads anything outside the folders you add.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
-        )
+        InfoRow("LocalShare only needs these so Android does not put it to sleep. It never reads anything outside the folders you add.")
         if (Build.VERSION.SDK_INT >= 33) PermRow(
             "Show a notice while sharing", "Android needs this small notice to let sharing keep running with the screen off. You can stop sharing from it.",
             perms.notifications, "Allow",
@@ -364,10 +338,7 @@ private fun PermissionsCard(perms: Perms, askNotifications: (String) -> Unit) {
             "Don't limit battery use", "Without this, Android can stop sharing a few minutes after you leave the app or lock the phone, which restarts games and signs guests out. Tap Allow, then choose Allow in the box that opens.",
             perms.unrestricted, "Allow",
         ) { requestUnrestricted(ctx) }
-        Text(
-            "Xiaomi, Oppo, Vivo and Samsung phones also have an “Autostart” or “Battery” switch in the app's settings. Turn it on if sharing stops by itself.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
-        )
+        InfoRow("Xiaomi, Oppo, Vivo and Samsung phones also have an “Autostart” or “Battery” switch in the app's settings. Turn it on if sharing stops by itself.")
         TextButton({
             ctx.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}")))
         }, Modifier.heightIn(min = 48.dp)) { Text("Open app settings") }
@@ -421,15 +392,19 @@ private fun ScreenCard(st: UiState, onCast: () -> Unit) {
         if (st.casting && st.castNote.isNotEmpty()) Text(st.castNote + " to keep your phone cool.", color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall)
         if (!st.casting) Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Compatibility mode", fontWeight = FontWeight.SemiBold)
-                Text("Only for very old browsers. Uses more battery and looks less smooth.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Compatibility mode", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    Info("Only for very old browsers. Uses more battery and looks less smooth.")
+                }
             }
             Switch(st.castCompat, { ShareController.setCastCompat(it) })
         }
         if (!st.casting) Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Also send my microphone", fontWeight = FontWeight.SemiBold)
-                Text("Your voice is heard along with the phone's sound.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Also send my microphone", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    Info("Your voice is heard along with the phone's sound.")
+                }
             }
             Switch(st.castMic, { ShareController.setCastMic(it) })
         }
@@ -444,7 +419,7 @@ private fun ChatCard(st: UiState) {
     var msg by rememberSaveable { mutableStateOf("") }
     SectionCard {
         Text("Live chat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        if (st.chat.isEmpty()) Text("No messages yet. Guests chat from the page, and you can answer here.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        if (st.chat.isEmpty()) InfoRow("No messages yet. Guests chat from the page, and you can answer here.")
         st.chat.forEach { c ->
             Text(buildAnnotatedString {
                 withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (c.host) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)) { append(c.name + ": ") }
@@ -459,7 +434,7 @@ private fun ChatCard(st: UiState) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(0 to "Off", 5 to "5 s", 15 to "15 s", 30 to "30 s").forEach { (s, l) -> FilterChip(st.chatSlow == s, { ShareController.setChatSlow(s) }, { Text(l) }) }
         }
-        Text("To mute a guest or delete a message, use the host controls on the web page.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        InfoRow("To mute a guest or delete a message, use the host controls on the web page.")
     }
 }
 
@@ -480,8 +455,10 @@ private fun InviteCard(st: UiState) {
     LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(30000); tick++ } }
     val base = st.urls.firstOrNull()
     SectionCard {
-        Text("Invite links", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text("Give a friend a link that works without the password, for a limited time. You can cancel it at any time.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Invite links", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Info("Give a friend a link that works without the password, for a limited time. You can cancel it at any time.")
+        }
         if (!st.running || base == null) { Text("Start sharing first.", color = MaterialTheme.colorScheme.onSurfaceVariant); return@SectionCard }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(1 to "1 hour", 24 to "1 day", 168 to "7 days").forEach { (h, l) -> FilterChip(hours == h, { hours = h }, { Text(l) }) }
@@ -519,8 +496,10 @@ private fun WifiCard(st: UiState) {
     var pass by rememberSaveable { mutableStateOf(st.wifiPass) }
     var show by rememberSaveable { mutableStateOf(false) }
     SectionCard {
-        Text("Wi-Fi QR code", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text("Guests scan this with their camera to join your Wi-Fi. Android does not let apps read the Wi-Fi password, so type it here once. It stays on this phone.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Wi-Fi QR code", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Info("Guests scan this with their camera to join your Wi-Fi. Android does not let apps read the Wi-Fi password, so type it here once. It stays on this phone.")
+        }
         OutlinedTextField(ssid, { ssid = it; ShareController.setWifi(it, pass) }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Network name") })
         OutlinedTextField(pass, { pass = it; ShareController.setWifi(ssid, it) }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Password (leave empty for an open network)") })
         OutlinedButton({ show = !show }, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = ssid.isNotBlank()) { Text(if (show) "Hide QR code" else "Show QR code") }
@@ -536,8 +515,10 @@ private fun WifiCard(st: UiState) {
 private fun JoinCard(onJoin: (String) -> Unit) {
     var link by rememberSaveable { mutableStateOf("") }
     SectionCard {
-        Text("Join another share", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text("Type the link shown on the other phone (like http://192.168.1.5:8080). You get files, viewers, the game and its screen, just like in a browser.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Join another share", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Info("Type the link shown on the other phone (like http://192.168.1.5:8080). You get files, viewers, the game and its screen, just like in a browser.")
+        }
         OutlinedTextField(
             link, { link = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Link") },
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri, imeAction = androidx.compose.ui.text.input.ImeAction.Go),
@@ -589,5 +570,43 @@ private fun Legend(color: androidx.compose.ui.graphics.Color, label: String, val
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             Text(value, fontWeight = FontWeight.SemiBold)
         }
+    }
+}
+
+
+/** "Connected: 1 of 4", the TV remote switch and the shortcuts for the open session. */
+@Composable
+private fun ConnectedCard(st: UiState, openBrowser: () -> Unit, note: (String) -> Unit) {
+    val ctx = LocalContext.current
+    var tvNote by remember { mutableStateOf<String?>(null) }
+    SectionCard {
+        Text("Connected: ${st.devices.size} of ${st.maxClients} devices", fontWeight = FontWeight.SemiBold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Let every guest use the TV remote", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+            Info("Off: only you and devices you allow on the Devices tab get a Remote button while LocalShare TV is connected.")
+            Switch(st.remoteOn, { ShareController.setRemote(it) })
+        }
+        OutlinedButton(openBrowser, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Icon(Icons.Filled.PlayArrow, null)
+            Spacer(Modifier.width(8.dp))
+            Text("Open the page here (files and game)")
+        }
+        OutlinedButton({ SendToTv.scan(ctx, st) { tvNote = it; note(it) } }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text("Send to TV (scan the code on your TV)")
+        }
+        tvNote?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+/** Who is connected right now; manage them on the Devices tab. */
+@Composable
+private fun DevicesCard(st: UiState) {
+    SectionCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Connected devices", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Info("Everyone who is on your share right now. Open the Devices tab to allow, block or set what each one can do.")
+        }
+        if (st.devices.isEmpty()) Text(if (st.running) "Nobody yet" else "Start sharing to let devices connect", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        st.devices.forEach { d -> Text("${d.name}  ·  ${d.ip}") }
     }
 }

@@ -21,7 +21,7 @@ data class Device(val id: String, val name: String, val ip: String, val since: L
 }
 data class SharedFolder(val uri: String, val name: String)
 data class BlockedDevice(val id: String, val name: String, val ip: String)
-data class LogLine(val time: Long, val kind: String, val who: String, val detail: String)
+data class LogLine(val time: Long, val kind: String, val who: String, val detail: String, val ip: String = "")
 
 /** How much the shared folders hold, against the phone's own storage. */
 data class StorageInfo(val sharedBytes: Long = 0, val files: Int = 0, val folders: Int = 0, val total: Long = 0, val free: Long = 0, val counting: Boolean = false, val partial: Boolean = false)
@@ -455,7 +455,7 @@ object ShareController {
             wifiSsid = prefs.wifiSsid,
             wifiPass = prefs.wifiPass,
             blocks = cfg.blocks().map { BlockedDevice(it.id, it.name, it.ip) },
-            log = if (s != null) cfg.log.recent().take(100).map { LogLine(it.time, it.kind, it.who, it.detail) } else emptyList(),
+            log = if (s != null) cfg.log.recent().take(100).map { LogLine(it.time, it.kind, it.who, it.detail, it.ip) } else emptyList(),
             password = cfg.password,
             maxClients = cfg.maxClients,
             gameEnabled = cfg.gameEnabled,
