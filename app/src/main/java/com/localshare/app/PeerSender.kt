@@ -40,7 +40,7 @@ object PeerSender {
         val c = open(base, "/api/login", "POST")
         form(c, "name=${enc(ShareController.state.value.hostName)}&password=${enc(password)}&device=${enc(device(ctx))}")
         if (c.responseCode != 200) throw IllegalStateException(if (c.responseCode == 401) "Wrong password" else error(c))
-        return c.headers["Set-Cookie"]?.firstOrNull { it.startsWith("ls_token=") }?.substringBefore(';') ?: throw IllegalStateException("The other phone did not let us in")
+        return c.headerFields["Set-Cookie"]?.firstOrNull { it.startsWith("ls_token=") }?.substringBefore(';') ?: throw IllegalStateException("The other phone did not let us in")
     }
 
     private fun info(ctx: Context, u: Uri): Pair<String, Long> {
