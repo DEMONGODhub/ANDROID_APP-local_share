@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.36.2** — "Open the page here" no longer leaves a black window: it now shows what went wrong (load error, crash, or blank page) with Try again and Open in browser
 - **v2.36.1** — the More button is back (look and permissions)
 - **v2.36.0**** — new side rail (All, Start, Chat, Shared, Connect) with nothing repeated between sections; every long explanation is now an (i) button; Devices redesigned (Connected / Blocked); Activity is a terminal that shows folder opens and red security alerts
 - **v2.35.1**** — build fix in the phone-to-phone sender

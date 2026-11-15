@@ -278,6 +278,9 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
         pending?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res.resultCode, res.data))
         pending = null
     }
+    val ctx0 = androidx.compose.ui.platform.LocalContext.current
+    var problem by remember { mutableStateOf<String?>(null) } // shown instead of a blank window when the page cannot load or draw
+    val pageUrl = url ?: ("http://127.0.0.1:$port/#ht=$token" + if (mode.isEmpty()) "" else "&g=$mode")
     BackHandler { web?.takeIf { it.canGoBack() }?.goBack() ?: onClose() }
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -285,15 +288,45 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
             Spacer(Modifier.weight(1f))
             Text(if (url != null) "Guest view" else "You're the host", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(end = 14.dp))
         }
+        problem?.let { msg ->
+            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("The page didn't open inside the app", style = MaterialTheme.typography.titleMedium)
+                Text(msg, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button({ problem = null; web?.loadUrl(pageUrl) }) { Text("Try again") }
+                    OutlinedButton({
+                        try { ctx0.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) {}
+                    }) { Text("Open in browser") }
+                }
+            }
+        }
         AndroidView(
-            modifier = Modifier.fillMaxSize(),
+            modifier = if (problem == null) Modifier.fillMaxSize() else Modifier.size(1.dp),
             factory = { ctx ->
                 WebView(ctx).apply {
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.mediaPlaybackRequiresUserGesture = false
-                    setBackgroundColor(0xFF000000.toInt())
-                    webViewClient = WebViewClient()
+                    setBackgroundColor(0xFF0C0C0D.toInt())
+                    webViewClient = object : WebViewClient() {
+                        override fun onReceivedError(v: WebView, r: android.webkit.WebResourceRequest, e: android.webkit.WebResourceError) {
+                            if (r.isForMainFrame) problem = "${e.description}. Check that sharing is still on, then try again."
+                        }
+                        override fun onReceivedHttpError(v: WebView, r: android.webkit.WebResourceRequest, e: android.webkit.WebResourceResponse) {
+                            if (r.isForMainFrame) problem = "The server answered ${e.statusCode}."
+                        }
+                        override fun onRenderProcessGone(v: WebView, d: android.webkit.RenderProcessGoneDetail): Boolean {
+                            problem = "The web view crashed (low memory?)."; return true
+                        }
+                        override fun onPageFinished(v: WebView, u: String?) {
+                            // if nothing has drawn a couple of seconds later, say so instead of leaving a black window
+                            v.postDelayed({
+                                v.evaluateJavascript("(function(){return document.body&&document.body.innerText.trim().length})()") { n ->
+                                    if (n == null || n == "0" || n == "null") problem = "The page loaded but drew nothing. Your phone's Android System WebView may be out of date: update it in Play Store, or use Open in browser."
+                                }
+                            }, 3000)
+                        }
+                    }
                     webChromeClient = object : WebChromeClient() {
                         override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
                             pending?.onReceiveValue(null)
@@ -302,7 +335,7 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
                         }
                     }
                     setDownloadListener { url, agent, disposition, mime, _ -> download(ctx, url, agent, disposition, mime) }
-                    loadUrl(url ?: ("http://127.0.0.1:$port/#ht=$token" + if (mode.isEmpty()) "" else "&g=$mode"))
+                    loadUrl(pageUrl)
                     web = this
                 }
             },
