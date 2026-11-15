@@ -2,7 +2,8 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
-- **v2.34.0** — send files to the host from the web page (the host accepts or declines first), shared text board, Share from any app to a nearby LocalShare phone, accept/decline dialog
+- **v2.35.0** — lower memory: transfer buffers shrink when many downloads run at once, thumbnail cache is released when Android is low on memory, leaner package
+- **v2.34.0**** — send files to the host from the web page (the host accepts or declines first), shared text board, Share from any app to a nearby LocalShare phone, accept/decline dialog
 - **v2.33.0**** — open the host by name (demon-god.local, from your host name) as well as the IP; battery "Unrestricted" tip on Home
 - **v2.32.0**** — four new insects in the food chain: Ladybug, Moth, Centipede, Dragonfly (10 species)
 - **v2.31.1** — neon-glow insects: dark bodies, bright glowing outlines, glowing eyes and legs, soft halo

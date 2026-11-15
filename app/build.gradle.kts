@@ -12,8 +12,8 @@ android {
         applicationId = "com.localshare.app"
         minSdk = 21            // Android 5.0+ (covers ~99% of devices)
         targetSdk = 35
-        versionCode = 49
-        versionName = "2.34.0"
+        versionCode = 50
+        versionName = "2.35.0"
     }
 
     // Release signing comes from environment variables (GitHub secrets); without them the release build is simply unsigned.
@@ -43,7 +43,7 @@ android {
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     androidResources { noCompress += listOf("js", "html") }
-    packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    packaging { resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/*.version", "DebugProbesKt.bin", "kotlin-tooling-metadata.json") }
 }
 
 dependencies {

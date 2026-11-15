@@ -95,6 +95,11 @@ public final class MiniServer {
             this.cap = cap;
         }
 
+        synchronized void clear() {
+            map.clear();
+            size = 0;
+        }
+
         synchronized byte[] get(String k) {
             return map.get(k);
         }
@@ -122,6 +127,7 @@ public final class MiniServer {
     private final AssetProvider assets;
     private final ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<String, Session>();
     private final ConcurrentHashMap<String, long[]> fails = new ConcurrentHashMap<String, long[]>();
+    private final java.util.concurrent.atomic.AtomicInteger streams = new java.util.concurrent.atomic.AtomicInteger();
     private final ThumbCache thumbs = new ThumbCache(12L * 1024 * 1024);
     private final Semaphore thumbSlots = new Semaphore(3); // decoding photos is memory-hungry on low-end phones
     private final SecureRandom rnd = new SecureRandom();
@@ -225,6 +231,9 @@ public final class MiniServer {
     private final java.util.LinkedHashMap<String, Offer> offers = new java.util.LinkedHashMap<String, Offer>();
     private final java.util.ArrayList<String[]> clips = new java.util.ArrayList<String[]>();
     private static final long OFFER_WAIT_MS = 120000L;
+
+    /** The phone is short on memory: drop the thumbnail cache (it refills on demand). */
+    public void trimMemory() { thumbs.clear(); }
 
     /** Offers still waiting for the host's answer. */
     public List<OfferInfo> pendingOffers() {
@@ -1463,7 +1472,8 @@ public final class MiniServer {
             return false; // headers are already sent; closing the connection is the only honest signal
         }
         try {
-            byte[] buf = new byte[262144];
+            // big reads while few transfers run (fast); smaller ones when many run at once (keeps RAM flat)
+            byte[] buf = new byte[streams.incrementAndGet() <= 4 ? 262144 : 65536];
             long left = len;
             while (left > 0) {
                 int n = is.read(buf, 0, (int) Math.min(buf.length, left));
@@ -1474,6 +1484,7 @@ public final class MiniServer {
             }
             return left == 0;
         } finally {
+            streams.decrementAndGet();
             try {
                 is.close();
             } catch (IOException ignored) {

@@ -118,6 +118,12 @@ object ShareController {
         ready = true
         app = ctx.applicationContext
         prefs = Prefs(app)
+        // when Android is short on memory, give back what can be rebuilt (thumbnails)
+        app.registerComponentCallbacks(object : android.content.ComponentCallbacks2 {
+            override fun onTrimMemory(level: Int) { if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) server?.trimMemory() }
+            override fun onConfigurationChanged(c: android.content.res.Configuration) {}
+            @Deprecated("old callback") override fun onLowMemory() { server?.trimMemory() }
+        })
         cfg.password = prefs.password
         cfg.maxClients = prefs.maxClients
         cfg.gameEnabled = prefs.gameEnabled
