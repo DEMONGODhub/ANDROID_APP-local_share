@@ -2,7 +2,8 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
-- **v2.36.0** — new side rail (All, Start, Chat, Shared, Connect) with nothing repeated between sections; every long explanation is now an (i) button; Devices redesigned (Connected / Blocked); Activity is a terminal that shows folder opens and red security alerts
+- **v2.36.1** — the More button is back (look and permissions)
+- **v2.36.0**** — new side rail (All, Start, Chat, Shared, Connect) with nothing repeated between sections; every long explanation is now an (i) button; Devices redesigned (Connected / Blocked); Activity is a terminal that shows folder opens and red security alerts
 - **v2.35.1**** — build fix in the phone-to-phone sender
 - **v2.35.0**** — lower memory: transfer buffers shrink when many downloads run at once, thumbnail cache is released when Android is low on memory, leaner package
 - **v2.34.0**** — send files to the host from the web page (the host accepts or declines first), shared text board, Share from any app to a nearby LocalShare phone, accept/decline dialog

@@ -133,7 +133,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
     LaunchedEffect(Unit) { ShareController.measure() }
     val ls = rememberLazyListState()
     var sec by rememberSaveable { mutableStateOf(0) } // 0 all, 1 sharing, 2 folders, 3 access, 4 support, 5 chat
-    LaunchedEffect(Unit) { if (sec == 2) sec = 1 else if (sec == 4 || sec == 6) sec = 0 } // sections that moved in v2.28
+    LaunchedEffect(Unit) { if (sec == 2) sec = 1 else if (sec == 6) sec = 4 } // sections that moved in v2.28
     var showProfile by remember { mutableStateOf(false) }
     if (showProfile) ProfileDialog(st) { showProfile = false }
     var seenChat by remember { mutableStateOf<ChatRow?>(null) }
@@ -178,19 +178,10 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                     anim("wifi") { WifiCard(st) }
                     anim("join") { JoinCard(onJoin) }
                 }
-                if (sec == 0) anim("setup") {
-                    // look and permissions are set once, so they fold away (open while a permission is still missing)
-                    var more by rememberSaveable { mutableStateOf(!(perms.notifications && perms.unrestricted)) }
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TextButton({ more = !more }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                            Text(if (more) "Hide look and permissions" else "Look and permissions", fontWeight = FontWeight.SemiBold)
-                        }
-                        if (more) {
-                            AppearanceCard()
-                            PermissionsCard(perms) { p -> notif.launch(p) }
-                        }
-                    }
-                }
+                // look and permissions live in More; All only nudges when a permission is still missing
+                if (sec == 0 && !(perms.notifications && perms.unrestricted)) anim("perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
+                if (sec == 4) anim("look") { AppearanceCard() }
+                if (sec == 4) anim("perms2") { PermissionsCard(perms) { p -> notif.launch(p) } }
                 if (sec == 0) anim("donate") {
                     SectionCard {
                         Row(verticalAlignment = Alignment.CenterVertically) {
