@@ -12,19 +12,19 @@ android {
         applicationId = "com.localshare.app"
         minSdk = 21            // Android 5.0+ (covers ~99% of devices)
         targetSdk = 35
-        versionCode = 54
-        versionName = "2.36.2"
+        versionCode = 55
+        versionName = "2.37.0"
     }
 
-    // Release signing comes from environment variables (GitHub secrets); without them the release build is simply unsigned.
+    // Release signing: your own keystore via keystore.properties (kept out of git), or GitHub-secret env vars. Neither set = unsigned.
     signingConfigs {
-        System.getenv("KEYSTORE_FILE")?.let { f ->
-            create("release") {
-                storeFile = file(f)
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-            }
+        val kp = java.util.Properties().apply { rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) } }
+        val ks = kp.getProperty("storeFile") ?: System.getenv("KEYSTORE_FILE")
+        if (ks != null) create("release") {
+            storeFile = rootProject.file(ks)
+            storePassword = kp.getProperty("storePassword") ?: System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = kp.getProperty("keyAlias") ?: System.getenv("KEY_ALIAS")
+            keyPassword = kp.getProperty("keyPassword") ?: System.getenv("KEY_PASSWORD")
         }
     }
 
