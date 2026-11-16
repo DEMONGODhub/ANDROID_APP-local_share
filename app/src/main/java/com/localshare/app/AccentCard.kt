@@ -64,12 +64,22 @@ private val PRESETS = listOf(
 private val ICONS = listOf(
     "Yellow" to Color(0xFFFFD60A), "White" to Color(0xFFFFFFFF), "Purple" to Color(0xFFA855F7),
     "Blue" to Color(0xFF3B82F6), "Silver" to Color(0xFFC0C0C8), "Green" to Color(0xFF22C55E),
+    "Cyan" to Color(0xFF22D3EE), "Mint" to Color(0xFF34D399), "Lime" to Color(0xFFA3E635),
+    "Red" to Color(0xFFEF4444), "Orange" to Color(0xFFFB923C), "Pink" to Color(0xFFEC4899),
 )
 
 private fun alias(ctx: android.content.Context, n: String) = android.content.ComponentName(ctx, "com.localshare.app.Icon$n")
 
-private fun iconNow(ctx: android.content.Context): String =
+private fun iconNow(ctx: android.content.Context): String = Prefs.pendingIcon.takeIf { p -> ICONS.any { it.first == p } } ?:
     ICONS.firstOrNull { ctx.packageManager.getComponentEnabledSetting(alias(ctx, it.first)) == android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED }?.first ?: "Yellow"
+
+/** Applies an icon picked earlier once the app is in the background (like a store app's "change app icon"). */
+internal fun applyPendingIcon(ctx: android.content.Context) {
+    val n = Prefs.pendingIcon
+    if (n.isEmpty()) return
+    Prefs.pendingIcon = ""
+    if (ICONS.any { it.first == n }) try { setIcon(ctx, n) } catch (_: Exception) {}
+}
 
 /** Enables the chosen launcher alias first, then disables the others, so the app never vanishes from the home screen. */
 internal fun setIcon(ctx: android.content.Context, name: String) {
@@ -91,10 +101,8 @@ internal fun AppearanceCard() {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val cur = Color(Accent.argb)
     var saved by remember { mutableStateOf(ShareController.savedColors(false)) }
-    var savedIcons by remember { mutableStateOf(ShareController.savedColors(true)) }
     var icon by remember { mutableStateOf(iconNow(ctx)) }
     var adding by remember { mutableStateOf(0) } // 1 = new accent colour, 2 = new icon colour
-    var note by remember { mutableStateOf("") }
     fun parse(h: String) = Color(android.graphics.Color.parseColor(h))
 
     SectionCard {
@@ -113,33 +121,21 @@ internal fun AppearanceCard() {
     }
     SectionCard {
         Text("Home-screen icon", fontWeight = FontWeight.SemiBold)
-        Hint("Pick one of the ready-made icon colours. Your home screen may take a few seconds to update.")
+        Hint("Pick a colour and leave the app: your launcher icon itself changes (no extra shortcut). If it still shows the old one after a few seconds, long-press the old icon and remove it, then find LocalShare in your app drawer.")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             ICONS.forEach { (name, c) ->
-                Swatch(c, RoundedCornerShape(14.dp), name == icon, "$name icon", logo = true) { setIcon(ctx, name); icon = name }
+                Swatch(c, RoundedCornerShape(14.dp), name == icon, "$name icon", logo = true) { Prefs.pendingIcon = name; icon = name }
             }
         }
-        Text("Your own icon colours", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
-        Hint("Tap + to make an icon in any colour. Android asks you to add it to the home screen. The original icon stays and you can remove either one.")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            savedIcons.forEach { h ->
-                val c = parse(h)
-                Swatch(c, RoundedCornerShape(14.dp), false, "Icon colour $h. Tap to add to the home screen, long press to remove", logo = true,
-                    onLong = { ShareController.forgetColor(true, h); savedIcons = ShareController.savedColors(true) }) { note = pinIcon(ctx, c.toArgb()) ?: "" }
-            }
-            PlusTile(RoundedCornerShape(14.dp), "Add an icon colour") { adding = 2 }
-        }
-        if (note.isNotEmpty()) Hint(note)
     }
     if (adding != 0) ColorPickerDialog(
-        initial = if (adding == 1) cur else Color(0xFFA855F7),
-        title = if (adding == 1) "New accent colour" else "New icon colour",
-        confirm = if (adding == 1) "Save and use" else "Save and add icon",
+        initial = cur,
+        title = "New accent colour",
+        confirm = "Save and use",
         onDismiss = { adding = 0 },
     ) { c ->
         val hx = hexOf(c)
-        if (adding == 1) { ShareController.saveColor(false, hx); saved = ShareController.savedColors(false); ShareController.setAccent(c.toArgb()) }
-        else { ShareController.saveColor(true, hx); savedIcons = ShareController.savedColors(true); note = pinIcon(ctx, c.toArgb()) ?: "" }
+        ShareController.saveColor(false, hx); saved = ShareController.savedColors(false); ShareController.setAccent(c.toArgb())
         adding = 0
     }
 }

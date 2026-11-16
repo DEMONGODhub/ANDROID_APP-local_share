@@ -95,6 +95,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         ShareController.visible = false
+        applyPendingIcon(this)
         super.onStop()
     }
 

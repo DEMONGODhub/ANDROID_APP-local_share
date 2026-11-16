@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.38.0** — Look is back as its own tile (accent colour + home-screen icon); the launcher icon now really changes (12 colours, applied when you leave the app, no extra shortcut)
 - **v2.37.0** — publishing kit: own-keystore signing (keystore.properties + tools/make-keystore.sh), website landing page in docs/, PUBLISH.md step-by-step for GitHub, Play and other stores
 - **v2.36.2** — "Open the page here" no longer leaves a black window: it now shows what went wrong (load error, crash, or blank page) with Try again and Open in browser
 - **v2.36.1** — the More button is back (look and permissions)
