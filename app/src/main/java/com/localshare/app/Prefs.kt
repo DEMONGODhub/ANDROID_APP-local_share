@@ -68,10 +68,6 @@ class Prefs(ctx: Context) {
     var savedAccents: String
         get() = sp.getString("savedAccents", "") ?: ""
         set(v) = sp.edit().putString("savedAccents", v).apply()
-    /** Launcher icon chosen but not applied yet; applied when the app goes to the background so the home screen does not drop the icon mid-use. */
-    var pendingIcon: String
-        get() = sp.getString("pendingIcon", "") ?: ""
-        set(v) = sp.edit().putString("pendingIcon", v).apply()
     var savedIcons: String
         get() = sp.getString("savedIcons", "") ?: ""
         set(v) = sp.edit().putString("savedIcons", v).apply()

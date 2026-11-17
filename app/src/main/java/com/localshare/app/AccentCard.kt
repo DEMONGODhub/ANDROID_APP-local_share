@@ -70,14 +70,17 @@ private val ICONS = listOf(
 
 private fun alias(ctx: android.content.Context, n: String) = android.content.ComponentName(ctx, "com.localshare.app.Icon$n")
 
-private fun iconNow(ctx: android.content.Context): String = Prefs.pendingIcon.takeIf { p -> ICONS.any { it.first == p } } ?:
+private fun pendingIcon(ctx: android.content.Context): String = ctx.getSharedPreferences("icon", android.content.Context.MODE_PRIVATE).getString("pending", "") ?: ""
+private fun setPendingIcon(ctx: android.content.Context, v: String) = ctx.getSharedPreferences("icon", android.content.Context.MODE_PRIVATE).edit().putString("pending", v).apply()
+
+private fun iconNow(ctx: android.content.Context): String = pendingIcon(ctx).takeIf { p -> ICONS.any { it.first == p } } ?:
     ICONS.firstOrNull { ctx.packageManager.getComponentEnabledSetting(alias(ctx, it.first)) == android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED }?.first ?: "Yellow"
 
 /** Applies an icon picked earlier once the app is in the background (like a store app's "change app icon"). */
 internal fun applyPendingIcon(ctx: android.content.Context) {
-    val n = Prefs.pendingIcon
+    val n = pendingIcon(ctx)
     if (n.isEmpty()) return
-    Prefs.pendingIcon = ""
+    setPendingIcon(ctx, "")
     if (ICONS.any { it.first == n }) try { setIcon(ctx, n) } catch (_: Exception) {}
 }
 
@@ -124,7 +127,7 @@ internal fun AppearanceCard() {
         Hint("Pick a colour and leave the app: your launcher icon itself changes (no extra shortcut). If it still shows the old one after a few seconds, long-press the old icon and remove it, then find LocalShare in your app drawer.")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             ICONS.forEach { (name, c) ->
-                Swatch(c, RoundedCornerShape(14.dp), name == icon, "$name icon", logo = true) { Prefs.pendingIcon = name; icon = name }
+                Swatch(c, RoundedCornerShape(14.dp), name == icon, "$name icon", logo = true) { setPendingIcon(ctx, name); icon = name }
             }
         }
     }
