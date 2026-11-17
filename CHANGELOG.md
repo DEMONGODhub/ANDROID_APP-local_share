@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.40.0** — Look now shows both the accent colour and the icon cards (they were stacked on top of each other); live chat widget removed from All; (i) buttons sit beside their titles in every tab; web page: "+" for a new Files tab so you can browse and open more files without leaving your tabs
 - **v2.39.2** — fixes build error "Unresolved reference pendingIcon" in AccentCard
 - **v2.39.1** — fixes the Gradle sync error "Unresolved reference: util" in build.gradle.kts (signing setup)
 - **v2.39.0** — web page: open many files as tabs (music keeps playing in a mini player while you browse), YouTube-style video player, Spotify-style music player, DOCX viewer, code editor with save (Python, C, C++, Java, Kotlin, JS and more). App: Join, TV and Browser tiles in the side rail (removed from All), modern chat with bubbles and photos, full-screen video in the built-in browser

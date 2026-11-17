@@ -18,6 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.filled.Info
 
 /** A small (i). Tap it to read what the card does, so the screen itself stays clean. */
@@ -38,4 +42,17 @@ internal fun Info(text: String, modifier: Modifier = Modifier) {
 @Composable
 internal fun InfoRow(text: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { Info(text) }
+}
+
+/** A card heading with its (i) right next to it, so every tab lines up the same way. */
+@Composable
+internal fun TitleRow(title: String, info: String, big: Boolean = false) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            title, Modifier.weight(1f).semantics { heading() },
+            style = if (big) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+            fontWeight = if (big) FontWeight.Bold else FontWeight.SemiBold,
+        )
+        Info(info)
+    }
 }

@@ -95,18 +95,16 @@ fun SettingsScreen(st: UiState) {
         }
         item {
             SectionCard {
-                Row { Text("Max devices", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text("${st.maxClients}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
-                InfoRow("Extra people see “Room is full” until someone leaves.")
+                Row(verticalAlignment = Alignment.CenterVertically) { Text("Max devices", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); Text("${st.maxClients}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold); Info("Extra people see “Room is full” until someone leaves.") }
                 Slider(st.maxClients.toFloat(), { ShareController.setMaxClients(it.toInt()) }, valueRange = 1f..20f, steps = 18)
             }
         }
         item {
             SectionCard {
-                Text("What guests can do", fontWeight = FontWeight.SemiBold)
+                TitleRow("What guests can do", "You can always upload and delete from the page opened here.")
                 SwitchRow("Ask before anyone joins", "New devices wait until you tap Allow in the Devices tab", st.askToJoin) { ShareController.setAskToJoin(it) }
                 SwitchRow("Upload files", "Guests can add files to a folder", st.allowUploads) { ShareController.setUploads(it) }
                 SwitchRow("Delete files", "Guests can remove files from your phone", st.allowDelete) { ShareController.setDelete(it) }
-                InfoRow("You can always do both from the page opened here.")
             }
         }
         item {
@@ -128,9 +126,7 @@ fun SettingsScreen(st: UiState) {
                 )
             }
         }
-        item {
-            InfoRow("Traffic on your Wi-Fi is not encrypted (plain HTTP). Only share on networks you trust, and don't reuse an important password here.")
-        }
+        item { SectionCard { TitleRow("Network safety", "Traffic on your Wi-Fi is not encrypted (plain HTTP). Only share on networks you trust, and don't reuse an important password here.") } }
         item { AboutCard() }
     }
 }
@@ -157,9 +153,8 @@ private fun AboutCard() {
         try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
     }
     SectionCard {
-        Text("About", fontWeight = FontWeight.SemiBold)
+        TitleRow("About", "Share folders from your phone with any device on your Wi-Fi or hotspot.")
         Text(if (version.isEmpty()) "LocalShare" else "LocalShare $version", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        InfoRow("Share folders from your phone with any device on your Wi-Fi or hotspot.")
         OutlinedButton(
             {
                 try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SITE))) }

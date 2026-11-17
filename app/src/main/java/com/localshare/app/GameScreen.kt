@@ -98,8 +98,8 @@ fun GameScreen(st: UiState, onOpen: (String) -> Unit) {
         }
         item {
             SectionCard {
-                Text("Hall of fame", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                if (st.hall.isEmpty()) InfoRow("Nobody yet. Scores are saved on this phone between sessions.")
+                TitleRow("Hall of fame", "Scores are saved on this phone between sessions.", big = true)
+                if (st.hall.isEmpty()) Text("Nobody yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 st.hall.forEachIndexed { i, h ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text("${i + 1}. ${h.name}", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
@@ -125,9 +125,8 @@ fun GameScreen(st: UiState, onOpen: (String) -> Unit) {
         }
         item {
             SectionCard {
-                Text("Give everyone a power", fontWeight = FontWeight.SemiBold)
+                TitleRow("Give everyone a power", "Powers also change the player's picture to a pixel hero while they last. Only you can give them.")
                 PowerMenu("Everyone", enabled = st.running && players.isNotEmpty()) { p -> note = if (ShareController.givePower("all", p) > 0) "Given to everyone" else "Nobody to give it to yet" }
-                InfoRow("Powers also change the player's picture to a pixel hero while they last. Only you can give them.")
                 if (note.isNotEmpty()) Text(note, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
             }
         }

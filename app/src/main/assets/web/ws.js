@@ -2,6 +2,8 @@
    YouTube-style video, Spotify-style music (keeps playing while you browse), code editor with save, DOCX, PDF and pictures. */
 (()=>{
 "use strict";
+// A page opened inside a "Files" tab hands every file it opens to the main page, so all files become tabs of one workspace.
+if(window.parent!==window){try{if(parent.WS&&parent.WS.open){window.WS={open:e=>parent.WS.open(e,{cur,shown,entries}),visible:()=>false,kinds:parent.WS.kinds};return}}catch(x){}}
 const D=document,Q=s=>D.querySelector(s),KINDS=["video","audio","text","image","pdf","docx"];
 const ic=(d,s)=>'<svg viewBox="0 0 24 24" width="'+(s||22)+'" height="'+(s||22)+'" fill="currentColor" aria-hidden="true"><path d="'+d+'"/></svg>';
 const I={
@@ -9,6 +11,7 @@ const I={
  vol:"M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z",mute:"M16.5 12A4.5 4.5 0 0 0 14 8v2.2l2.5 2.5V12zM19 12c0 .9-.2 1.8-.5 2.6l1.5 1.5A8.8 8.8 0 0 0 21 12c0-4.3-3-7.9-7-8.8v2.1c2.9.9 5 3.5 5 6.7zM4.3 3L3 4.3 7.7 9H3v6h4l5 5v-6.7l4.2 4.2c-.7.5-1.4.9-2.2 1.1v2.1a9 9 0 0 0 3.7-1.8l2 2 1.3-1.3L4.3 3zM12 4L9.9 6.1 12 8.2V4z",
  full:"M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z",theatre:"M19 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm0 10H5V8h14v8z",
  pip:"M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z",
+ folder:"M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z",plus:"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
  x:"M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6z",back:"M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z",
  shuf:"M10.6 9.2L5.4 4 4 5.4l5.2 5.2 1.4-1.4zM14.5 4l2.0 2-12.5 12.5 1.4 1.4L17.9 7.4l2 2V4h-5.4zm.3 9.8l-1.4 1.4 3.1 3.1-2 2h5.4v-5.4l-2 2-3.1-3.1z",
  rep:"M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z",list:"M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z",
@@ -32,7 +35,7 @@ const css=`
 .wtab.pl::after{content:"";position:absolute;left:12px;right:34px;bottom:3px;height:2px;border-radius:2px;background:var(--primary);opacity:.8}
 #wsb{flex:1;min-height:0;position:relative}.wp{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain}.wp:not(.on){display:none!important}.wp.on{display:flex;flex-direction:column}.wp.on.mu{display:grid}
 #ws.mp #wsb{padding-bottom:74px}
-#wsd{position:fixed;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:34;display:flex;align-items:center;gap:8px;height:48px;padding:0 16px 0 12px;border-radius:24px;border:1px solid var(--outline);background:var(--surface2);color:var(--text);box-shadow:var(--shadow);cursor:pointer;font:inherit;font-weight:700}
+#wsd{position:fixed;left:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:34;display:flex;align-items:center;gap:8px;height:48px;padding:0 16px 0 12px;border-radius:24px;border:1px solid var(--outline);background:var(--surface2);color:var(--text);box-shadow:var(--shadow);cursor:pointer;font:inherit;font-weight:700}
 #wsd.hide{display:none}#wsd svg{color:var(--primary)}body.mpOn #wsd{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 66px)}
 /* mini player (like Spotify's bottom bar) */
 #mp{position:fixed;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));z-index:36;height:60px;border-radius:14px;background:var(--surface2);border:1px solid var(--outline);box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;padding:0 10px 0 6px;overflow:hidden}
@@ -91,9 +94,9 @@ const css=`
 .wldr{margin:auto;color:var(--muted)}
 `;
 const st=D.createElement("style");st.textContent=css;D.head.appendChild(st);
-D.body.insertAdjacentHTML("beforeend",'<div id="ws" class="hide" role="dialog" aria-label="Open files"><div id="wst"><button id="wmin" aria-label="Back to files" title="Back to files">'+ic(I.back)+'</button><div id="wtabs" role="tablist"></div></div><div id="wsb"></div></div><button id="wsd" class="hide" aria-label="Open tabs"></button><div id="mp" class="hide" role="region" aria-label="Music player"></div>');
+D.body.insertAdjacentHTML("beforeend",'<div id="ws" class="hide" role="dialog" aria-label="Open files"><div id="wst"><button id="wmin" aria-label="Back to files" title="Back to files">'+ic(I.back)+'</button><div id="wtabs" role="tablist"></div><button id="wnew" aria-label="New tab" title="New tab">'+ic(I.plus)+'</button></div><div id="wsb"></div></div><button id="wsd" class="hide" aria-label="Open tabs"></button><div id="mp" class="hide" role="region" aria-label="Music player"></div>');
 const ws=Q("#ws"),tabsEl=Q("#wtabs"),body=Q("#wsb"),dock=Q("#wsd"),mp=Q("#mp");
-const kicon={video:I.film,audio:I.music,text:I.code,docx:I.doc,pdf:I.doc,image:I.img};
+const kicon={files:I.folder,video:I.film,audio:I.music,text:I.code,docx:I.doc,pdf:I.doc,image:I.img};
 const fu=(p,dl)=>"/api/file?path="+encodeURIComponent(p)+(dl?"&dl=1":"");
 const ext=n=>(n.match(/\.([^.]+)$/)||[,""])[1].toLowerCase();
 const mm=t=>{if(!isFinite(t))return"0:00";t=Math.floor(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return(h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s).padStart(2,"0")};
@@ -117,8 +120,8 @@ function renderTabs(){
     b.onkeydown=ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();activate(t)}};
     tabsEl.appendChild(b);if(t===active)b.scrollIntoView({inline:"nearest",block:"nearest"});
   });
-  dock.innerHTML=ic(I.list,20)+"<span>"+tabs.length+" open</span>";
-  const want=tabs.length>0&&ws.classList.contains("hide");dock.classList.toggle("hide",!want);
+  dock.innerHTML=ic(tabs.length?I.list:I.plus,20)+"<span>"+(tabs.length?tabs.length+" open":"New tab")+"</span>";
+  const want=ws.classList.contains("hide");dock.classList.toggle("hide",!want);
 }
 function activate(t){
   if(active&&active!==t&&active.onhide)active.onhide();
@@ -145,22 +148,23 @@ function hideWs(fromPop){
   renderTabs();syncMini();
 }
 addEventListener("popstate",()=>{if(pushed&&!ws.classList.contains("hide")){pushed=false;hideWs(true)}});
-Q("#wmin").onclick=()=>hideWs();dock.onclick=showWs;
+Q("#wmin").onclick=()=>hideWs();Q("#wnew").onclick=()=>{const t=filesTab();showWs();activate(t)};dock.onclick=()=>{if(!tabs.length){const t=filesTab();showWs();activate(t)}else showWs()};
 addEventListener("beforeunload",ev=>{if(tabs.some(t=>t.dirty)){ev.preventDefault();ev.returnValue=""}});
 function addTab(key,k,title,pane){
   const t={key,k,title,pane};tabs.push(t);pane.classList.add("wp");body.appendChild(pane);return t;
 }
-function siblings(kinds){
-  try{return(shown||[]).filter(x=>!x.d&&kinds.includes(x.k)).map(x=>({n:x.n,k:x.k,s:x.s||0,p:join(cur,x.n)}))}catch(e){return[]}
+function siblings(kinds,C){
+  try{C=C||{cur,shown};return(C.shown||[]).filter(x=>!x.d&&kinds.includes(x.k)).map(x=>({n:x.n,k:x.k,s:x.s||0,p:join(C.cur,x.n)}))}catch(e){return[]}
 }
 /* open(e) is called from the file list. opts.edit opens text files straight in the editor. */
-function open(e,opts){
+function open(e,C){
   if(!e||e.d||!KINDS.includes(e.k))return false;
-  const p=join(cur,e.n);
-  if(e.k==="audio"){playAudio(e.n,p,siblings(["audio"]));let t=findTab("audio");if(!t)t=musicTab();showWs();activate(t);return true}
+  C=C||{cur,shown,entries};
+  const p=join(C.cur,e.n);
+  if(e.k==="audio"){playAudio(e.n,p,siblings(["audio"],C));let t=findTab("audio");if(!t)t=musicTab();showWs();activate(t);return true}
   let t=findTab(p);
   if(!t){
-    t=e.k==="video"?videoTab(e,p):e.k==="text"?textTab(e,p):e.k==="docx"?docxTab(e,p):e.k==="pdf"?pdfTab(e,p):imageTab(e,p);
+    t=e.k==="video"?videoTab(e,p,C):e.k==="text"?textTab(e,p):e.k==="docx"?docxTab(e,p):e.k==="pdf"?pdfTab(e,p):imageTab(e,p,C);
   }
   showWs();activate(t);return true;
 }
@@ -279,9 +283,9 @@ function musicTab(){
 }
 
 /* ---------- video tab (YouTube style) ---------- */
-function videoTab(e,p){
+function videoTab(e,p,C){
   const pane=mk("div"),t=addTab(p,"video",e.n,pane);
-  const list=siblings(["video"]);
+  const list=siblings(["video"],C);
   const v=mk("video");v.playsInline=true;v.preload="auto";v.autoplay=true;v.src=fu(p);
   const w=mk("div","vw");
   const vp=mk("div","vp");
@@ -298,7 +302,7 @@ function videoTab(e,p){
     const b=mk("button","vit"+(x.p===p?" on":""),'<div class="th2"></div><span></span>');
     b.querySelector("span").textContent=base(x.n);const sm=mk("small",null,x.s?fmtSize(x.s):"");b.querySelector("span").appendChild(sm);
     const th=b.querySelector(".th2");th.style.backgroundImage='url("/api/thumb?path='+encodeURIComponent(x.p)+'&w=320")';
-    b.onclick=()=>{if(x.p===p)return;open({n:x.n,k:"video",s:x.s,d:false})};vl.appendChild(b);
+    b.onclick=()=>{if(x.p===p)return;open({n:x.n,k:"video",s:x.s,d:false},C)};vl.appendChild(b);
   });
   w.append(main,nx);pane.appendChild(w);
   const $=s=>vp.querySelector(s),pp=$(".pp"),prog=$(".vprog"),big=$(".vbig i");
@@ -324,7 +328,7 @@ function videoTab(e,p){
   v.volume=A.vol;vin.value=Math.round(v.volume*100);volIcon();
   vin.oninput=()=>{v.volume=vin.value/100;v.muted=v.volume===0;volIcon()};mu.onclick=ev=>{ev.stopPropagation();v.muted=!v.muted;volIcon()};v.addEventListener("volumechange",()=>{vin.value=v.muted?0:Math.round(v.volume*100);volIcon()});
   // next
-  const idx=list.findIndex(x=>x.p===p),nextV=()=>{const n2=list[idx+1];if(n2)open({n:n2.n,k:"video",s:n2.s,d:false})};
+  const idx=list.findIndex(x=>x.p===p),nextV=()=>{const n2=list[idx+1];if(n2)open({n:n2.n,k:"video",s:n2.s,d:false},C)};
   const nb=$(".nx");nb.onclick=ev=>{ev.stopPropagation();nextV()};nb.hidden=!list[idx+1];
   // resume
   const key="ls_pos:"+p+":"+(e.s||0),saved=parseFloat(getStore(key)||"0")||0;
@@ -347,9 +351,9 @@ function videoTab(e,p){
   // subtitles (.srt/.vtt next to the video)
   const ccb=$(".cc");let tracks=[],showCC=true;
   (async()=>{const b0=base(e.n).toLowerCase();let first=true;
-    for(const x of (typeof entries!=="undefined"?entries:[])){const n=x.n.toLowerCase();
+    for(const x of (C&&C.entries||[])){const n=x.n.toLowerCase();
       if(x.d||!/\.(srt|vtt)$/.test(n)||!n.startsWith(b0+".")||(x.s||0)>2e6)continue;
-      try{const r=await fetch(fu(join(cur,x.n)));if(!r.ok)continue;let tx=(await r.text()).replace(/^\uFEFF/,"").replace(/\r/g,"");
+      try{const r=await fetch(fu(join(C.cur,x.n)));if(!r.ok)continue;let tx=(await r.text()).replace(/^\uFEFF/,"").replace(/\r/g,"");
         if(!/^WEBVTT/.test(tx))tx="WEBVTT\n\n"+tx.replace(/(\d\d:\d\d:\d\d),(\d{3})/g,"$1.$2");
         const tr=D.createElement("track");tr.kind="subtitles";tr.label=n.slice(b0.length+1).replace(/\.(srt|vtt)$/,"")||"Subtitles";tr.src=URL.createObjectURL(new Blob([tx],{type:"text/vtt"}));if(first)tr.default=true;first=false;v.appendChild(tr);tracks.push(tr);if(tr.default&&tr.track)tr.track.mode="showing";ccb.hidden=false;
       }catch(x2){}}})();
@@ -446,15 +450,27 @@ function docxTab(e,p){
   return t;
 }
 
+/* ---------- a Files tab: browse folders and open more files without leaving the workspace ---------- */
+let fileTabs=0;
+function filesTab(){
+  const pane=mk("div"),t=addTab("files:"+(++fileTabs),"files","Files",pane);
+  const f=mk("iframe");f.title="Files";f.src="/"+(location.hash&&!/^#ht=/.test(location.hash)?location.hash:"");pane.appendChild(f);
+  f.addEventListener("load",()=>{
+    const upd=()=>{try{const h=decodeURIComponent(f.contentWindow.location.hash.replace(/^#/,""));const seg=h.split("/").filter(Boolean).pop();t.title=seg||"Files";renderTabs()}catch(x){}};
+    upd();try{f.contentWindow.addEventListener("hashchange",upd)}catch(x){}
+  });
+  t.onclose=()=>{f.src="about:blank"};return t;
+}
+
 /* ---------- pdf and image tabs ---------- */
 function pdfTab(e,p){
   const pane=mk("div"),t=addTab(p,"pdf",e.n,pane);
   const f=mk("iframe");f.title=e.n;f.src="/static/pdfview.html?embed=1&path="+encodeURIComponent(p);pane.appendChild(f);
   t.onclose=()=>{f.src="about:blank"};return t;
 }
-function imageTab(e,p){
+function imageTab(e,p,C){
   const pane=mk("div","im"),t=addTab(p,"image",e.n,pane);
-  const list=siblings(["image"]);let i=Math.max(0,list.findIndex(x=>x.p===p));
+  const list=siblings(["image"],C);let i=Math.max(0,list.findIndex(x=>x.p===p));
   const img=new Image();img.alt=e.n;pane.appendChild(img);
   const show=()=>{const x=list[i];if(!x)return;img.src=fu(x.p);img.alt=x.n;t.title=x.n;renderTabs()};
   if(list.length>1){
@@ -474,5 +490,5 @@ addEventListener("keydown",ev=>{
   if(ev.altKey&&/^[1-9]$/.test(ev.key)&&tabs[+ev.key-1]){ev.preventDefault();activate(tabs[+ev.key-1])}
 },true);
 window.WS={open,visible:()=>!ws.classList.contains("hide"),kinds:KINDS};
-syncMini();
+renderTabs();syncMini();
 })();

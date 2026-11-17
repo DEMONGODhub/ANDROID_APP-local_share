@@ -88,7 +88,7 @@ private fun readPerms(ctx: android.content.Context): Perms {
 }
 
 /** A keyed list item that slides to its new place, and fades in or out when it appears or goes. */
-private fun LazyListScope.anim(key: String, content: @Composable () -> Unit) = item(key = key) { Box(Modifier.fillMaxWidth().animateItem()) { content() } }
+private fun LazyListScope.anim(key: String, content: @Composable () -> Unit) = item(key = key) { Column(Modifier.fillMaxWidth().animateItem(), verticalArrangement = Arrangement.spacedBy(14.dp)) { content() } }
 
 @Composable
 fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin: (String) -> Unit) {
@@ -156,7 +156,6 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
             ) {
                 // All: the whole picture. The other sections each hold their own part, with nothing shown twice.
                 if (sec == 0) anim("status") { StatusCard(st, ::start, stop, copy) }
-                if (sec == 0 && st.running) anim("chat") { ChatCard(st) }
                 if (sec == 0 && st.running) anim("connected") { ConnectedCard(st) }
                 if (sec == 0 || sec == 1) anim("storage") { StorageCard(st) }
                 if (sec == 0 || sec == 1) anim("folders") { FoldersCard(st, { picker.launch(null) }) }
@@ -275,8 +274,7 @@ private fun StatusCard(
 @Composable
 private fun FoldersCard(st: UiState, onAdd: () -> Unit) {
     SectionCard {
-        Text("Shared folders", fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
-        InfoRow("People who join pick which of these to open.")
+        TitleRow("Shared folders", "People who join pick which of these to open.")
         if (st.folders.isEmpty()) Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(painterResource(R.drawable.ic_folder), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
             Text("Nothing shared yet", style = MaterialTheme.typography.titleMedium)
@@ -319,8 +317,7 @@ private fun FoldersCard(st: UiState, onAdd: () -> Unit) {
 private fun PermissionsCard(perms: Perms, askNotifications: (String) -> Unit) {
     val ctx = LocalContext.current
     SectionCard {
-        Text("Keep sharing when the screen is locked", fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
-        InfoRow("LocalShare only needs these so Android does not put it to sleep. It never reads anything outside the folders you add.")
+        TitleRow("Keep sharing when the screen is locked", "LocalShare only needs these so Android does not put it to sleep. It never reads anything outside the folders you add." + "\n\n" + "Xiaomi, Oppo, Vivo and Samsung phones also have an “Autostart” or “Battery” switch in the app's settings. Turn it on if sharing stops by itself.")
         if (Build.VERSION.SDK_INT >= 33) PermRow(
             "Show a notice while sharing", "Android needs this small notice to let sharing keep running with the screen off. You can stop sharing from it.",
             perms.notifications, "Allow",
@@ -329,7 +326,6 @@ private fun PermissionsCard(perms: Perms, askNotifications: (String) -> Unit) {
             "Don't limit battery use", "Without this, Android can stop sharing a few minutes after you leave the app or lock the phone, which restarts games and signs guests out. Tap Allow, then choose Allow in the box that opens.",
             perms.unrestricted, "Allow",
         ) { requestUnrestricted(ctx) }
-        InfoRow("Xiaomi, Oppo, Vivo and Samsung phones also have an “Autostart” or “Battery” switch in the app's settings. Turn it on if sharing stops by itself.")
         TextButton({
             ctx.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}")))
         }, Modifier.heightIn(min = 48.dp)) { Text("Open app settings") }
@@ -401,31 +397,6 @@ private fun ScreenCard(st: UiState, onCast: () -> Unit) {
         }
         if (st.casting) Button({ CastService.stop(ctx) }, Modifier.fillMaxWidth().heightIn(min = 48.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError)) { Text("Stop sharing screen") }
         else OutlinedButton(onCast, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.running) { Text("Start sharing screen") }
-    }
-}
-
-/** Read and answer the live chat without opening the browser page. */
-@Composable
-private fun ChatCard(st: UiState) {
-    var msg by rememberSaveable { mutableStateOf("") }
-    SectionCard {
-        Text("Live chat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        if (st.chat.isEmpty()) InfoRow("No messages yet. Guests chat from the page, and you can answer here.")
-        st.chat.takeLast(4).forEach { c ->
-            Text(buildAnnotatedString {
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (c.host) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)) { append(c.name + ": ") }
-                append(if (c.img) "\uD83D\uDCF7 Photo" else c.text)
-            }, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(msg, { if (it.length <= 300) msg = it }, Modifier.weight(1f), singleLine = true, label = { Text("Message everyone") })
-            Button({ ShareController.chatSay(msg); msg = "" }, Modifier.heightIn(min = 48.dp), enabled = msg.isNotBlank()) { Text("Send") }
-        }
-        Text("Slow mode (guests only)", fontWeight = FontWeight.SemiBold)
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(0 to "Off", 5 to "5 s", 15 to "15 s", 30 to "30 s").forEach { (s, l) -> FilterChip(st.chatSlow == s, { ShareController.setChatSlow(s) }, { Text(l) }) }
-        }
-        InfoRow("To mute a guest or delete a message, use the host controls on the web page.")
     }
 }
 
