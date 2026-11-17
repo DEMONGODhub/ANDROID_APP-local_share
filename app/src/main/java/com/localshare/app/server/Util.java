@@ -100,7 +100,9 @@ final class Util {
         m("audio", "audio/flac", "flac");
         m("audio", "audio/aac", "aac");
         m("pdf", "application/pdf", "pdf");
-        m("text", "text/plain; charset=utf-8", "txt log md csv json xml yml yaml ini conf js ts css java kt py c cpp h cs go rs sh bat html htm php sql srt vtt");
+        m("text", "text/plain; charset=utf-8", "txt log md csv json xml yml yaml ini conf js ts css java kt py c cpp h cs go rs sh bat html htm php sql srt vtt"
+                + " cc cxx hpp hh hxx mjs jsx tsx cjs scss less toml cfg gradle properties rb swift lua pl r dart vue ps1 cmake kts scala m mm tex rst diff patch env gitignore");
+        m("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
         m(null, "application/zip", "zip");
         m(null, "application/vnd.android.package-archive", "apk");
         m(null, "application/x-7z-compressed", "7z");

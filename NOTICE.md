@@ -14,3 +14,7 @@ The v2 feature ideas (login with session time, upload/download control, activity
 were inspired by the public project HTTP FS by tiarait. No code from it is used.
 
 All other code, design, text, logo and artwork are the original work of DEMON_GOD. Third-party rights remain with their respective owners.
+
+## Bundled in the web page
+- CodeMirror 5 (MIT, Marijn Haverbeke and contributors): the code editor.
+- mammoth.js (BSD-2-Clause, Michael Williamson): shows .docx files.

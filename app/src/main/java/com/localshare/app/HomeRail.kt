@@ -29,7 +29,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Email
@@ -104,7 +106,7 @@ private fun RailTile(
 
 /** The left rail: the logo (everything), the quick actions (start or stop, live screen, chat) and the sections. */
 @Composable
-internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> Unit, onStartStop: () -> Unit) {
+internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> Unit, onStartStop: () -> Unit, onBrowser: () -> Unit) {
     val c = MaterialTheme.colorScheme
     Column(
         Modifier.width(76.dp).fillMaxHeight().background(Color.Black).verticalScroll(rememberScrollState()).padding(vertical = 10.dp),
@@ -116,8 +118,16 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
             Icon(if (st.running) Icons.Filled.Close else Icons.Filled.PlayArrow, null, tint = fg)
         }
         RailTile("Chat", sec == 5, { onSec(5) }, dot = chatDot) { fg -> Icon(Icons.Filled.Email, null, tint = fg) }
+        RailTile("Browser", false, onBrowser, active = st.running) { fg -> Icon(Icons.Filled.Search, null, tint = fg) }
         HorizontalDivider(Modifier.width(36.dp), color = c.outlineVariant)
         RailTile("Shared", sec == 1, { onSec(1) }) { fg -> Icon(Icons.Filled.Share, null, tint = fg) }
+        RailTile("Join", sec == 7, { onSec(7) }) { fg -> Icon(Icons.Filled.Add, null, tint = fg) }
+        RailTile("TV", sec == 8, { onSec(8) }) { fg ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.size(26.dp, 17.dp).border(2.dp, fg, RoundedCornerShape(4.dp)))
+                Box(Modifier.padding(top = 2.dp).size(12.dp, 2.dp).background(fg))
+            }
+        }
         RailTile("Connect", sec == 3, { onSec(3) }) { fg -> Icon(Icons.Filled.Lock, null, tint = fg) }
         RailTile("Look", sec == 6, { onSec(6) }) { fg -> Icon(Icons.Filled.Edit, null, tint = fg) }
         RailTile("More", sec == 4, { onSec(4) }) { fg -> Icon(Icons.Filled.MoreVert, null, tint = fg) }
@@ -128,7 +138,9 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
 internal fun SectionHeader(sec: Int, st: UiState) {
     val (title, sub) = when (sec) {
         1 -> "Shared" to (if (st.running) "On · ${st.devices.size} connected · ${st.folders.size} folders" else "Off · ${st.folders.size} folders")
-        3 -> "Connect" to "Find phones nearby, invite and join"
+        3 -> "Connect" to "Invite links and Wi-Fi sharing"
+        7 -> "Join" to "Open another phone's share, or find one nearby"
+        8 -> "TV" to "Show this share on LocalShare TV"
         5 -> "Live chat" to (if (st.running) "Everyone who joined can see this" else "Start sharing to chat")
         6 -> "Look" to "Accent colour and home-screen icon"
         4 -> "More" to "Keep it running and say thanks"

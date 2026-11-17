@@ -86,6 +86,7 @@ const name=path.split("/").pop()||"PDF";
 const fileUrl="/api/file?path="+encodeURIComponent(path);
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 document.title=name;$("#title").textContent=name;$("#dl").href=fileUrl+"&dl=1";$("#dl").setAttribute("download",name);
+if(new URLSearchParams(location.search).get("embed"))$("#close").style.display="none";
 $("#close").onclick=()=>{window.close();setTimeout(()=>{if(history.length>1)history.back();else location.href="/"},150)};
 const box=$("#pages"),side=$("#side");let zoom=1,fitMode="width",rotation=0,pages=[],doc=null,raf=0,curPage=1,mode=store.get("ls_pdfmode")||"";
 const pk="ls_pdfpage:"+path;

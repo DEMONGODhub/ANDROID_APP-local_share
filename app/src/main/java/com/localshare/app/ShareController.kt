@@ -26,7 +26,7 @@ data class LogLine(val time: Long, val kind: String, val who: String, val detail
 /** How much the shared folders hold, against the phone's own storage. */
 data class StorageInfo(val sharedBytes: Long = 0, val files: Int = 0, val folders: Int = 0, val total: Long = 0, val free: Long = 0, val counting: Boolean = false, val partial: Boolean = false)
 
-data class ChatRow(val name: String, val text: String, val host: Boolean)
+data class ChatRow(val id: Long, val name: String, val text: String, val host: Boolean, val time: Long, val img: Boolean, val mgr: Boolean = false, val team: Int = 0)
 
 data class InviteInfo(val token: String, val expires: Long, val uses: Int)
 
@@ -271,6 +271,30 @@ object ShareController {
         return vid + rate + heat + bat
     }
     fun chatSay(text: String) { server?.hostSay(text); refresh() }
+    fun chatImage(id: Long): ByteArray? = server?.chatImage(id)
+    fun chatDelete(id: Long) { server?.chatDelete(id); refresh() }
+    /** Shrinks a picture from the phone to a small JPEG (max 120 KB) and sends it to the chat. */
+    fun chatSayPicture(ctx: android.content.Context, uri: android.net.Uri): Boolean {
+        val srv = server ?: return false
+        try {
+            val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            ctx.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, o) }
+            var sample = 1
+            while (o.outWidth / sample > 1400 || o.outHeight / sample > 1400) sample *= 2
+            val bmp = ctx.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }) } ?: return false
+            var w = bmp.width; var h = bmp.height
+            val big = maxOf(w, h); if (big > 960) { w = w * 960 / big; h = h * 960 / big }
+            var cur = if (w == bmp.width) bmp else android.graphics.Bitmap.createScaledBitmap(bmp, w, h, true)
+            var q = 82
+            while (true) {
+                val bo = java.io.ByteArrayOutputStream()
+                cur.compress(android.graphics.Bitmap.CompressFormat.JPEG, q, bo)
+                val b = bo.toByteArray()
+                if (b.size <= 120000) { val ok = srv.hostSayImage(b); refresh(); return ok }
+                if (q > 40) q -= 12 else { w = w * 3 / 4; h = h * 3 / 4; if (w < 120) return false; cur = android.graphics.Bitmap.createScaledBitmap(cur, w, h, true) }
+            }
+        } catch (e: Exception) { return false }
+    }
     fun setChatSlow(sec: Int) { server?.setChatSlow(sec); refresh() }
     fun streamHub() = server?.stream()
     fun setOnStopStream(r: () -> Unit) { server?.setOnStopStream(Runnable(r)) }
@@ -449,7 +473,7 @@ object ShareController {
             castNote = if (CastService.active) s?.stream()?.note() ?: "" else "",
             castSince = if (CastService.active) s?.stream()?.startedAt() ?: 0L else 0L,
             storage = storage,
-            chat = s?.chatRecent(12)?.map { ChatRow(it[0], it[1], it[2] == "1") } ?: emptyList(),
+            chat = s?.chatMessages(80)?.map { ChatRow(it.id, it.name, it.text, it.host, it.t, it.img, it.mgr, it.team) } ?: emptyList(),
             chatSlow = s?.chatSlow() ?: 0,
             invites = if (s != null) cfg.activeInvites().map { InviteInfo(it.token, it.expires, it.uses) } else emptyList(),
             wifiSsid = prefs.wifiSsid,

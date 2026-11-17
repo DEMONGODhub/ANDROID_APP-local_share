@@ -282,7 +282,13 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
     val ctx0 = androidx.compose.ui.platform.LocalContext.current
     var problem by remember { mutableStateOf<String?>(null) } // shown instead of a blank window when the page cannot load or draw
     val pageUrl = url ?: ("http://127.0.0.1:$port/#ht=$token" + if (mode.isEmpty()) "" else "&g=$mode")
-    BackHandler { web?.takeIf { it.canGoBack() }?.goBack() ?: onClose() }
+    BackHandler {
+        // Back first leaves a full-screen video, then closes a minimised tab view, then the page itself
+        val w = web
+        if (w == null) onClose() else w.evaluateJavascript("(function(){var f=document.fullscreenElement||document.webkitFullscreenElement;if(f){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return 1}return 0})()") { r ->
+            if (r != "1") { if (w.canGoBack()) w.goBack() else onClose() }
+        }
+    }
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClose, Modifier.heightIn(min = 48.dp)) { Text(if (url != null) "← Back" else "← Back to host") }
@@ -329,6 +335,28 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
                         }
                     }
                     webChromeClient = object : WebChromeClient() {
+                        // lets the page's video player go full screen (the page asks the browser, the browser asks us)
+                        private var custom: android.view.View? = null
+                        private var customDone: CustomViewCallback? = null
+                        override fun onShowCustomView(view: android.view.View, cb: CustomViewCallback) {
+                            val act = generateSequence(ctx) { (it as? android.content.ContextWrapper)?.baseContext }.filterIsInstance<android.app.Activity>().firstOrNull()
+                            if (act == null) { cb.onCustomViewHidden(); return }
+                            custom?.let { (it.parent as? android.view.ViewGroup)?.removeView(it) }
+                            custom = view; customDone = cb
+                            view.setBackgroundColor(0xFF000000.toInt())
+                            (act.window.decorView as android.view.ViewGroup).addView(view, android.view.ViewGroup.LayoutParams(-1, -1))
+                            androidx.core.view.WindowCompat.getInsetsController(act.window, act.window.decorView).apply {
+                                systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                                hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+                            }
+                        }
+                        override fun onHideCustomView() {
+                            val v = custom ?: return
+                            val act = generateSequence(ctx) { (it as? android.content.ContextWrapper)?.baseContext }.filterIsInstance<android.app.Activity>().firstOrNull()
+                            (v.parent as? android.view.ViewGroup)?.removeView(v)
+                            custom = null; customDone?.onCustomViewHidden(); customDone = null
+                            if (act != null) androidx.core.view.WindowCompat.getInsetsController(act.window, act.window.decorView).show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+                        }
                         override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
                             pending?.onReceiveValue(null)
                             pending = cb

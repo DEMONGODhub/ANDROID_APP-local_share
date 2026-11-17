@@ -201,6 +201,47 @@ public final class MiniServer {
         return out;
     }
 
+    /** One chat message for the phone app (no reactions). */
+    public static final class ChatInfo {
+        public final long id, t;
+        public final String name, text;
+        public final boolean host, mgr, img;
+        public final int team;
+        ChatInfo(ChatMsg m) { id = m.id; t = m.t; name = m.name; text = m.text; host = m.host; mgr = m.mgr; img = m.img != null; team = m.team; }
+    }
+
+    public java.util.List<ChatInfo> chatMessages(int n) {
+        java.util.List<ChatInfo> out = new java.util.ArrayList<ChatInfo>();
+        synchronized (chat) {
+            for (int i = chat.size() - 1; i >= 0 && out.size() < n; i--) {
+                ChatMsg m = chat.get(i);
+                if (m.kind == 0) out.add(0, new ChatInfo(m));
+            }
+        }
+        return out;
+    }
+
+    /** The JPEG of a chat picture, or null once it has been dropped to save memory. */
+    public byte[] chatImage(long id) {
+        synchronized (chat) { for (ChatMsg m : chat) if (m.id == id) return m.img; }
+        return null;
+    }
+
+    /** The host sends a small JPEG (at most 120 KB) to everyone. */
+    public boolean hostSayImage(byte[] jpeg) {
+        if (jpeg == null || jpeg.length < 4 || jpeg.length > CHAT_IMG_MAX || (jpeg[0] & 255) != 0xff || (jpeg[1] & 255) != 0xd8) return false;
+        synchronized (chat) {
+            ChatMsg m = new ChatMsg(++chatSeq, "Host", "", true, false, "host", 0, 0);
+            m.img = jpeg;
+            addChat(m);
+        }
+        return true;
+    }
+
+    public void chatDelete(long id) {
+        synchronized (chat) { for (int i = 0; i < chat.size(); i++) if (chat.get(i).id == id) { chat.remove(i); break; } }
+    }
+
     public void hostSay(String text) {
         if (text == null || text.trim().length() == 0) return;
         synchronized (chat) {

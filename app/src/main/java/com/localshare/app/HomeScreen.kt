@@ -105,7 +105,6 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
     }
     val notif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { perms = readPerms(ctx) }
     var showDonate by remember { mutableStateOf(false) }
-    var tvNote by remember { mutableStateOf<String?>(null) }
     var confirmStop by remember { mutableStateOf(false) }
     if (confirmStop) AlertDialog(
         onDismissRequest = { confirmStop = false },
@@ -146,10 +145,11 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
         HomeRail(
             st, sec, lastChat != null && lastChat != seenChat && sec != 5, { sec = it },
             { if (st.running) stop() else start() },
+            { if (st.running) openBrowser() else android.widget.Toast.makeText(ctx, "Start sharing first", android.widget.Toast.LENGTH_SHORT).show() },
         )
         Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(topStart = 24.dp)).background(MaterialTheme.colorScheme.background)) {
             SectionHeader(sec, st)
-            LazyColumn(
+            if (sec == 5 && st.running) ChatScreen(st, Modifier.weight(1f).fillMaxWidth()) else LazyColumn(
                 Modifier.weight(1f), state = ls,
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -157,13 +157,12 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                 // All: the whole picture. The other sections each hold their own part, with nothing shown twice.
                 if (sec == 0) anim("status") { StatusCard(st, ::start, stop, copy) }
                 if (sec == 0 && st.running) anim("chat") { ChatCard(st) }
-                if (sec == 0 && st.running) anim("connected") { ConnectedCard(st, openBrowser) { tvNote = it } }
+                if (sec == 0 && st.running) anim("connected") { ConnectedCard(st) }
                 if (sec == 0 || sec == 1) anim("storage") { StorageCard(st) }
                 if (sec == 0 || sec == 1) anim("folders") { FoldersCard(st, { picker.launch(null) }) }
                 if (sec == 0 || sec == 1) anim("screen") { ScreenCard(st, onCast) }
                 if (sec == 1) anim("devices") { DevicesCard(st) }
                 if (sec == 0 || sec == 3) anim("invite") { InviteCard(st) }
-                if (sec == 5 && st.running) anim("chat2") { ChatCard(st) }
                 if (sec == 5 && !st.running) anim("nochat") {
                     SectionCard {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -173,11 +172,12 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                         Button(::start, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.folders.isNotEmpty() || st.gameOnly) { Text("Start sharing") }
                     }
                 }
-                if (sec == 3) anim("nearby") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { NearbyCard(st, onJoin) } }
-                if (sec == 3) {
-                    anim("wifi") { WifiCard(st) }
+                if (sec == 7) {
                     anim("join") { JoinCard(onJoin) }
+                    anim("nearby") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { NearbyCard(st, onJoin) } }
                 }
+                if (sec == 8) anim("tv") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { TvCard(st) } }
+                if (sec == 3) anim("wifi") { WifiCard(st) }
                 // look and permissions live in More; All only nudges when a permission is still missing
                 if (sec == 0 && !(perms.notifications && perms.unrestricted)) anim("perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
                 if (sec == 6) anim("look") { AppearanceCard() }
@@ -411,11 +411,11 @@ private fun ChatCard(st: UiState) {
     SectionCard {
         Text("Live chat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         if (st.chat.isEmpty()) InfoRow("No messages yet. Guests chat from the page, and you can answer here.")
-        st.chat.forEach { c ->
+        st.chat.takeLast(4).forEach { c ->
             Text(buildAnnotatedString {
                 withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = if (c.host) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)) { append(c.name + ": ") }
-                append(c.text)
-            }, style = MaterialTheme.typography.bodyMedium)
+                append(if (c.img) "\uD83D\uDCF7 Photo" else c.text)
+            }, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(msg, { if (it.length <= 300) msg = it }, Modifier.weight(1f), singleLine = true, label = { Text("Message everyone") })
@@ -567,25 +567,32 @@ private fun Legend(color: androidx.compose.ui.graphics.Color, label: String, val
 
 /** "Connected: 1 of 4", the TV remote switch and the shortcuts for the open session. */
 @Composable
-private fun ConnectedCard(st: UiState, openBrowser: () -> Unit, note: (String) -> Unit) {
-    val ctx = LocalContext.current
-    var tvNote by remember { mutableStateOf<String?>(null) }
+private fun ConnectedCard(st: UiState) {
     SectionCard {
         Text("Connected: ${st.devices.size} of ${st.maxClients} devices", fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** Show this share on LocalShare TV, and choose who may use the TV remote. */
+@Composable
+private fun TvCard(st: UiState) {
+    val ctx = LocalContext.current
+    var note by remember { mutableStateOf<String?>(null) }
+    SectionCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Send to TV", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Info("Open LocalShare TV, choose Share, and scan the code shown on the TV. The TV then opens this share.")
+        }
+        Button({ SendToTv.scan(ctx, st) { note = it } }, Modifier.fillMaxWidth().heightIn(min = 48.dp), enabled = st.running) { Text("Scan the code on your TV") }
+        if (!st.running) Text("Start sharing first.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        note?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall) }
+    }
+    SectionCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Let every guest use the TV remote", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
             Info("Off: only you and devices you allow on the Devices tab get a Remote button while LocalShare TV is connected.")
             Switch(st.remoteOn, { ShareController.setRemote(it) })
         }
-        OutlinedButton(openBrowser, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Icon(Icons.Filled.PlayArrow, null)
-            Spacer(Modifier.width(8.dp))
-            Text("Open the page here (files and game)")
-        }
-        OutlinedButton({ SendToTv.scan(ctx, st) { tvNote = it; note(it) } }, Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Text("Send to TV (scan the code on your TV)")
-        }
-        tvNote?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall) }
     }
 }
 

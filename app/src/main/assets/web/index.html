@@ -878,16 +878,12 @@ $("#seld").onclick=()=>dialog('<h3>Delete '+SEL.size+' item'+(SEL.size===1?"":"s
     close();cache.delete(cur);toast(ok+" deleted"+(bad?". "+bad:""));selMode(false);go(cur,true);
   };
 });
+const WSK=["video","audio","text","image","pdf","docx"];
 function setLink(a,e,p){
   if(e.d){a.href=hashOf(p);return}
-  if(e.k==="image"){
-    a.href=fileUrl(p);
-    if(ME.host)a.onclick=ev=>{ev.preventDefault();openViewer(e)};else{a.target="_blank";a.rel="noopener"}
-  }else if(e.k==="pdf"){
-    a.href=pdfUrl(p);
-    if(ME.host)a.onclick=ev=>{ev.preventDefault();location.href=pdfUrl(p)};else{a.target="_blank";a.rel="noopener"}
-  }else if(["video","audio","text"].includes(e.k)){
-    a.href=fileUrl(p);a.onclick=ev=>{ev.preventDefault();openViewer(e)};
+  if(WSK.includes(e.k)){
+    a.href=e.k==="pdf"?pdfUrl(p):fileUrl(p);
+    a.onclick=ev=>{ev.preventDefault();openViewer(e)};
   }else{a.href=fileUrl(p,1);a.setAttribute("download",e.n)}
 }
 let qt=0;$("#q").oninput=()=>{clearTimeout(qt);qt=setTimeout(()=>render(false),120)};
@@ -907,22 +903,20 @@ function openMenu(e,p,btn){
   const sc=document.createElement("div");sc.id="scrim";sc.onclick=closeMenu;
   const m=document.createElement("div");m.id="menu";m.setAttribute("role","menu");m.setAttribute("aria-label","Options for "+e.n);
   const t=document.createElement("div");t.className="mt";t.textContent=e.n;m.appendChild(t);
-  const newTab=!e.d&&(e.k==="image"||e.k==="pdf")&&!ME.host;
   if(e.d){
     m.append(item(P.open,"Open",null,"",hashOf(p)),item(P.zip,"Download as ZIP",null,"","/api/zip?path="+enc(p),{download:e.n+".zip"}));
   }else{
-    const a=document.createElement("a");a.href=e.k==="pdf"?pdfUrl(p):fileUrl(p);
-    if(e.k==="image"||e.k==="pdf"){
-      if(newTab)m.appendChild(item(P.open,"Open in new tab",null,"",a.getAttribute("href"),{target:"_blank",rel:"noopener"}));
-      else m.appendChild(item(P.open,"Open",()=>e.k==="pdf"?location.href=pdfUrl(p):openViewer(e)));
-    }else if(["video","audio","text"].includes(e.k))m.appendChild(item(P.open,"Open",()=>openViewer(e)));
+    if(WSK.includes(e.k)){
+      m.appendChild(item(P.open,"Open in a tab",()=>openViewer(e)));
+      if(e.k==="image"||e.k==="pdf")m.appendChild(item(P.open,"Open in new browser tab",null,"",e.k==="pdf"?pdfUrl(p):fileUrl(p),{target:"_blank",rel:"noopener"}));
+    }
     m.appendChild(item(P.dl,"Download",null,"",fileUrl(p,1),{download:e.n}));
   }
   m.appendChild(item(P.link,"Copy link",()=>copy(location.origin+(e.d?"/"+hashOf(p):fileUrl(p)),"Link copied")));
   const inside=p.split("/").filter(Boolean).length>=2; // the shared folders themselves can only be changed in the app
   if(inside&&INFO.canRename)m.appendChild(item(P.edit,"Rename",()=>renameDialog(e,p)));
   if(inside&&INFO.canMove)m.appendChild(item(P.move,"Move to…",()=>moveDialog(e,p)));
-  if(!e.d&&INFO.canEdit&&e.k==="text"&&e.s<=524288)m.appendChild(item(P.file,"Edit text",()=>editDialog(e,p)));
+  if(!e.d&&INFO.canEdit&&e.k==="text"&&e.s<=524288)m.appendChild(item(P.file,"Edit",()=>openViewer(e)));
   if(inside&&INFO.canDelete)m.appendChild(item(P.trash,"Delete",()=>confirmDelete(e,p),"dng"));
   document.body.append(sc,m);
   if(innerWidth>640){
@@ -1056,6 +1050,7 @@ addEventListener("drop",e=>{dragN=0;const d=$("#drop");d&&d.remove();if(!INFO.ca
 let vlist=[],vi=0;
 const viewable=e=>!e.d&&["video","audio","text"].concat(ME.host?["image"]:[]).includes(e.k);
 function openViewer(e){
+  if(window.WS&&WS.open(e))return;
   vlist=shown.filter(viewable);vi=Math.max(0,vlist.findIndex(x=>x.n===e.n));
   $("#viewer").classList.remove("hide");showItem();
 }
@@ -1162,6 +1157,7 @@ function focusMove(dx,dy){
 addEventListener("keydown",e=>{
   if(G.on||(window.ARC&&ARC.on)||!ME.name||e.ctrlKey||e.metaKey||e.altKey)return;
   const open=!$("#viewer").classList.contains("hide");
+  if(window.WS&&WS.visible())return;
   if(open){if(e.key==="Escape")closeViewer();else if(e.key==="ArrowLeft")step(-1);else if(e.key==="ArrowRight")step(1);return}
   if(document.querySelector(".dlg")||$("#menu")||$("#app").classList.contains("hide"))return;
   if(typing()){if(e.key==="Escape"){e.target.blur();if(e.target.id==="q"){e.target.value="";render(false)}}return}
@@ -1183,6 +1179,7 @@ addEventListener("keydown",e=>{
 <script src="/static/avatar.js?v=6"></script>
 <script src="/static/arena.js?v=13"></script>
 <script src="/static/party.js?v=1"></script>
+<script src="/static/ws.js?v=1"></script>
 <script>boot();</script>
 </body>
 </html>
