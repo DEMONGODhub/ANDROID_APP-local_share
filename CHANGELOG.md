@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.40.1** — the page script is now reloaded after an update (browsers kept the old one for a day, so the tab button was still at the bottom right)
 - **v2.40.0** — Look now shows both the accent colour and the icon cards (they were stacked on top of each other); live chat widget removed from All; (i) buttons sit beside their titles in every tab; web page: "+" for a new Files tab so you can browse and open more files without leaving your tabs
 - **v2.39.2** — fixes build error "Unresolved reference pendingIcon" in AccentCard
 - **v2.39.1** — fixes the Gradle sync error "Unresolved reference: util" in build.gradle.kts (signing setup)
