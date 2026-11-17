@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -12,13 +14,13 @@ android {
         applicationId = "com.localshare.app"
         minSdk = 21            // Android 5.0+ (covers ~99% of devices)
         targetSdk = 35
-        versionCode = 57
-        versionName = "2.39.0"
+        versionCode = 58
+        versionName = "2.39.1"
     }
 
     // Release signing: your own keystore via keystore.properties (kept out of git), or GitHub-secret env vars. Neither set = unsigned.
     signingConfigs {
-        val kp = java.util.Properties().apply { rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) } }
+        val kp = Properties().apply { rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) } }
         val ks = kp.getProperty("storeFile") ?: System.getenv("KEYSTORE_FILE")
         if (ks != null) create("release") {
             storeFile = rootProject.file(ks)

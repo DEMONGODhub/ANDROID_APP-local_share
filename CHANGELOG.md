@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.39.1** — fixes the Gradle sync error "Unresolved reference: util" in build.gradle.kts (signing setup)
 - **v2.39.0** — web page: open many files as tabs (music keeps playing in a mini player while you browse), YouTube-style video player, Spotify-style music player, DOCX viewer, code editor with save (Python, C, C++, Java, Kotlin, JS and more). App: Join, TV and Browser tiles in the side rail (removed from All), modern chat with bubbles and photos, full-screen video in the built-in browser
 - **v2.38.0** — Look is back as its own tile (accent colour + home-screen icon); the launcher icon now really changes (12 colours, applied when you leave the app, no extra shortcut)
 - **v2.37.0** — publishing kit: own-keystore signing (keystore.properties + tools/make-keystore.sh), website landing page in docs/, PUBLISH.md step-by-step for GitHub, Play and other stores
