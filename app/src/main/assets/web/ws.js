@@ -106,7 +106,7 @@ const css=`
 /* dock and its settings */
 #wsd{background:var(--dbg,var(--surface2));color:var(--dfg,var(--text))}#wsd svg{color:var(--dic,var(--primary))}
 #wsd.dk-bl{left:14px;bottom:max(14px,env(safe-area-inset-bottom))}#wsd.dk-br{right:14px;bottom:max(14px,env(safe-area-inset-bottom))}#wsd.dk-tl{left:14px;top:max(14px,env(safe-area-inset-top))}#wsd.dk-tr{right:14px;top:max(14px,env(safe-area-inset-top))}
-body.mpOn #wsd.dk-bl,body.mpOn #wsd.dk-br{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 66px)}
+body.mpOn #wsd.dk-bl,body.mpOn #wsd.dk-br{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 66px)}body.mpOn #fab{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 68px)}body.mpOn #arcfab{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 140px)}body.mpOn #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 66px)}body:has(#wsd:not(.hide)) #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 58px)}body.mpOn:has(#wsd:not(.hide)) #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 124px)}body.mpOn #ups{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 68px)}
 #wst>button.cfg{margin-left:2px}
 #wcp{position:fixed;z-index:60;left:50%;bottom:20px;transform:translateX(-50%);width:min(380px,calc(100vw - 24px));background:var(--surface2);color:var(--text);border:1px solid var(--outline);border-radius:18px;padding:16px;box-shadow:var(--shadow);max-height:80vh;overflow:auto}#wcp.hide{display:none}
 #wcp h3{margin:0 0 10px;font-size:16px;display:flex;align-items:center}#wcp h3 button{margin-left:auto}#wcp h4{margin:14px 0 8px;font-size:13px;color:var(--muted);font-weight:600}
