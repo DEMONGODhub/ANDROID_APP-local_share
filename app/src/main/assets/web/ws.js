@@ -127,7 +127,7 @@ body.mpOn #wsd.dk-bl,body.mpOn #wsd.dk-br{bottom:calc(max(14px,env(safe-area-ins
 @media print{body>*:not(#prt){display:none!important}#prt{display:block!important}}
 `;
 const st=D.createElement("style");st.textContent=css;D.head.appendChild(st);
-D.body.insertAdjacentHTML("beforeend",'<div id="ws" class="hide" role="dialog" aria-label="Open files"><div id="wst"><button id="wmin" aria-label="Back to files" title="Back to files">'+ic(I.back)+'</button><div id="wtabs" role="tablist"></div><button id="wnew" aria-label="New tab" title="New tab">'+ic(I.plus)+'</button><button id="wcfg" class="cfg" aria-label="Tab button settings" title="Tab button settings">'+ic(I.gear)+'</button></div><div id="wsb"></div></div><button id="wsd" class="hide" aria-label="Open tabs"></button><div id="mp" class="hide" role="region" aria-label="Music player"></div><div id="wcp" class="hide" role="dialog" aria-label="Tab button settings"></div>');
+D.body.insertAdjacentHTML("beforeend",'<div id="ws" class="hide" role="dialog" aria-label="Open files"><div id="wst"><button id="wmin" aria-label="Back to files" title="Back to files">'+ic(I.back)+'</button><div id="wtabs" role="tablist"></div><button id="wnew" aria-label="New tab" title="New tab">'+ic(I.plus)+'</button><button id="wmode" class="cfg" aria-label="Windows or tabs" title="Windows or tabs">⧉</button><button id="wcfg" class="cfg" aria-label="Tab button settings" title="Tab button settings">'+ic(I.gear)+'</button></div><div id="wsb"></div></div><button id="wsd" class="hide" aria-label="Open tabs"></button><div id="mp" class="hide" role="region" aria-label="Music player"></div><div id="wcp" class="hide" role="dialog" aria-label="Tab button settings"></div>');
 const ws=Q("#ws"),tabsEl=Q("#wtabs"),body=Q("#wsb"),dock=Q("#wsd"),mp=Q("#mp");
 const kicon={files:I.folder,video:I.film,audio:I.music,text:I.code,docx:I.doc,pdf:I.doc,image:I.img};
 const fu=(p,dl)=>"/api/file?path="+encodeURIComponent(p)+(dl?"&dl=1":"");
@@ -141,42 +141,98 @@ function lazy(src,test){return new Promise((ok,no)=>{if(test()){ok();return}cons
 
 /* ---------- tab model ---------- */
 const tabs=[];let active=null,pushed=false;
+const narrow=()=>innerWidth<760;
+let WM=getStore("ls_wmode")==="1",Z=10,locked=true,restored=false;
+const winOn=()=>WM&&!narrow();
+const vis=(t,b)=>{t.pane.classList.toggle("on",b);t.fr.classList.toggle("on",b)};
 const findTab=key=>tabs.find(t=>t.key===key);
 function renderTabs(){
   tabsEl.innerHTML="";
   tabs.forEach(t=>{
-    const b=mk("div","wtab"+(t.key==="audio"&&A.playing?" pl":""));b.setAttribute("role","tab");b.tabIndex=0;b.setAttribute("aria-selected",t===active);b.title=t.title;
+    const b=mk("div","wtab"+(t.key==="audio"&&A.playing?" pl":"")+(t.min?" min":""));b.setAttribute("role","tab");b.tabIndex=0;b.setAttribute("aria-selected",t===active);b.title=t.title;
     b.innerHTML=ic(kicon[t.k]||I.doc,18)+"<span></span>"+(t.dirty?"<i title=\"Unsaved changes\"></i>":"")+'<b role="button" aria-label="Close tab">'+ic(I.x,14)+"</b>";
     b.querySelector("span").textContent=t.title;
-    b.onclick=ev=>{if(ev.target.closest("b"))closeTab(t);else activate(t)};
+    b.onclick=ev=>{if(ev.target.closest("b"))closeTab(t);else if(winOn()&&t===active&&!t.min)snap(t,"min");else activate(t)};
     b.onauxclick=ev=>{if(ev.button===1)closeTab(t)};
     b.onkeydown=ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();activate(t)}};
     tabsEl.appendChild(b);if(t===active)b.scrollIntoView({inline:"nearest",block:"nearest"});
   });
+  tabs.forEach((t,i)=>{const tt=t.fr.querySelector(".tt");if(tt)tt.textContent=t.title+(narrow()&&tabs.length>1?"   "+(i+1)+"/"+tabs.length:"")});
   dock.innerHTML=ic(tabs.length?I.list:I.plus,20)+"<span>"+(tabs.length?tabs.length+" open":"New tab")+"</span>";
-  const want=ws.classList.contains("hide");dock.classList.toggle("hide",!want);
+  const want=ws.classList.contains("hide");dock.classList.toggle("hide",!want||locked);
+  saveLayout();
 }
 function activate(t){
-  if(active&&active!==t&&active.onhide)active.onhide();
-  active=t;tabs.forEach(x=>x.pane.classList.toggle("on",x===t));if(t.onshow)t.onshow();
+  const w=winOn();
+  if(active&&active!==t&&active.onhide&&!w)active.onhide();
+  active=t;
+  if(w){t.min=false;vis(t,true);if(!t.placed&&!ws.classList.contains("hide"))place(t);t.fr.style.zIndex=++Z}
+  else tabs.forEach(x=>{x.min=false;vis(x,x===t)});
+  tabs.forEach(x=>x.fr.classList.toggle("act",x===t));
+  if(t.onshow)t.onshow();
+  renderTabs();syncMini();
+}
+function step(d){if(tabs.length<2)return;const i=Math.max(0,tabs.indexOf(active));activate(tabs[(i+d+tabs.length)%tabs.length])}
+function place(t){
+  const b=body.getBoundingClientRect(),s=t.fr.style;t.placed=true;
+  if(t.g){[s.left,s.top,s.width,s.height]=t.g;t.g=null;return}
+  const n=tabs.indexOf(t)%6,w=Math.min(b.width-20,Math.max(380,b.width*.55)),h=Math.min(b.height-20,Math.max(300,b.height*.75));
+  s.left=Math.max(0,Math.min(20+n*32,b.width-w))+"px";s.top=Math.max(0,Math.min(14+n*28,b.height-h))+"px";s.width=w+"px";s.height=h+"px";
+}
+function snap(t,a){
+  const s=t.fr.style;
+  if(a==="min"){t.min=true;vis(t,false);if(t.onhide)t.onhide();if(active===t){active=null;const nx=tabs.filter(x=>!x.min).pop();if(nx)activate(nx)}renderTabs();syncMini();return}
+  if(a==="max"&&t.maxed&&t.pg){[s.left,s.top,s.width,s.height]=t.pg;t.maxed=false;return}
+  if(!t.maxed)t.pg=[s.left,s.top,s.width,s.height];
+  const g={l:["0px","0px","50%","100%"],r:["50%","0px","50%","100%"],max:["0px","0px","100%","100%"]}[a];
+  [s.left,s.top,s.width,s.height]=g;t.maxed=a==="max";s.zIndex=++Z;if(active!==t)activate(t);
+}
+function applyMode(){
+  const w=winOn();ws.classList.toggle("wm",w);ws.classList.toggle("nr",narrow());
+  tabs.forEach(t=>{t.fr.removeAttribute("style");t.placed=false;t.maxed=false;t.g=null;if(w)vis(t,!t.min);else{t.min=false;vis(t,t===active)}});
+  if(!w&&!active&&tabs.length){active=tabs[tabs.length-1];vis(active,true)}
+  if(w&&!ws.classList.contains("hide"))tabs.forEach(t=>{if(!t.min)place(t)});
+  renderTabs();syncMini();
+}
+addEventListener("resize",()=>{if(winOn()!==ws.classList.contains("wm")||narrow()!==ws.classList.contains("nr"))applyMode()});
+/* remember the open files and where the windows were */
+function saveLayout(){
+  if(!restored||locked)return;
+  try{setStore("ls_layout",JSON.stringify(tabs.filter(t=>t.src).slice(0,8).map(t=>({e:t.src,g:t.placed&&winOn()?[t.fr.style.left,t.fr.style.top,t.fr.style.width,t.fr.style.height]:null}))))}catch(x){}
+}
+function restore(){
+  let L=[];try{L=JSON.parse(getStore("ls_layout")||"[]")}catch(x){}
+  if(!Array.isArray(L)||!L.length)return;
+  L.slice(0,8).forEach(x=>{try{if(x&&x.e)open(x.e,{cur:x.e.cur,shown:[x.e],entries:[x.e]},{g:x.g})}catch(e){}});
+  tabs.forEach(t=>{if(t.onhide)t.onhide()});hideWs();
+}
+function lock(b){
+  if(b===locked)return;locked=b;
+  if(b){
+    [...tabs].forEach(t=>{t.dirty=false;closeTab(t)});
+    try{A.pause();A.q=[];A.i=-1;A.removeAttribute("src")}catch(x){}
+    hideWs();setStore("ls_layout","");
+  }else if(!restored){applyMode();restore();restored=true;saveLayout()}
   renderTabs();syncMini();
 }
 function closeTab(t){
   if(t.dirty&&!confirm("Close "+t.title+" without saving your changes?"))return;
   if(t.onclose)t.onclose();
-  const i=tabs.indexOf(t);tabs.splice(i,1);t.pane.remove();
-  if(active===t){active=null;if(tabs.length)activate(tabs[Math.min(i,tabs.length-1)]);else{hideWs();renderTabs()}}
+  const i=tabs.indexOf(t);tabs.splice(i,1);t.fr.remove();
+  if(active===t){active=null;const nx=winOn()?tabs.filter(x=>!x.min).pop():tabs[Math.min(i,tabs.length-1)];if(nx)activate(nx);else if(!tabs.length){hideWs();renderTabs()}else renderTabs()}
   else renderTabs();
   syncMini();
 }
 function showWs(){
-  ws.classList.remove("hide");D.body.style.overflow="hidden";
+  if(locked)return;
+  ws.classList.remove("hide");if(winOn())tabs.forEach(t=>{if(!t.min&&!t.placed)place(t)});D.body.style.overflow="hidden";
   if(!pushed){try{history.pushState({ws:1},"");pushed=true}catch(e){}}
   renderTabs();syncMini();
 }
 function hideWs(fromPop){
   ws.classList.add("hide");D.body.style.overflow="";
   if(active&&active.onhide)active.onhide();
+  if(winOn())tabs.forEach(t=>{if(t!==active&&!t.min&&t.onhide)t.onhide()});
   if(pushed&&!fromPop){pushed=false;try{if(history.state&&history.state.ws)history.back()}catch(e){}}else pushed=false;
   renderTabs();syncMini();
 }
@@ -200,31 +256,55 @@ function dockCfg(){
 }
 applyDock();
 Q("#wcfg").onclick=dockCfg;
+Q("#wmode").onclick=()=>{if(narrow()){warn("Windows need a wider screen. On a phone, swipe the title bar to change window.");return}WM=!WM;setStore("ls_wmode",WM?"1":"0");applyMode();warn(WM?"Windows: drag, snap left or right, minimise":"Tabs")};
+addEventListener("beforeunload",saveLayout);
 {let lp=0,fired=false;dock.addEventListener("pointerdown",()=>{fired=false;lp=setTimeout(()=>{fired=true;dockCfg()},600)});["pointerup","pointerleave","pointercancel"].forEach(ev=>dock.addEventListener(ev,()=>clearTimeout(lp)));
  dock.addEventListener("contextmenu",ev=>{ev.preventDefault();dockCfg()});dock.addEventListener("click",ev=>{if(fired){ev.stopImmediatePropagation();fired=false}},true)}
 D.addEventListener("pointerdown",ev=>{if(!cp.classList.contains("hide")&&!ev.target.closest("#wcp")&&!ev.target.closest("#wcfg")&&!ev.target.closest("#wsd"))cp.classList.add("hide")});
 Q("#wmin").onclick=()=>hideWs();Q("#wnew").onclick=()=>{const t=filesTab();showWs();activate(t)};dock.onclick=()=>{if(!tabs.length){const t=filesTab();showWs();activate(t)}else showWs()};
 addEventListener("beforeunload",ev=>{if(tabs.some(t=>t.dirty)){ev.preventDefault();ev.returnValue=""}});
 function addTab(key,k,title,pane){
-  const t={key,k,title,pane};tabs.push(t);pane.classList.add("wp");body.appendChild(pane);return t;
+  if(tabs.length>=8){const v=tabs.find(x=>x!==active&&!x.dirty&&!x.floating&&x.key!=="audio");if(v){closeTab(v);warn("Closed the oldest tab (8 is the most)")}}
+  const t={key,k,title,pane};tabs.push(t);pane.classList.add("wp");
+  const fr=mk("div","win");t.fr=fr;
+  fr.innerHTML='<div class="wtl"><button class="nro" data-a="p" title="Previous" aria-label="Previous">‹</button><span class="tt"></span><button class="nro" data-a="n" title="Next" aria-label="Next">›</button><button class="wmw" data-a="l" title="Snap left (Alt+←)" aria-label="Snap left">◧</button><button class="wmw" data-a="r" title="Snap right (Alt+→)" aria-label="Snap right">◨</button><button class="wmw" data-a="min" title="Minimise (Alt+↓)" aria-label="Minimise">–</button><button class="wmw" data-a="max" title="Maximise (Alt+↑)" aria-label="Maximise">▢</button><button data-a="x" title="Close (Alt+W)" aria-label="Close window">✕</button></div>';
+  fr.appendChild(pane);body.appendChild(fr);
+  const tl=fr.querySelector(".wtl");
+  tl.onclick=ev=>{const b=ev.target.closest("button");if(!b)return;const a=b.dataset.a;if(a==="x")closeTab(t);else if(a==="p")step(-1);else if(a==="n")step(1);else snap(t,a)};
+  tl.ondblclick=ev=>{if(!ev.target.closest("button")&&winOn())snap(t,"max")};
+  fr.addEventListener("pointerdown",()=>{if(winOn()&&active!==t&&!t.min)activate(t)},true);
+  tl.addEventListener("pointerdown",ev=>{
+    if(ev.target.closest("button"))return;
+    if(!winOn()){const sx=ev.clientX,up=e2=>{removeEventListener("pointerup",up);const dx=e2.clientX-sx;if(Math.abs(dx)>60)step(dx<0?1:-1)};addEventListener("pointerup",up);return}
+    const r=fr.getBoundingClientRect(),b=body.getBoundingClientRect(),ox=ev.clientX-r.left,oy=ev.clientY-r.top;
+    if(t.maxed||fr.style.width.endsWith("%")){fr.style.width=r.width+"px";fr.style.height=r.height+"px";t.maxed=false}
+    tl.setPointerCapture(ev.pointerId);tl.style.cursor="grabbing";
+    const mv=e2=>{fr.style.left=Math.max(60-r.width,Math.min(b.width-60,e2.clientX-b.left-ox))+"px";fr.style.top=Math.max(0,Math.min(b.height-36,e2.clientY-b.top-oy))+"px"};
+    const up=e2=>{tl.removeEventListener("pointermove",mv);tl.removeEventListener("pointerup",up);tl.style.cursor="";
+      if(e2.clientX<=b.left+8)snap(t,"l");else if(e2.clientX>=b.right-8)snap(t,"r");else if(e2.clientY<=b.top+4)snap(t,"max");saveLayout()};
+    tl.addEventListener("pointermove",mv);tl.addEventListener("pointerup",up);
+  });
+  return t;
 }
 function siblings(kinds,C){
   try{C=C||{cur,shown};return(C.shown||[]).filter(x=>!x.d&&kinds.includes(x.k)).map(x=>({n:x.n,k:x.k,s:x.s||0,p:join(C.cur,x.n)}))}catch(e){return[]}
 }
 /* open(e) is called from the file list. opts.edit opens text files straight in the editor. */
 function open(e,C,opts){
-  if(!e||e.d||!KINDS.includes(e.k))return false;
+  if(locked||!e||e.d||!KINDS.includes(e.k))return false;
   C=C||{cur,shown,entries};
   const p=join(C.cur,e.n);
   if(e.k==="audio"){playAudio(e.n,p,siblings(["audio"],C));let t=findTab("audio");if(!t)t=musicTab();showWs();activate(t);return true}
   let t=findTab(p);
   if(!t){
     t=e.k==="video"?videoTab(e,p,C):e.k==="text"?textTab(e,p):e.k==="docx"?docxTab(e,p):e.k==="pdf"?pdfTab(e,p):imageTab(e,p,C);
+    t.src={n:e.n,k:e.k,s:e.s||0,cur:C.cur};if(opts&&opts.g){t.g=opts.g}
   }
   if(opts&&opts.replace&&opts.replace!==t&&tabs.includes(opts.replace)){
     const old=opts.replace,wasActive=active===old;
     tabs.splice(tabs.indexOf(t),1);const at=tabs.indexOf(old);tabs.splice(at,0,t);
-    if(old.onclose)old.onclose();old.pane.remove();tabs.splice(tabs.indexOf(old),1);if(wasActive)active=null;
+    if(winOn()&&old.placed){const s=old.fr.style;t.g=[s.left,s.top,s.width,s.height];t.placed=false}
+    if(old.onclose)old.onclose();old.fr.remove();tabs.splice(tabs.indexOf(old),1);if(wasActive)active=null;
   }
   showWs();activate(t);return true;
 }
@@ -308,8 +388,9 @@ function mediaSession(){
 }
 /* mini bar */
 function syncMini(){
-  const hasTrack=A.q.length>0&&A.i>=0,musicVisible=!ws.classList.contains("hide")&&active&&active.key==="audio";
-  const show=hasTrack&&!musicVisible;mp.classList.toggle("hide",!show);D.body.classList.toggle("mpOn",show);
+  const hasTrack=A.q.length>0&&A.i>=0;
+  const mt=findTab("audio"),mv=!ws.classList.contains("hide")&&mt&&(winOn()?!mt.min:active===mt);
+  const show=!locked&&hasTrack&&!mv;mp.classList.toggle("hide",!show);D.body.classList.toggle("mpOn",show);
   ws.classList.toggle("mp",show&&!ws.classList.contains("hide"));
   if(show)paintMini();
 }
@@ -434,7 +515,33 @@ function videoTab(e,p,C){
   const theatre=()=>{w.classList.toggle("th");th.classList.toggle("on",w.classList.contains("th"))};th.onclick=ev=>{ev.stopPropagation();theatre()};
   const full=()=>{if(D.fullscreenElement)D.exitFullscreen();else if(vp.requestFullscreen)vp.requestFullscreen().catch(()=>{});else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen()};fs.onclick=ev=>{ev.stopPropagation();full()};
   const pip=async()=>{try{if(D.pictureInPictureElement)await D.exitPictureInPicture();else await v.requestPictureInPicture()}catch(x){warn("Picture in picture is not available here")}};
-  if(!D.pictureInPictureEnabled)pi.hidden=true;pi.onclick=ev=>{ev.stopPropagation();pip()};
+  // floating player: the same player and controls, in a small window that stays while you browse
+  let fl=null;
+  const unfloat=go=>{if(!fl)return;const f=fl;fl=null;t.floating=false;vp.classList.remove("fl");main.insertBefore(vp,main.firstChild);if(f.pw){try{f.pw.close()}catch(x){}}f.remove();if(go){showWs();activate(t)}};
+  const float=async pop=>{
+    if(fl)return;const f=mk("div","fv");
+    f.innerHTML='<div class="fh"><span></span><button class="fo" title="Pop out over other apps" aria-label="Pop out">\u29c9</button><button class="fe" title="Back to the tab" aria-label="Back to the tab">\u2922</button><button class="fc" title="Stop and put back" aria-label="Close floating player">\u2715</button></div>';
+    f.querySelector("span").textContent=base(e.n);if(!window.documentPictureInPicture)f.querySelector(".fo").remove();
+    fl=f;t.floating=true;vp.classList.add("fl");f.appendChild(vp);D.body.appendChild(f);
+    f.querySelector(".fe").onclick=()=>unfloat(true);f.querySelector(".fc").onclick=()=>{v.pause();unfloat(false)};
+    const fo=f.querySelector(".fo");if(fo)fo.onclick=()=>{popOut(f)};
+    const h=f.querySelector(".fh");
+    h.addEventListener("pointerdown",ev=>{if(ev.target.closest("button")||f.pw)return;const r=f.getBoundingClientRect(),sx=ev.clientX-r.left,sy=ev.clientY-r.top;h.setPointerCapture(ev.pointerId);f.style.right="auto";f.style.bottom="auto";f.style.left=r.left+"px";f.style.top=r.top+"px";
+      const mv=e2=>{f.style.left=Math.max(0,Math.min(innerWidth-80,e2.clientX-sx))+"px";f.style.top=Math.max(0,Math.min(innerHeight-40,e2.clientY-sy))+"px"};
+      const up=()=>{h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up)};h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up)});
+    if(!ws.classList.contains("hide"))hideWs();
+    if(pop)popOut(f);
+  };
+  const popOut=async f=>{
+    try{const pw=await documentPictureInPicture.requestWindow({width:420,height:290});
+      D.querySelectorAll("style,link[rel=stylesheet]").forEach(n=>pw.document.head.appendChild(n.cloneNode(true)));
+      pw.document.documentElement.className=D.documentElement.className;pw.document.documentElement.style.cssText=D.documentElement.style.cssText;
+      pw.document.body.style.cssText="margin:0;background:#000";f.classList.add("pw");f.pw=pw;pw.document.body.appendChild(f);
+      pw.addEventListener("pagehide",()=>{if(fl===f){v.pause();unfloat(false)}})}
+    catch(x){warn("Pop out is not available here")}
+  };
+  pi.title="Floating player (i)";pi.onclick=ev=>{ev.stopPropagation();float(false)};
+  v.addEventListener("play",()=>A.pause());
   // ----- picture, captions, audio tracks and tools: one menu with pages -----
   const picSaved=(()=>{try{return JSON.parse(getStore("ls_pic")||"{}")}catch(x){return{}}})();
   const pic=Object.assign({b:100,c:100,s:100,h:0},picSaved);
@@ -508,9 +615,9 @@ function videoTab(e,p,C){
     else if(/^[0-9]$/.test(k)&&v.duration)v.currentTime=v.duration*(+k/10);else used=false;
     if(used){ev.preventDefault();ev.stopPropagation()}
   };
-  t.onhide=()=>{if(!D.pictureInPictureElement&&!D.fullscreenElement)v.pause()};
-  t.onclose=()=>{save();v.pause();v.removeAttribute("src");v.load();tracks.forEach(x=>URL.revokeObjectURL(x.src))};
-  t.onshow=()=>{A.pause()};
+  t.onhide=()=>{if(!t.floating&&!D.pictureInPictureElement&&!D.fullscreenElement)v.pause()};
+  t.onclose=()=>{unfloat(false);save();v.pause();v.removeAttribute("src");v.load();tracks.forEach(x=>URL.revokeObjectURL(x.src))};
+  t.onshow=()=>{unfloat(false)};
   return t;
 }
 const fmtSize=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(0)+" KB":n<1073741824?(n/1048576).toFixed(1)+" MB":(n/1073741824).toFixed(2)+" GB";
@@ -689,11 +796,15 @@ function imageTab(e,p,C){
 /* ---------- keys, then expose ---------- */
 addEventListener("keydown",ev=>{
   if(ws.classList.contains("hide"))return;
+  if(ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&active){const k=ev.key;
+    if(k==="w"||k==="W"){ev.preventDefault();closeTab(active);return}
+    if(winOn()){const m={ArrowLeft:"l",ArrowRight:"r",ArrowUp:"max",ArrowDown:"min"}[k];if(m){ev.preventDefault();snap(active,m);return}}
+    else if(k==="ArrowLeft"||k==="ArrowRight"){ev.preventDefault();step(k==="ArrowLeft"?-1:1);return}}
   if(ev.key==="Escape"&&!(ev.target.closest&&ev.target.closest(".CodeMirror-dialog"))&&!D.fullscreenElement){ev.preventDefault();ev.stopPropagation();hideWs();return}
   if(active&&active.key2)active.key2(ev);
   if((ev.ctrlKey||ev.metaKey)&&ev.key==="w"&&active){ev.preventDefault();closeTab(active)}
   if(ev.altKey&&/^[1-9]$/.test(ev.key)&&tabs[+ev.key-1]){ev.preventDefault();activate(tabs[+ev.key-1])}
 },true);
-window.WS={open,visible:()=>!ws.classList.contains("hide"),kinds:KINDS};
-renderTabs();syncMini();
+window.WS={lock,open,visible:()=>!ws.classList.contains("hide"),kinds:KINDS};
+applyMode();renderTabs();syncMini();
 })();
