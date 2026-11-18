@@ -201,7 +201,7 @@ final class PartyHub {
             long len = b1 & 127;
             if (len == 126) len = (in.read() << 8) | in.read();
             else if (len == 127) return null;
-            if (len > MAX_MSG) return null;
+            if (len < 0 || len > MAX_MSG) return null;
             byte[] key = new byte[4], d = new byte[(int) len];
             fill(in, key);
             fill(in, d);

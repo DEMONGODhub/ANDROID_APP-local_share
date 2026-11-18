@@ -716,10 +716,11 @@ function mdToHtml(src){
 }
 
 /* ---------- docx tab ---------- */
+function okUrl(u){const v=String(u).replace(/[\u0000-\u0020\u007f-\u009f]/g,"");return !/^[a-z][a-z0-9+.-]*:/i.test(v)||/^(https?:|mailto:|tel:|blob:)/i.test(v)||/^data:image\/(png|jpe?g|gif|webp|bmp);/i.test(v)}
 function clean(html){
   const d=new DOMParser().parseFromString(html,"text/html");
   d.querySelectorAll("script,iframe,object,embed,style,link,meta,form").forEach(x=>x.remove());
-  d.querySelectorAll("*").forEach(x=>{[...x.attributes].forEach(a=>{if(/^on/i.test(a.name)||(a.name==="href"&&/^\s*javascript:/i.test(a.value)))x.removeAttribute(a.name)});if(x.tagName==="A"){x.target="_blank";x.rel="noopener"}});
+  d.querySelectorAll("*").forEach(x=>{[...x.attributes].forEach(a=>{if(/^on/i.test(a.name)||((a.name==="href"||a.name==="src"||a.name==="xlink:href"||a.name==="action"||a.name==="formaction")&&!okUrl(a.value)))x.removeAttribute(a.name)});if(x.tagName==="A"){x.target="_blank";x.rel="noopener"}});
   return d.body.innerHTML;
 }
 function docxTab(e,p){

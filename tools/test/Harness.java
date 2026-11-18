@@ -286,6 +286,7 @@ public class Harness {
         Res l = req("GET", "/api/list?path=Main", t1, null);
         check("list a folder", l.code == 200 && l.text().contains("movie.mp4") && l.text().contains("docs") && l.text().contains("\"k\":\"video\""));
         check("dotfiles hidden", !l.text().contains(".secret"));
+        check("dotfile cannot be fetched by path", req("GET", "/api/file?path=Main%2F.secret", t1, null).code == 400);
         check("unicode filename", req("GET", "/api/list?path=Main%2Fdocs", t1, null).text().contains("résumé.txt"));
         check("traversal ../ rejected", req("GET", "/api/list?path=..%2f..", t1, null).code == 400);
         check("traversal in file rejected", req("GET", "/api/file?path=Main%2Fdocs%2f..%2f..%2fetc%2fpasswd", t1, null).code == 400);

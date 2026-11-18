@@ -1393,7 +1393,7 @@ public final class MiniServer {
         if (p == null) return out;
         for (String s : p.split("/")) {
             if (s.length() == 0) continue;
-            if (s.equals(".") || s.equals("..") || s.indexOf('\\') >= 0 || s.indexOf('\0') >= 0) return null;
+            if (s.startsWith(".") || s.indexOf('\\') >= 0 || s.indexOf('\0') >= 0) return null; // hidden files stay hidden
             out.add(s);
         }
         return out;
