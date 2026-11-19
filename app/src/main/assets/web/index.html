@@ -259,12 +259,11 @@ header #lo{display:none}
 ::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--outline);border-radius:8px;border:3px solid transparent;background-clip:content-box;min-height:48px}::-webkit-scrollbar-thumb:hover{background:var(--primary);background-clip:content-box}::-webkit-scrollbar-corner{background:transparent}
 @supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:var(--outline) transparent}}
 #crumbs::-webkit-scrollbar{display:none}#arcfab{display:none!important}
-#snb .lbl,#hwt .lbl{display:none;font-size:14px;font-weight:600;margin-left:6px}
-@media(min-width:720px){#snb,#hwt{width:auto;padding:0 14px;border-radius:22px;display:inline-flex;align-items:center}#snb .lbl,#hwt .lbl{display:inline}}
+#snb .lbl{display:none;font-size:14px;font-weight:600;margin-left:6px}
+@media(min-width:720px){#snb{width:auto;padding:0 14px;border-radius:22px;display:inline-flex;align-items:center}#snb .lbl{display:inline}}
 #bar #sw{order:-1}#count{flex:0 0 auto;min-width:0;order:0}
 .pop{position:fixed;z-index:90;background:var(--surface2);color:var(--text);border:1px solid var(--outline);border-radius:16px;box-shadow:var(--shadow);padding:6px;min-width:190px}
 .pop button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0 12px;border-radius:12px;cursor:pointer}.pop button:hover,.pop button:focus-visible{background:var(--bg)}.pop button.dng{color:#f87171}
-#hwt{position:relative}#hwt b{position:absolute;top:2px;right:0;min-width:18px;height:18px;border-radius:9px;background:var(--primary);color:var(--onprimary);font-size:11px;display:grid;place-items:center;padding:0 4px}#hwt b:empty{display:none}
 </style>
 </head>
 <body>
@@ -1141,14 +1140,14 @@ function device(){
   return{os,br,pc:["Windows","Mac","Linux","Chromebook"].includes(os)};
 }
 const TIPS={
- Android:["Tap a photo or PDF to open it in a new tab. Tap the ⋮ on any item to download or delete it.","Downloads are saved in your Downloads folder. Open them from the notification or the Files app.","To keep this page one tap away, open the browser menu and choose “Add to Home screen”."],
- iPhone:["Tap a photo or PDF to open it in a new tab. Tap the ⋮ on any item to download it.","After downloading, tap the arrow in Safari's address bar to find the file, or open the Files app.","To keep this page handy, tap Share, then “Add to Home Screen”."],
- iPad:["Tap a photo or PDF to open it in a new tab. Tap the ⋮ on any item to download it.","Downloads appear in the Files app, in the Downloads folder.","To keep this page handy, tap Share, then “Add to Home Screen”."],
- Windows:["Click a photo or PDF to open it in a new tab. Click the ⋮ on a card for more.","Downloads go to your Downloads folder, or wherever your browser is set to save.","Tip: press Ctrl+D to bookmark this page."],
- Mac:["Click a photo or PDF to open it in a new tab. Click the ⋮ on a card for more.","Downloads go to your Downloads folder.","Tip: press ⌘D to bookmark this page."],
- Linux:["Click a photo or PDF to open it in a new tab. Click the ⋮ on a card for more.","Downloads go to your Downloads folder.","Tip: press Ctrl+D to bookmark this page."],
- Chromebook:["Click a photo or PDF to open it in a new tab. Click the ⋮ on a card for more.","Downloads are saved in the Files app, in Downloads.","Tip: press Ctrl+D to bookmark this page."],
- device:["Tap or click a photo or PDF to open it in a new tab. Use the ⋮ on any item to download it.","Use the ZIP button to download a whole folder at once."]};
+ Android:["Tap a photo or PDF to open it right here. Tap the ⋮ on any item to download or delete it.","Downloads are saved in your Downloads folder. Open them from the notification or the Files app.","To keep this page one tap away, open the browser menu and choose “Add to Home screen”."],
+ iPhone:["Tap a photo or PDF to open it right here. Tap the ⋮ on any item to download it.","After downloading, tap the arrow in Safari's address bar to find the file, or open the Files app.","To keep this page handy, tap Share, then “Add to Home Screen”."],
+ iPad:["Tap a photo or PDF to open it right here. Tap the ⋮ on any item to download it.","Downloads appear in the Files app, in the Downloads folder.","To keep this page handy, tap Share, then “Add to Home Screen”."],
+ Windows:["Click a photo or PDF to open it right here. Click the ⋮ on a card for more.","Downloads go to your Downloads folder, or wherever your browser is set to save.","Tip: press Ctrl+D to bookmark this page."],
+ Mac:["Click a photo or PDF to open it right here. Click the ⋮ on a card for more.","Downloads go to your Downloads folder.","Tip: press ⌘D to bookmark this page."],
+ Linux:["Click a photo or PDF to open it right here. Click the ⋮ on a card for more.","Downloads go to your Downloads folder.","Tip: press Ctrl+D to bookmark this page."],
+ Chromebook:["Click a photo or PDF to open it right here. Click the ⋮ on a card for more.","Downloads are saved in the Files app, in Downloads.","Tip: press Ctrl+D to bookmark this page."],
+ device:["Tap or click a photo or PDF to open it right here. Use the ⋮ on any item to download it.","Use the ZIP button to download a whole folder at once."]};
 const KEYS=[["/","Search"],["←  →  ↑  ↓","Move between items"],["Enter","Open the selected item"],["M","Open its ⋮ menu"],["Delete","Delete the selected file (if allowed)"],["Backspace","Go up one folder"],["G","Switch grid / list"],["U","Upload files"],["Z","Download this folder as ZIP"],["P","Play Orb Arena"],["?","Show this help"],["Esc","Close whatever is open"]];
 function showHelp(){
   const d=device();
@@ -1194,7 +1193,7 @@ addEventListener("keydown",e=>{
 <script src="/static/avatar.js?v=6"></script>
 <script src="/static/arena.js?v=13"></script>
 <script src="/static/party.js?v=1"></script>
-<script src="/static/ws.js?v=12"></script>
+<script src="/static/ws.js?v=13"></script>
 <script>boot();</script>
 <script>
 /* one Play button, and your avatar holds your own actions */
