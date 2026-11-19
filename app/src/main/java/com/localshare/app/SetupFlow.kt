@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -95,7 +96,7 @@ fun SetupFlow(mode: Int, onDone: () -> Unit) {
 
     Dialog(onDismissRequest = {}, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = false, dismissOnClickOutside = false)) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Column(Modifier.fillMaxSize().padding(24.dp)) {
+            Column(Modifier.fillMaxSize().systemBarsPadding().padding(24.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Row(Modifier.weight(1f).semantics { contentDescription = "Step ${i + 1} of ${steps.size}" }, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         steps.indices.forEach { k ->

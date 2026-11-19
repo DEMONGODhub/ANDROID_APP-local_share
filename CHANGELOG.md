@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.43.1** — fixes: the stray file name and tiny buttons that showed above videos and other tabs are gone (window-mode and floating-player styles were missing); the top bar and toolbar fit on phones (title and host picture hidden when narrow, Zip is icon-only, Upload stays on the same row); the first-run set-up screens no longer sit under the status and navigation bars
 - **v2.43.0** — things where you would expect them: app Home puts Shared folders under Status, the invite/QR card right after it while sharing, and the permission warning at the top; side rail regrouped (Share, People, Tools); page has one Play button (Orb Arena or Arcade), Log out inside your avatar menu, a labelled Send button, search first in the toolbar, and a Tabs / New tab button in the top bar instead of the floating one (the old floating button is still an option in its settings)
 - **v2.42.2** — layout fixes in the page: the music mini-player no longer covers the upload, arcade and back-to-top buttons; the top bar fits narrow phones (logout was cut off and the host picture overlapped your avatar)
 - **v2.42.1** — security fixes from a bug-hunter scan: hidden files (names starting with a dot) can no longer be opened, edited or deleted by typing their path; DOCX/Markdown previews now only keep safe links (http, https, mailto, tel); a malformed party-chat message can no longer crash its thread

@@ -34,7 +34,7 @@ svg{display:block;flex:none}
 #app{display:flex;flex-direction:column;height:100%}
 header{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--outline)}
 #brand{display:flex;align-items:center;gap:8px;background:none;border:0;font-weight:800;font-size:17px;padding:0 8px 0 4px;min-height:44px;border-radius:22px}
-#brand{min-width:0;flex:0 1 auto}#brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}header>*{flex-shrink:0}header>#brand{flex-shrink:1}#hostchip{flex-shrink:1}#hostchip b:empty{display:none}@media(max-width:419px){#brand span{display:none}}
+#brand{min-width:0;flex:0 1 auto}#brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}header>*{flex-shrink:0}header>#brand{flex-shrink:1}#hostchip{flex-shrink:1}#hostchip b:empty{display:none}@media(max-width:520px){#brand span,#hostchip{display:none!important}#count{display:none}#bar select{max-width:112px}#zipb{font-size:0;padding:0 12px}#zipb svg{width:22px;height:22px}#upb{margin-left:auto}}
 #hostchip{display:flex;align-items:center;gap:6px;min-width:0;margin-left:2px;color:var(--muted);font-size:13px}#hostchip img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--surface2)}#hostchip b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}@media(max-width:560px){#hostchip b{display:none}}
 #brand i{width:32px;height:32px;border-radius:10px;background:var(--primary);color:var(--onprimary);display:grid;place-items:center}
 #sw{flex:1;min-width:0;display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--outline);border-radius:22px;padding:0 12px;height:44px;color:var(--muted)}
@@ -1189,7 +1189,7 @@ addEventListener("keydown",e=>{
 <script src="/static/avatar.js?v=6"></script>
 <script src="/static/arena.js?v=13"></script>
 <script src="/static/party.js?v=1"></script>
-<script src="/static/ws.js?v=8"></script>
+<script src="/static/ws.js?v=10"></script>
 <script>boot();</script>
 <script>
 /* one Play button, and your avatar holds your own actions */
