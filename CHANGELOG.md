@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.45.0** — workspaces replace the single viewer: Workspace 1 is Files, 2–6 hold videos, code, PDFs, docs and pictures (Settings gear sets the count, Alt+1..6 jumps). Music is now a pill at the top with a tools panel. Pictures use Viewer.js (MIT).
 - **2.44.2** – The tab system is gone for real: no tab bar, dock, floating windows, saved layouts, "Files" tab or tab buttons. One viewer at a time; ⋮ → "Open in new browser tab" for another tab.
 - **v2.44.1** — fix for the black, empty file list in the in-app browser: file cards are no longer skipped by the browser to save work (that left them blank), and the fade-in can no longer leave the list invisible
 - **v2.44.0** — tabs removed: one viewer at a time (the back arrow closes it) and no tab bar, New tab, dock or window buttons; every file and folder menu has "Open in new browser tab" (opens that file in our video, music, image, PDF, Word or code viewer in a separate browser tab); video playlist sidebar like YouTube (folder name, position, numbers, playing marker, scrolls to the current video); custom slim scrollbar

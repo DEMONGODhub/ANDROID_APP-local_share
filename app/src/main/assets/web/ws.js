@@ -1,4 +1,4 @@
-/* LocalShare viewer: opens one file at a time inside the page.
+/* LocalShare workspaces: Files plus up to five workspaces for what you open.
    YouTube-style video, Spotify-style music (keeps playing while you browse), code editor with save, DOCX, PDF and pictures. */
 (()=>{
 "use strict";
@@ -32,16 +32,24 @@ const css=`
 #wst{display:flex;align-items:stretch;gap:4px;padding:6px 8px 0;padding-top:max(6px,env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--outline)}
 #wst>button{flex:none;width:40px;height:40px;margin-bottom:6px;border:0;border-radius:20px;background:none;color:var(--text);display:grid;place-items:center;cursor:pointer}#wst>button:hover{background:var(--surface2)}
 #wtabs{flex:1;min-width:0;display:flex;align-items:center;overflow:hidden}.wtt{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:40px;margin-bottom:6px;font-weight:600;font-size:15px}.wtt svg{flex:none;color:var(--primary)}.wtt span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wtt i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--primary)}
+#wtabs{gap:4px}.wn{flex:none;min-width:36px;height:36px;margin:0 0 6px;padding:0 8px;border-radius:18px;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font:inherit;font-weight:700;display:grid;place-items:center;cursor:pointer;position:relative}.wn.on{background:var(--primary);color:var(--onprimary);border-color:var(--primary)}.wn.has:not(.on)::after{content:"";position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:var(--primary)}.wn.home svg{display:block}
+.wtt{margin-left:6px}@media(max-width:520px){.wtt span{display:none}}
+#wst>button[hidden]{display:none}
+#wemp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;color:var(--muted)}#wemp.hide{display:none}#wemp b{color:var(--text);font-size:20px}#wemp p{margin:0;max-width:340px}#wemp button,#wset .ca{height:40px;padding:0 18px;border-radius:20px;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+#wset{position:absolute;top:56px;right:8px;z-index:40;width:min(320px,calc(100vw - 16px));padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}#wset.hide{display:none}#wset h3{margin:0;display:flex;align-items:center;justify-content:space-between;font-size:16px}#wset h3 .cx{border:0;background:none;color:var(--text);cursor:pointer}#wset p{margin:0;font-size:13px;color:var(--muted)}#wset .st{display:flex;align-items:center;justify-content:center;gap:16px}#wset .st b{min-width:130px;text-align:center}#wset .st button{width:40px;height:40px;border-radius:50%;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font-size:20px;cursor:pointer}
+#wsw{position:relative}#wsw .lbl{display:none;font-size:14px;font-weight:600;margin-left:6px}#wsw b{position:absolute;top:2px;right:0;min-width:18px;height:18px;border-radius:9px;background:var(--primary);color:var(--onprimary);font-size:11px;display:grid;place-items:center}@media(min-width:900px){#wsw{width:auto;padding:0 14px;border-radius:22px;display:inline-flex;align-items:center}#wsw .lbl{display:inline}#wsw b{position:static;margin-left:6px}}
+#mp{position:fixed;top:calc(max(8px,env(safe-area-inset-top)) + 60px);right:10px;z-index:60;height:44px;width:min(250px,calc(100vw - 20px));display:flex;align-items:center;gap:4px;padding:0 4px 0 5px;border-radius:22px;background:var(--surface2);border:1px solid var(--outline);box-shadow:var(--shadow);overflow:hidden}#mp.hide{display:none}
+#mp .art{flex:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#333);display:grid;place-items:center;color:var(--onprimary);overflow:hidden;cursor:pointer}#mp .art img{width:100%;height:100%;object-fit:cover}
+#mp .tx{flex:1;min-width:0;cursor:pointer;font-size:13px}#mp .tx b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mp button{flex:none;width:34px;height:34px;border:0;border-radius:50%;background:none;color:var(--text);display:grid;place-items:center;cursor:pointer}#mp .pp{background:var(--text);color:var(--bg)}
+#mp .bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--outline)}#mp .bar i{display:block;height:100%;width:0;background:var(--primary)}
+@media(min-width:900px){#mp{top:calc(max(8px,env(safe-area-inset-top)) + 7px)}body:has(#ws:not(.hide)) #mp{right:112px}#mpan{top:calc(max(8px,env(safe-area-inset-top)) + 58px)!important}}
+#mpan{position:fixed;top:calc(max(8px,env(safe-area-inset-top)) + 110px);right:10px;z-index:61;width:min(380px,calc(100vw - 20px));max-height:calc(100dvh - 130px);overflow:auto;border-radius:16px;background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow)}#mpan.hide{display:none}
+#mpan .win{position:relative;inset:auto;display:flex}#mpan .wp.on.mu{display:flex;flex-direction:column;height:auto;overflow:visible}#mpan .mu .now{padding:16px;gap:12px}#mpan .mu .cover{width:min(160px,40vw)}#mpan .mu .meta h2{font-size:18px}#mpan .mu .q{border:0;border-top:1px solid var(--outline);max-height:220px}
+.vj{background:#050505;position:relative}.vj .vjl{display:none}.vj .viewer-container{position:absolute;inset:0}.imd{position:absolute;top:10px;left:10px;z-index:2020;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center}
 #wsb{flex:1;min-height:0;position:relative}.wp{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain}.wp:not(.on){display:none!important}.wp.on{display:flex;flex-direction:column}.wp.on.mu{display:grid}
-#ws.mp #wsb{padding-bottom:74px}
 #prt{display:none}
 /* mini player (like Spotify's bottom bar) */
-#mp{position:fixed;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));z-index:36;height:60px;border-radius:14px;background:var(--surface2);border:1px solid var(--outline);box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;padding:0 10px 0 6px;overflow:hidden}
-#mp.hide{display:none}#mp .art{flex:none;width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#333);display:grid;place-items:center;color:var(--onprimary);overflow:hidden;cursor:pointer}.art img{width:100%;height:100%;object-fit:cover}
-#mp .tx{flex:1;min-width:0;cursor:pointer}#mp .tx b,#mp .tx small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#mp .tx small{color:var(--muted);font-size:12px}
-#mp button{flex:none;width:40px;height:40px;border:0;border-radius:50%;background:none;color:var(--text);display:grid;place-items:center;cursor:pointer}#mp .pp{background:var(--text);color:var(--bg)}
-#mp .bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--outline)}#mp .bar i{display:block;height:100%;width:0;background:var(--primary)}
-@media(min-width:700px){#mp{left:50%;right:auto;width:560px;transform:translateX(-50%)}}
 /* video, YouTube style */
 .vw{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;padding:18px 24px 40px;max-width:1700px;margin:0 auto;width:100%;align-items:start}
 .vw.th{grid-template-columns:minmax(0,1fr);padding:0 0 30px}.vw.th .vp{border-radius:0;max-height:78vh}.vw.th .vinfo,.vw.th .vnext{padding:0 24px}
@@ -95,13 +103,11 @@ const css=`
 .vmh{display:flex;align-items:center;gap:6px;padding:2px 4px 6px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:4px}.vmh button{width:34px!important;height:34px!important;padding:0!important;justify-content:center!important;border-radius:50%!important;flex:none}.vmh b{font-size:14px}
 .vsl{display:flex;align-items:center;gap:10px;padding:6px 12px;font-size:13px;color:#fff}.vsl span:first-child{flex:none;min-width:70px}.vsl input{flex:1;min-width:80px;accent-color:var(--primary)}.vsl b{flex:none;min-width:44px;text-align:right;font-weight:600;font-size:12px}.vsl .vd{flex:1;display:flex;gap:6px}.vsl .vd button{padding:4px 8px!important;border-radius:8px!important;background:rgba(255,255,255,.12)!important;font-size:12px!important;display:block!important;width:auto!important}
 .vmn{margin:6px 12px;color:rgba(255,255,255,.65);font-size:12.5px;line-height:1.45}
-body.mpOn #fab{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 68px)}body.mpOn #arcfab{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 140px)}body.mpOn #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 66px)}
 .vnext{background:var(--surface);border:1px solid var(--outline);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;align-self:start;position:sticky;top:12px;max-height:calc(100vh - 130px);padding:0!important}
 .vnext .plh{padding:14px 16px 10px;background:var(--surface2);border-bottom:1px solid var(--outline)}.vnext .plh b{display:block;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vnext .plh small{color:var(--muted);font-size:12px}
 .vnext label{margin:0;padding:10px 16px;border-bottom:1px solid var(--outline)}.vnext .vl{overflow:auto;padding:6px;flex:1;min-height:0;position:relative}
 .vit .num{flex:none;width:22px;align-self:center;text-align:center;color:var(--muted);font-size:12px;font-style:normal}.vit.on .num{color:var(--primary)}
 @media(max-width:1000px){.vnext{position:static;max-height:60vh;margin:0 14px}}
-body.mpOn #ups{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 68px)}
 .win{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg);min-width:0;min-height:0}.win.on{display:flex}
 .win>.wp{position:relative;inset:auto;flex:1;min-height:0}
 .fv{position:fixed;right:16px;bottom:96px;width:min(420px,calc(100vw - 24px));z-index:80;background:#000;border:1px solid var(--outline);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
@@ -110,7 +116,6 @@ body.mpOn #ups{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 68px)}
 .fv .fh button{width:32px;height:32px;border:0;border-radius:8px;background:none;color:var(--text);font:inherit;font-size:16px;cursor:pointer}.fv .fh button:hover,.fv .fh button:focus-visible{background:var(--bg)}
 .fv .vp{border-radius:0;max-height:none}
 .fv.pw{position:static;width:100vw;height:100vh;border:0;border-radius:0}.fv.pw .fh{display:none}.fv.pw .vp{height:100%;aspect-ratio:auto}
-body.mpOn .fv{bottom:164px}
 #wst>button.cfg{margin-left:2px}
 #wcp{position:fixed;z-index:60;left:50%;bottom:20px;transform:translateX(-50%);width:min(380px,calc(100vw - 24px));background:var(--surface2);color:var(--text);border:1px solid var(--outline);border-radius:18px;padding:16px;box-shadow:var(--shadow);max-height:80vh;overflow:auto}#wcp.hide{display:none}
 #wcp h3{margin:0 0 10px;font-size:16px;display:flex;align-items:center}#wcp h3 button{margin-left:auto}#wcp h4{margin:14px 0 8px;font-size:13px;color:var(--muted);font-weight:600}
@@ -131,7 +136,7 @@ body.mpOn .fv{bottom:164px}
 @media print{body>*:not(#prt){display:none!important}#prt{display:block!important}}
 `;
 const st=D.createElement("style");st.textContent=css;D.head.appendChild(st);
-D.body.insertAdjacentHTML("beforeend",'<div id="ws" class="hide" role="dialog" aria-label="Open file"><div id="wst"><button id="wmin" aria-label="Back to files" title="Back to files">'+ic(I.back)+'</button><div id="wtabs"></div></div><div id="wsb"></div></div><div id="mp" class="hide" role="region" aria-label="Music player"></div>');
+D.body.insertAdjacentHTML("beforeend",'<div id="ws" class="hide" role="dialog" aria-label="Open file"><div id="wst"><button id="wmin" aria-label="Back to files" title="Back to files (Esc)">'+ic(I.back)+'</button><div id="wtabs"></div><button id="wx" aria-label="Close this file" title="Close this file (Alt+W)" hidden>'+ic(I.x,20)+'</button><button id="wcfg" aria-label="Workspace settings" title="Workspace settings">'+ic(I.gear,20)+'</button></div><div id="wsb"><div id="wemp" class="hide"><b></b><p>Videos, code, PDFs, documents and pictures you open from Files land here.</p><button>Back to Files</button></div></div><div id="wset" class="hide" role="dialog" aria-label="Workspace settings"></div></div><div id="mp" class="hide" role="region" aria-label="Music player"></div><div id="mpan" class="hide" role="dialog" aria-label="Music tools"></div>');
 const ws=Q("#ws"),tabsEl=Q("#wtabs"),body=Q("#wsb"),mp=Q("#mp");
 const kicon={files:I.folder,video:I.film,audio:I.music,text:I.code,docx:I.doc,pdf:I.doc,image:I.img};
 const fu=(p,dl)=>"/api/file?path="+encodeURIComponent(p)+(dl?"&dl=1":"");
@@ -143,59 +148,93 @@ const warn=t=>{try{toast(t)}catch(e){}};
 const getStore=k=>{try{return localStorage.getItem(k)}catch(e){return null}},setStore=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 function lazy(src,test){return new Promise((ok,no)=>{if(test()){ok();return}const s=D.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("Could not load "+src));D.head.appendChild(s)})}
 
-/* ---------- one viewer at a time (no tabs, no windows) ---------- */
-let active=null,pushed=false,locked=true;
+/* ---------- workspaces: 1 = Files, 2..N hold what you open ---------- */
+let active=null,pushed=false,locked=true,wsi=1;
+const slots=[];let NS=Math.min(6,Math.max(2,+getStore("ls_ns")||3));
 const narrow=()=>innerWidth<760;
 const vis=(t,b)=>{t.pane.classList.toggle("on",b);t.fr.classList.toggle("on",b)};
-const findTab=key=>active&&active.key===key?active:null;
+const isOpen=()=>!ws.classList.contains("hide");
+const slotOf=t=>slots.indexOf(t);
+const css1=h=>new Promise(ok=>{if(D.querySelector('link[href="'+h+'"]')){ok();return}const l=D.createElement("link");l.rel="stylesheet";l.href=h;l.onload=l.onerror=ok;D.head.appendChild(l)});
+const emp=Q("#wemp"),setEl=Q("#wset"),mpan=Q("#mpan");let wsw=null;
 function renderTabs(){
-  tabsEl.innerHTML="";if(!active)return;
-  const b=mk("div","wtt");b.innerHTML=ic(kicon[active.k]||I.doc,18)+"<span></span>"+(active.dirty?'<i title="Unsaved changes"></i>':"");
-  b.querySelector("span").textContent=active.title;tabsEl.appendChild(b);
+  const bar=tabsEl;bar.innerHTML="";
+  for(let i=0;i<NS;i++){
+    const t=i?slots[i]:null,b=mk("button","wn"+(i===0?" home":"")+(i&&wsi===i&&isOpen()?" on":"")+(t?" has":""),i===0?ic(I.folder,18):String(i+1));
+    b.title=i===0?"Workspace 1: Files (Alt+1)":"Workspace "+(i+1)+(t?": "+t.title:": empty")+" (Alt+"+(i+1)+")";b.setAttribute("aria-label",b.title);
+    b.onclick=()=>{if(i===0)hideWs();else{showSlot(i);showWs()}};bar.appendChild(b);
+  }
+  const a=slots[wsi];
+  if(a){const b=mk("div","wtt",ic(kicon[a.k]||I.doc,18)+"<span></span>"+(a.dirty?'<i title="Unsaved changes"></i>':""));b.querySelector("span").textContent=a.title;bar.appendChild(b)}
+  Q("#wx").hidden=!a;
+  const n=slots.filter(Boolean).length;
+  if(!wsw){const h=D.querySelector("header"),sn=h&&h.querySelector("#snb");if(sn){wsw=mk("button","ib");wsw.id="wsw";wsw.onclick=()=>{const k=slots[wsi]?wsi:(slots.findIndex((x,j)=>j&&x)||1);showSlot(k>0?k:1);showWs()};sn.parentNode.insertBefore(wsw,sn)}}
+  if(wsw){wsw.hidden=locked;wsw.title="Workspaces ("+n+" open)";wsw.setAttribute("aria-label",wsw.title);wsw.innerHTML=ic(I.list,22)+'<span class="lbl">Workspaces</span>'+(n?"<b>"+n+"</b>":"")}
 }
-function activate(t){
-  active=t;vis(t,true);if(t.onshow)t.onshow();
+function showSlot(i){
+  if(i<1||i>=NS)return;
+  const prev=active;wsi=i;active=slots[i]||null;
+  if(prev&&prev!==active){vis(prev,false);if(prev.onhide)prev.onhide()}
+  if(active){vis(active,true);if(active.onshow)active.onshow()}
+  emp.classList.toggle("hide",!!active);if(!active)emp.querySelector("b").textContent="Workspace "+(i+1)+" is empty";
   renderTabs();syncMini();
 }
 function lock(b){
   if(b===locked)return;locked=b;
   if(b){
-    if(active){active.dirty=false;closeTab(active)}
+    slots.forEach(t=>{if(t){t.dirty=false;closeTab(t,1)}});
     try{A.pause();A.q=[];A.i=-1;A.removeAttribute("src")}catch(x){}
     hideWs();
   }
   renderTabs();syncMini();
 }
-function closeTab(t){
+function closeTab(t,quiet){
   if(t.dirty&&!confirm("Close "+t.title+" without saving your changes?"))return;
-  if(t.onclose)t.onclose();
-  t.fr.remove();if(active===t)active=null;
-  hideWs();syncMini();
+  const i=slotOf(t);if(t.onclose)t.onclose();t.fr.remove();if(i>=0)slots[i]=null;if(active===t)active=null;
+  if(quiet)return;
+  const nx=slots.findIndex((x,j)=>j&&x);
+  if(nx>0)showSlot(nx);else{renderTabs();hideWs()}
+  syncMini();
 }
 function showWs(){
   if(locked)return;
   ws.classList.remove("hide");D.body.style.overflow="hidden";
   if(!pushed){try{history.pushState({ws:1},"");pushed=true}catch(e){}}
+  if(active&&active.onshow&&!active.fr.classList.contains("on")){vis(active,true);active.onshow()}
   renderTabs();syncMini();
 }
 function hideWs(fromPop){
-  ws.classList.add("hide");D.body.style.overflow="";
+  ws.classList.add("hide");D.body.style.overflow="";setEl.classList.add("hide");
   if(active&&active.onhide)active.onhide();
   if(pushed&&!fromPop){pushed=false;try{if(history.state&&history.state.ws)history.back()}catch(e){}}else pushed=false;
   renderTabs();syncMini();
 }
-addEventListener("popstate",()=>{if(pushed&&!ws.classList.contains("hide")){pushed=false;hideWs(true)}});
-Q("#wmin").onclick=()=>{if(active)closeTab(active);else hideWs()};
-addEventListener("beforeunload",ev=>{if(active&&active.dirty){ev.preventDefault();ev.returnValue=""}});
+addEventListener("popstate",()=>{if(pushed&&isOpen()){pushed=false;hideWs(true)}});
+Q("#wmin").onclick=()=>hideWs();
+Q("#wx").onclick=()=>{if(active)closeTab(active)};
+emp.querySelector("button").onclick=()=>hideWs();
+function setNS(n){
+  n=Math.min(6,Math.max(2,n));
+  for(let i=n;i<slots.length;i++){const t=slots[i];if(t&&t.dirty&&!confirm("Close "+t.title+" without saving your changes?"))return}
+  NS=n;setStore("ls_ns",String(n));
+  for(let i=n;i<slots.length;i++)if(slots[i]){slots[i].dirty=false;closeTab(slots[i],1)}
+  slots.length=Math.min(slots.length,n);
+  if(wsi>=n)showSlot(n-1);else showSlot(wsi);
+  drawSet();
+}
+function drawSet(){
+  setEl.innerHTML='<h3>Workspaces<button class="cx" aria-label="Close">'+ic(I.x,16)+'</button></h3><p>Workspace 1 is your files. The others hold what you open: videos, code, PDFs, documents and pictures.</p><div class="st"><button class="m" aria-label="Fewer">−</button><b></b><button class="p" aria-label="More">+</button></div><p class="k">Jump with Alt+1 … Alt+'+NS+'. Alt+W closes the file in view.</p><button class="ca">Close all open files</button>';
+  setEl.querySelector("b").textContent=NS+" workspaces";
+  setEl.querySelector(".m").onclick=()=>setNS(NS-1);setEl.querySelector(".p").onclick=()=>setNS(NS+1);
+  setEl.querySelector(".cx").onclick=()=>setEl.classList.add("hide");
+  setEl.querySelector(".ca").onclick=()=>{slots.forEach(t=>{if(t)closeTab(t,1)});hideWs()};
+}
+Q("#wcfg").onclick=()=>{drawSet();setEl.classList.toggle("hide")};
+addEventListener("beforeunload",ev=>{if(slots.some(t=>t&&t.dirty)){ev.preventDefault();ev.returnValue=""}});
 function addTab(key,k,title,pane){
   const t={key,k,title,pane};pane.classList.add("wp");
   const fr=mk("div","win");t.fr=fr;fr.appendChild(pane);body.appendChild(fr);
   return t;
-}
-/* put t on screen; the viewer that was there goes away */
-function swap(t){
-  const old=active;if(!old||old===t)return;
-  if(old.onclose)old.onclose();old.fr.remove();active=null;
 }
 function siblings(kinds,C){
   try{C=C||{cur,shown};return(C.shown||[]).filter(x=>!x.d&&kinds.includes(x.k)).map(x=>({n:x.n,k:x.k,s:x.s||0,p:join(C.cur,x.n)}))}catch(e){return[]}
@@ -205,14 +244,17 @@ function open(e,C,opts){
   if(locked||!e||e.d||!KINDS.includes(e.k))return false;
   C=C||{cur,shown,entries};
   const p=join(C.cur,e.n);
-  if(active&&active.key!==(e.k==="audio"?"audio":p)&&active.dirty&&!confirm("Close "+active.title+" without saving your changes?"))return false;
-  if(e.k==="audio"){playAudio(e.n,p,siblings(["audio"],C));let t=findTab("audio");if(!t)t=musicTab();swap(t);showWs();activate(t);return true}
-  let t=findTab(p);
-  if(!t){
-    t=e.k==="video"?videoTab(e,p,C):e.k==="text"?textTab(e,p):e.k==="docx"?docxTab(e,p):e.k==="pdf"?pdfTab(e,p):imageTab(e,p,C);
-  }
-  swap(t);
-  showWs();activate(t);return true;
+  if(e.k==="audio"){playAudio(e.n,p,siblings(["audio"],C));syncMini();return true}
+  let t=slots.find(x=>x&&x.key===p);
+  if(t){showSlot(slotOf(t));showWs();return true}
+  let to=-1;const rep=opts&&opts.replace;
+  if(rep&&slotOf(rep)>0)to=slotOf(rep);
+  else{for(let i=1;i<NS;i++)if(!slots[i]){to=i;break}if(to<0)to=wsi>=1&&wsi<NS?wsi:1}
+  const old=slots[to];
+  if(old&&old.dirty&&!confirm("Close "+old.title+" without saving your changes?"))return false;
+  t=e.k==="video"?videoTab(e,p,C):e.k==="text"?textTab(e,p):e.k==="docx"?docxTab(e,p):e.k==="pdf"?pdfTab(e,p):imageTab(e,p,C);
+  if(old){if(old.onclose)old.onclose();old.fr.remove();if(active===old)active=null}
+  slots[to]=t;showSlot(to);showWs();return true;
 }
 
 /* ---------- music engine ---------- */
@@ -295,29 +337,29 @@ function mediaSession(){
 /* mini bar */
 function syncMini(){
   const hasTrack=A.q.length>0&&A.i>=0;
-  const mt=findTab("audio"),mv=!ws.classList.contains("hide")&&!!mt;
-  const show=!locked&&hasTrack&&!mv;mp.classList.toggle("hide",!show);D.body.classList.toggle("mpOn",show);
-  ws.classList.toggle("mp",show&&!ws.classList.contains("hide"));
+  const show=!locked&&hasTrack;mp.classList.toggle("hide",!show);
+  if(!show)mpan.classList.add("hide");
   if(show)paintMini();
 }
 function paintMini(){
   const m=A.meta||{};
   if(!mp.firstChild){
-    mp.innerHTML='<div class="art" role="button" aria-label="Open music tab"></div><div class="tx" role="button"><b></b><small></small></div><button class="pv" aria-label="Previous">'+ic(I.prev)+'</button><button class="pp" aria-label="Play or pause"></button><button class="nx" aria-label="Next">'+ic(I.next)+'</button><button class="cl" aria-label="Stop and close">'+ic(I.x,18)+'</button><div class="bar"><i></i></div>';
-    const go=()=>{const t=findTab("audio")||musicTab();swap(t);showWs();activate(t)};
+    mp.innerHTML='<div class="art" role="button" aria-label="Music tools"></div><div class="tx" role="button" aria-label="Music tools"><b></b></div><button class="pp" aria-label="Play or pause"></button><button class="nx" aria-label="Next">'+ic(I.next,20)+'</button><button class="cl" aria-label="Stop and close">'+ic(I.x,16)+'</button><div class="bar"><i></i></div>';
+    const go=()=>{if(!MT){MT=musicTab();mpan.appendChild(MT.fr);vis(MT,true)}MT.paint();mpan.classList.toggle("hide")};
     mp.querySelector(".art").onclick=go;mp.querySelector(".tx").onclick=go;
-    mp.querySelector(".pv").onclick=prevTrack;mp.querySelector(".nx").onclick=()=>nextTrack(false);
+    mp.querySelector(".nx").onclick=()=>nextTrack(false);
     mp.querySelector(".pp").onclick=()=>A.playing?A.pause():A.play();
-    mp.querySelector(".cl").onclick=()=>{A.pause();A.removeAttribute("src");A.load();A.q=[];A.i=-1;const t=findTab("audio");if(t)closeTab(t);syncMini()};
+    mp.querySelector(".cl").onclick=()=>{A.pause();A.removeAttribute("src");A.load();A.q=[];A.i=-1;syncMini()};
   }
-  const art=mp.querySelector(".art");art.innerHTML=m.cover?'<img alt="" src="'+m.cover+'">':ic(I.music,24);
-  mp.querySelector("b").textContent=m.title||"";mp.querySelector("small").textContent=m.artist||(A.q[A.i]?"":"");
-  mp.querySelector(".pp").innerHTML=ic(A.playing?I.pause:I.play);
+  const art=mp.querySelector(".art");art.innerHTML=m.cover?'<img alt="" src="'+m.cover+'">':ic(I.music,18);
+  mp.querySelector("b").textContent=m.title||"Music";
+  mp.querySelector(".pp").innerHTML=ic(A.playing?I.pause:I.play,20);
   mp.querySelector(".bar i").style.width=(A.duration?A.currentTime/A.duration*100:0)+"%";
 }
+let MT=null;
 function refreshAudio(light){
   if(!mp.classList.contains("hide")){if(light)paintMini();else syncMini()}else if(!light)syncMini();
-  const t=findTab("audio");if(t&&t.paint)t.paint(light);
+  if(MT&&MT.paint&&!mpan.classList.contains("hide"))MT.paint(light);
 }
 function musicTab(){
   const pane=mk("div","mu"),t=addTab("audio","audio","Music",pane);
@@ -425,7 +467,7 @@ function videoTab(e,p,C){
   const pip=async()=>{try{if(D.pictureInPictureElement)await D.exitPictureInPicture();else await v.requestPictureInPicture()}catch(x){warn("Picture in picture is not available here")}};
   // floating player: the same player and controls, in a small window that stays while you browse
   let fl=null;
-  const unfloat=go=>{if(!fl)return;const f=fl;fl=null;t.floating=false;vp.classList.remove("fl");main.insertBefore(vp,main.firstChild);if(f.pw){try{f.pw.close()}catch(x){}}f.remove();if(go){swap(t);showWs();activate(t)}};
+  const unfloat=go=>{if(!fl)return;const f=fl;fl=null;t.floating=false;vp.classList.remove("fl");main.insertBefore(vp,main.firstChild);if(f.pw){try{f.pw.close()}catch(x){}}f.remove();if(go){const si=slotOf(t);if(si>0){showSlot(si);showWs()}}};
   const float=async pop=>{
     if(fl)return;const f=mk("div","fv");
     f.innerHTML='<div class="fh"><span></span><button class="fo" title="Pop out over other apps" aria-label="Pop out">\u29c9</button><button class="fe" title="Back to the tab" aria-label="Back to the tab">\u2922</button><button class="fc" title="Stop and put back" aria-label="Close floating player">\u2715</button></div>';
@@ -655,49 +697,30 @@ function pdfTab(e,p){
   t.onclose=()=>{f.src="about:blank"};return t;
 }
 function imageTab(e,p,C){
-  const pane=mk("div","im"),t=addTab(p,"image",e.n,pane);
-  const list=siblings(["image"],C);let i=Math.max(0,list.findIndex(x=>x.p===p));
-  const img=new Image();img.alt=e.n;img.draggable=false;pane.appendChild(img);
-  let z=1,rot=0,fx=1,x=0,y=0,show1=null;
-  const xf=()=>{img.style.transform="translate("+x+"px,"+y+"px) rotate("+rot+"deg) scale("+(z*fx)+","+z+")"};
-  const reset=()=>{z=1;rot=0;fx=1;x=0;y=0;xf()};
-  const zoom=d=>{z=Math.min(8,Math.max(.2,z*d));if(z<=1.001){x=0;y=0}xf()};
-  const show=()=>{const it=list[i];if(!it)return;img.src=fu(it.p);img.alt=it.n;t.title=it.n;reset();renderTabs()};
-  const bar=mk("div","imb");
-  const B=(icn,tip,fn)=>{const b=mk("button","",ic(icn,20));b.title=tip;b.setAttribute("aria-label",tip);b.onclick=ev=>{ev.stopPropagation();fn(b)};bar.appendChild(b);return b};
-  B(I.zout,"Zoom out",()=>zoom(1/1.25));B(I.zin,"Zoom in",()=>zoom(1.25));
-  const one=B(I.img,"Fit / actual size",()=>{if(z!==1||x||y)reset();else{z=Math.max(1,img.naturalWidth/Math.max(1,img.clientWidth));xf()}});
-  B(I.rot,"Turn right",()=>{rot=(rot+90)%360;xf()});B(I.flip,"Mirror",()=>{fx=-fx;xf()});
-  const dl=B(I.dl,"Download",()=>{const a=D.createElement("a");a.href=fu(list[i]?list[i].p:p,1);a.download=(list[i]||e).n;D.body.appendChild(a);a.click();a.remove()});
-  B(I.full,"Full screen",()=>{if(D.fullscreenElement)D.exitFullscreen();else if(pane.requestFullscreen)pane.requestFullscreen().catch(()=>{})});
-  let slide=0;
-  if(list.length>1){
-    const l=mk("button","nv l",ic(I.back,24)),r=mk("button","nv r",ic(I.back,24));r.firstChild.style.transform="scaleX(-1)";l.setAttribute("aria-label","Previous picture");r.setAttribute("aria-label","Next picture");
-    l.onclick=ev=>{ev.stopPropagation();i=(i-1+list.length)%list.length;show()};r.onclick=ev=>{ev.stopPropagation();i=(i+1)%list.length;show()};pane.append(l,r);
-    const sb=B(I.play,"Slideshow",()=>{if(slide){clearInterval(slide);slide=0;sb.classList.remove("on")}else{sb.classList.add("on");slide=setInterval(()=>{i=(i+1)%list.length;show()},3500)}});
-    t.key2=ev=>{if(active!==t||ws.classList.contains("hide"))return;const k=ev.key;let used=true;
-      if(k==="ArrowLeft")l.click();else if(k==="ArrowRight")r.click();else if(k==="+"||k==="=")zoom(1.25);else if(k==="-")zoom(1/1.25);else if(k==="0")reset();else if(k==="r"||k==="R"){rot=(rot+90)%360;xf()}else used=false;
-      if(used){ev.preventDefault();ev.stopPropagation()}};
-  }else t.key2=ev=>{if(active!==t||ws.classList.contains("hide"))return;const k=ev.key;if(k==="+"||k==="="){zoom(1.25);ev.preventDefault()}else if(k==="-"){zoom(1/1.25);ev.preventDefault()}else if(k==="0"){reset();ev.preventDefault()}};
-  pane.appendChild(bar);
-  pane.addEventListener("wheel",ev=>{ev.preventDefault();zoom(ev.deltaY<0?1.12:1/1.12)},{passive:false});
-  let drag=null;
-  pane.addEventListener("pointerdown",ev=>{if(ev.target.closest(".imb,.nv"))return;drag={px:ev.clientX,py:ev.clientY,x,y,moved:false};pane.setPointerCapture(ev.pointerId)});
-  pane.addEventListener("pointermove",ev=>{if(!drag)return;const dx=ev.clientX-drag.px,dy=ev.clientY-drag.py;if(Math.abs(dx)+Math.abs(dy)>3){drag.moved=true;pane.classList.add("g")}if(z>1){x=drag.x+dx;y=drag.y+dy;xf()}});
-  pane.addEventListener("pointerup",()=>{pane.classList.remove("g");drag=null});
-  pane.addEventListener("dblclick",ev=>{if(ev.target.closest(".imb,.nv"))return;if(z>1||x||y)reset();else{z=2.5;xf()}});
-  t.onclose=()=>{if(slide)clearInterval(slide)};t.onhide=()=>{if(slide){clearInterval(slide);slide=0}};
-  show();return t;
+  const pane=mk("div","im vj"),t=addTab(p,"image",e.n,pane);
+  const list=siblings(["image"],C),i0=Math.max(0,list.findIndex(x=>x.p===p));
+  const ul=mk("ul","vjl");list.forEach(x=>{const li=mk("li"),im=new Image();im.src="/api/thumb?path="+encodeURIComponent(x.p)+"&w=160";im.alt=x.n;im.dataset.original=fu(x.p);li.appendChild(im);ul.appendChild(li)});
+  const dl=mk("a","imd",ic(I.dl,20));dl.title="Download";dl.setAttribute("aria-label","Download");dl.href=fu(p,1);dl.setAttribute("download",e.n);
+  pane.append(ul,dl);let vw=null;
+  Promise.all([css1("/static/viewer.min.css"),lazy("/static/viewer.min.js",()=>window.Viewer)]).then(()=>{
+    vw=new Viewer(ul,{inline:true,container:pane,url:"data-original",navbar:false,title:[1,(im)=>im.alt],initialViewIndex:i0,zoomRatio:.25,maxZoomRatio:8,transition:false,keyboard:true,
+      viewed(ev){const it=list[ev.detail.index];if(it){t.title=it.n;dl.href=fu(it.p,1);dl.setAttribute("download",it.n);renderTabs()}}});
+  }).catch(()=>{pane.textContent="The picture viewer could not load."});
+  t.onclose=()=>{try{if(vw)vw.destroy()}catch(x){}};t.onhide=()=>{};
+  return t;
 }
 
 /* ---------- keys, then expose ---------- */
 addEventListener("keydown",ev=>{
-  if(ws.classList.contains("hide"))return;
+  if(locked)return;
+  if(ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&/^[1-6]$/.test(ev.key)&&+ev.key<=NS){ev.preventDefault();if(ev.key==="1")hideWs();else{showSlot(+ev.key-1);showWs()}return}
+  if(!isOpen())return;
   if(ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&active&&(ev.key==="w"||ev.key==="W")){ev.preventDefault();closeTab(active);return}
-  if(ev.key==="Escape"&&!(ev.target.closest&&ev.target.closest(".CodeMirror-dialog"))&&!D.fullscreenElement){ev.preventDefault();ev.stopPropagation();hideWs();return}
+  if(ev.key==="Escape"&&!(ev.target.closest&&ev.target.closest(".CodeMirror-dialog"))&&!D.fullscreenElement){ev.preventDefault();ev.stopPropagation();if(!setEl.classList.contains("hide"))setEl.classList.add("hide");else hideWs();return}
   if(active&&active.key2)active.key2(ev);
   if((ev.ctrlKey||ev.metaKey)&&ev.key==="w"&&active){ev.preventDefault();closeTab(active)}
 },true);
-window.WS={lock,open,visible:()=>!ws.classList.contains("hide"),kinds:KINDS};
+D.addEventListener("pointerdown",ev=>{if(!setEl.classList.contains("hide")&&!ev.target.closest("#wset,#wcfg"))setEl.classList.add("hide");if(!mpan.classList.contains("hide")&&!ev.target.closest("#mpan,#mp"))mpan.classList.add("hide")});
+window.WS={lock,open,visible:isOpen,kinds:KINDS};
 renderTabs();syncMini();
 })();

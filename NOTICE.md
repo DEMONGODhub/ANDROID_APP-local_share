@@ -18,3 +18,6 @@ All other code, design, text, logo and artwork are the original work of DEMON_GO
 ## Bundled in the web page
 - CodeMirror 5 (MIT, Marijn Haverbeke and contributors): the code editor.
 - mammoth.js (BSD-2-Clause, Michael Williamson): shows .docx files.
+
+## Viewer.js
+Picture viewer (MIT) by Chen Fengyuan, https://github.com/fengyuanchen/viewerjs — bundled as viewer.min.js / viewer.min.css.

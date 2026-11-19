@@ -5,7 +5,7 @@ Kotlin + Jetpack Compose (Material 3). The server is pure Java with no third-par
 
 ## What's new in v2
 - Guests first **choose which shared folder** to open; add as many folders as you like.
-- Photos, PDFs, videos, music, documents and code open in one built-in viewer (⋮ → "Open in new browser tab" for a separate browser tab). A **⋮ menu** on every item: open, download, copy link, delete.
+- Photos, PDFs, videos, music, documents and code open in workspaces (up to 6, switch with the Workspaces button or Alt+1..6) (⋮ → "Open in new browser tab" for a separate browser tab). A **⋮ menu** on every item: open, download, copy link, delete.
 - Smooth browsing: server thumbnails, lazy loading, chunked lists, stale-while-revalidate listings.
 - Guest controls: upload, delete, session length, password, max devices, block by device. Activity log.
 - **Per-device settings** (gear button next to Kick and Block on the Devices tab): let one device upload, delete, rename, move or edit text, or limit it to the game only.
