@@ -55,9 +55,9 @@ header{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:max(
 #bar .btn{min-height:40px;padding:0 14px}@media(max-width:640px){#bar{gap:var(--s2)}#bar #sw{flex:1 1 100%;order:-1;height:44px}#bar select,#bar .btn{min-height:44px;height:44px}}
 #main{flex:1;overflow:auto;padding:4px 12px 96px;-webkit-overflow-scrolling:touch;position:relative}
 #main.fade{animation:fade .16s ease-out}
-@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:.55}to{opacity:1}}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.card{position:relative;background:var(--surface);border:1px solid var(--outline);border-radius:var(--r);overflow:hidden;content-visibility:auto;contain-intrinsic-size:150px 190px;transition:opacity .2s,transform .2s}
+.card{position:relative;background:var(--surface);border:1px solid var(--outline);border-radius:var(--r);overflow:hidden;transition:opacity .2s,transform .2s}
 .card.gone{opacity:0;transform:scale(.94)}
 .card>a{display:block;color:inherit;text-decoration:none;outline-offset:-2px}
 .thumb{aspect-ratio:1;background:var(--surface2);display:grid;place-items:center;color:var(--c,var(--muted));position:relative;overflow:hidden}
@@ -1194,7 +1194,7 @@ addEventListener("keydown",e=>{
 <script src="/static/avatar.js?v=6"></script>
 <script src="/static/arena.js?v=13"></script>
 <script src="/static/party.js?v=1"></script>
-<script src="/static/ws.js?v=11"></script>
+<script src="/static/ws.js?v=12"></script>
 <script>boot();</script>
 <script>
 /* one Play button, and your avatar holds your own actions */

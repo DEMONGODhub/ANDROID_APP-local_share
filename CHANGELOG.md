@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.44.1** — fix for the black, empty file list in the in-app browser: file cards are no longer skipped by the browser to save work (that left them blank), and the fade-in can no longer leave the list invisible
 - **v2.44.0** — tabs removed: one viewer at a time (the back arrow closes it) and no tab bar, New tab, dock or window buttons; every file and folder menu has "Open in new browser tab" (opens that file in our video, music, image, PDF, Word or code viewer in a separate browser tab); video playlist sidebar like YouTube (folder name, position, numbers, playing marker, scrolls to the current video); custom slim scrollbar
 - **v2.43.1** — fixes: the stray file name and tiny buttons that showed above videos and other tabs are gone (window-mode and floating-player styles were missing); the top bar and toolbar fit on phones (title and host picture hidden when narrow, Zip is icon-only, Upload stays on the same row); the first-run set-up screens no longer sit under the status and navigation bars
 - **v2.43.0** — things where you would expect them: app Home puts Shared folders under Status, the invite/QR card right after it while sharing, and the permission warning at the top; side rail regrouped (Share, People, Tools); page has one Play button (Orb Arena or Arcade), Log out inside your avatar menu, a labelled Send button, search first in the toolbar, and a Tabs / New tab button in the top bar instead of the floating one (the old floating button is still an option in its settings)
