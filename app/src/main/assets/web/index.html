@@ -254,6 +254,15 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
 #totop.on{opacity:1;transform:none;pointer-events:auto}#totop[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<style id="ux">
+header #lo{display:none}#arcfab{display:none!important}
+#snb .lbl,#hwt .lbl{display:none;font-size:14px;font-weight:600;margin-left:6px}
+@media(min-width:720px){#snb,#hwt{width:auto;padding:0 14px;border-radius:22px;display:inline-flex;align-items:center}#snb .lbl,#hwt .lbl{display:inline}}
+#bar #sw{order:-1}#count{flex:0 0 auto;min-width:0;order:0}
+.pop{position:fixed;z-index:90;background:var(--surface2);color:var(--text);border:1px solid var(--outline);border-radius:16px;box-shadow:var(--shadow);padding:6px;min-width:190px}
+.pop button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0 12px;border-radius:12px;cursor:pointer}.pop button:hover,.pop button:focus-visible{background:var(--bg)}.pop button.dng{color:#f87171}
+#hwt{position:relative}#hwt b{position:absolute;top:2px;right:0;min-width:18px;height:18px;border-radius:9px;background:var(--primary);color:var(--onprimary);font-size:11px;display:grid;place-items:center;padding:0 4px}#hwt b:empty{display:none}
+</style>
 </head>
 <body>
 <div id="boot">Loading…</div>
@@ -276,7 +285,7 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
     <button id="brand" aria-label="Home, choose a folder"><i id="logo3"></i><span>LocalShare</span></button>
     <span id="hostchip" hidden><img alt=""><b></b></span>
     <button class="ib avme" id="avb" aria-label="Your picture. Tap to change it."><img alt=""></button>
-    <button class="ib" id="snb" aria-label="Send files or text to the host" style="position:relative">&#128232;</button>
+    <button class="ib" id="snb" aria-label="Send files or text to the host" title="Send files or text to the host" style="position:relative">&#128232;<span class="lbl">Send</span></button>
     <button class="ib" id="chb" aria-label="Live chat" style="position:relative"></button>
     <button class="ib" id="help" aria-label="Help for this device"></button>
     <button class="ib" id="lo" aria-label="Leave"></button>
@@ -1180,7 +1189,24 @@ addEventListener("keydown",e=>{
 <script src="/static/avatar.js?v=6"></script>
 <script src="/static/arena.js?v=13"></script>
 <script src="/static/party.js?v=1"></script>
-<script src="/static/ws.js?v=7"></script>
+<script src="/static/ws.js?v=8"></script>
 <script>boot();</script>
+<script>
+/* one Play button, and your avatar holds your own actions */
+(function(){
+const $=s=>document.querySelector(s);let pop=null;
+function closePop(){if(pop){pop.remove();pop=null}}
+function open(anchor,items,above){closePop();pop=document.createElement("div");pop.className="pop";pop.setAttribute("role","menu");
+ items.forEach(([t,fn,cls])=>{const b=document.createElement("button");b.textContent=t;b.setAttribute("role","menuitem");if(cls)b.className=cls;b.onclick=()=>{closePop();fn()};pop.appendChild(b)});
+ document.body.appendChild(pop);const r=anchor.getBoundingClientRect(),w=pop.offsetWidth,h=pop.offsetHeight;
+ pop.style.left=Math.max(8,Math.min(innerWidth-w-8,above?r.right-w:r.left))+"px";pop.style.top=above?Math.max(8,r.top-h-8)+"px":Math.min(innerHeight-h-8,r.bottom+6)+"px"}
+addEventListener("pointerdown",e=>{if(pop&&!e.target.closest(".pop")&&!e.target.closest("#avb")&&!e.target.closest("#fab"))closePop()},true);
+addEventListener("keydown",e=>{if(e.key==="Escape")closePop()});
+const av=$("#avb");if(av){const edit=av.onclick;av.onclick=ev=>{ev.stopPropagation();if(pop){closePop();return}open(av,[["Change my picture",()=>edit&&edit.call(av,ev)],["Log out",()=>$("#lo").click(),"dng"]])}}
+const fab=$("#fab");if(fab){const arena=fab.onclick;fab.setAttribute("aria-label","Play");fab.title="Play";
+ fab.onclick=ev=>{if(pop){closePop();return}const arc=$("#arcfab");if(!arc||!(typeof INFO!=="undefined"&&INFO.gameEnabled)){arena&&arena.call(fab,ev);return}
+  open(fab,[["Orb Arena",()=>arena&&arena.call(fab,ev)],["Arcade (card & party games)",()=>arc.click()]],true)}}
+})();
+</script>
 </body>
 </html>

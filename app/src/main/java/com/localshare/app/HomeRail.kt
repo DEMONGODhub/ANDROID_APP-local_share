@@ -117,10 +117,12 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
         RailTile(if (st.running) "Stop" else "Start", false, onStartStop, active = st.running) { fg ->
             Icon(if (st.running) Icons.Filled.Close else Icons.Filled.PlayArrow, null, tint = fg)
         }
+        RailTile("Shared", sec == 1, { onSec(1) }) { fg -> Icon(Icons.Filled.Share, null, tint = fg) }
+        RailTile("Connect", sec == 3, { onSec(3) }) { fg -> Icon(Icons.Filled.Lock, null, tint = fg) }
+        HorizontalDivider(Modifier.width(36.dp), color = c.outlineVariant)
         RailTile("Chat", sec == 5, { onSec(5) }, dot = chatDot) { fg -> Icon(Icons.Filled.Email, null, tint = fg) }
         RailTile("Browser", false, onBrowser, active = st.running) { fg -> Icon(Icons.Filled.Search, null, tint = fg) }
         HorizontalDivider(Modifier.width(36.dp), color = c.outlineVariant)
-        RailTile("Shared", sec == 1, { onSec(1) }) { fg -> Icon(Icons.Filled.Share, null, tint = fg) }
         RailTile("Join", sec == 7, { onSec(7) }) { fg -> Icon(Icons.Filled.Add, null, tint = fg) }
         RailTile("TV", sec == 8, { onSec(8) }) { fg ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -128,7 +130,7 @@ internal fun HomeRail(st: UiState, sec: Int, chatDot: Boolean, onSec: (Int) -> U
                 Box(Modifier.padding(top = 2.dp).size(12.dp, 2.dp).background(fg))
             }
         }
-        RailTile("Connect", sec == 3, { onSec(3) }) { fg -> Icon(Icons.Filled.Lock, null, tint = fg) }
+        HorizontalDivider(Modifier.width(36.dp), color = c.outlineVariant)
         RailTile("Look", sec == 6, { onSec(6) }) { fg -> Icon(Icons.Filled.Edit, null, tint = fg) }
         RailTile("More", sec == 4, { onSec(4) }) { fg -> Icon(Icons.Filled.MoreVert, null, tint = fg) }
     }

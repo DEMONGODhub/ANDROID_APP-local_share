@@ -146,6 +146,15 @@ let WM=getStore("ls_wmode")==="1",Z=10,locked=true,restored=false;
 const winOn=()=>WM&&!narrow();
 const vis=(t,b)=>{t.pane.classList.toggle("on",b);t.fr.classList.toggle("on",b)};
 const findTab=key=>tabs.find(t=>t.key===key);
+let hwt=null;
+function hdr(){
+  const h=D.querySelector("header");if(!h)return;
+  if(!hwt){const sn=h.querySelector("#snb");if(!sn)return;hwt=mk("button","ib");hwt.id="hwt";hwt.onclick=()=>dock.onclick();hwt.addEventListener("contextmenu",ev=>{ev.preventDefault();dockCfg()});sn.parentNode.insertBefore(hwt,sn)}
+  const n=tabs.length,on=DK.pos==="hd"&&!locked;hwt.hidden=!on;
+  hwt.title=n?"Open tabs ("+n+")":"New tab";hwt.setAttribute("aria-label",hwt.title);
+  hwt.innerHTML=ic(n?I.list:I.plus,22)+'<span class="lbl">'+(n?"Tabs":"New tab")+"</span><b>"+(n||"")+"</b>";
+  hwt.style.background=DK.bg||"";hwt.style.color=DK.bg?(lum(DK.bg)>.6?"#111":"#fff"):"";
+}
 function renderTabs(){
   tabsEl.innerHTML="";
   tabs.forEach(t=>{
@@ -159,7 +168,7 @@ function renderTabs(){
   });
   tabs.forEach((t,i)=>{const tt=t.fr.querySelector(".tt");if(tt)tt.textContent=t.title+(narrow()&&tabs.length>1?"   "+(i+1)+"/"+tabs.length:"")});
   dock.innerHTML=ic(tabs.length?I.list:I.plus,20)+"<span>"+(tabs.length?tabs.length+" open":"New tab")+"</span>";
-  const want=ws.classList.contains("hide");dock.classList.toggle("hide",!want||locked);
+  const want=ws.classList.contains("hide");dock.classList.toggle("hide",!want||locked||DK.pos==="hd");hdr();
   saveLayout();
 }
 function activate(t){
@@ -237,7 +246,7 @@ function hideWs(fromPop){
   renderTabs();syncMini();
 }
 addEventListener("popstate",()=>{if(pushed&&!ws.classList.contains("hide")){pushed=false;hideWs(true)}});
-const DK=Object.assign({bg:"",pos:"bl"},(()=>{try{return JSON.parse(getStore("ls_dock")||"{}")}catch(x){return{}}})());
+const DK=Object.assign({bg:"",pos:"hd"},(()=>{try{const o=JSON.parse(getStore("ls_dock")||"{}");if(o.v!==2)o.pos="hd";return o}catch(x){return{}}})());DK.v=2;
 const lum=h=>{const n=parseInt(h.slice(1),16);return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255};
 function applyDock(){["bl","br","tl","tr"].forEach(k=>dock.classList.toggle("dk-"+k,DK.pos===k));
   if(DK.bg){const fg=lum(DK.bg)>.6?"#111":"#fff";dock.style.setProperty("--dbg",DK.bg);dock.style.setProperty("--dfg",fg);dock.style.setProperty("--dic",fg)}else["--dbg","--dfg","--dic"].forEach(k=>dock.style.removeProperty(k));
@@ -245,7 +254,7 @@ function applyDock(){["bl","br","tl","tr"].forEach(k=>dock.classList.toggle("dk-
 const cp=Q("#wcp");
 function dockCfg(){
   cp.classList.remove("hide");
-  const cols=["#FFD60A","#A855F7","#3B82F6","#22D3EE","#22C55E","#EF4444","#FB923C","#EC4899","#FFFFFF","#111111"],pos=[["bl","Bottom left"],["br","Bottom right"],["tl","Top left"],["tr","Top right"]];
+  const cols=["#FFD60A","#A855F7","#3B82F6","#22D3EE","#22C55E","#EF4444","#FB923C","#EC4899","#FFFFFF","#111111"],pos=[["hd","Top bar"],["bl","Bottom left"],["br","Bottom right"],["tl","Top left"],["tr","Top right"]];
   cp.innerHTML='<h3>Tab button<button class="cx" aria-label="Close">'+ic(I.x,16)+'</button></h3><h4>Colour</h4><div class="sw"></div><h4>Where it sits</h4><div class="ps"></div>';
   const sw=cp.querySelector(".sw"),ps=cp.querySelector(".ps");
   const draw=()=>{sw.innerHTML="";const d=mk("button",!DK.bg?"on":"");d.title="Match the page";d.style.background="linear-gradient(135deg,var(--surface2) 50%,var(--primary) 50%)";d.onclick=()=>{DK.bg="";applyDock();draw()};sw.appendChild(d);

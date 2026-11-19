@@ -156,12 +156,17 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
             ) {
                 // All: the whole picture. The other sections each hold their own part, with nothing shown twice.
                 if (sec == 0) anim("status") { StatusCard(st, ::start, stop, copy) }
+                // a missing permission is the one thing that can silently stop sharing, so it sits right under Status
+                if (sec == 0 && !(perms.notifications && perms.unrestricted)) anim("perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
+                // once sharing is on, the address and QR are what you hand to people, so they come next
+                if (sec == 0 && st.running) anim("invite") { InviteCard(st) }
                 if (sec == 0 && st.running) anim("connected") { ConnectedCard(st) }
-                if (sec == 0 || sec == 1) anim("storage") { StorageCard(st) }
+                // what you share comes before how much space is left
                 if (sec == 0 || sec == 1) anim("folders") { FoldersCard(st, { picker.launch(null) }) }
                 if (sec == 0 || sec == 1) anim("screen") { ScreenCard(st, onCast) }
+                if (sec == 0 || sec == 1) anim("storage") { StorageCard(st) }
                 if (sec == 1) anim("devices") { DevicesCard(st) }
-                if (sec == 0 || sec == 3) anim("invite") { InviteCard(st) }
+                if (sec == 3 || (sec == 0 && !st.running)) anim("invite") { InviteCard(st) }
                 if (sec == 5 && !st.running) anim("nochat") {
                     SectionCard {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -177,8 +182,7 @@ fun HomeScreen(st: UiState, openBrowser: () -> Unit, onCast: () -> Unit, onJoin:
                 }
                 if (sec == 8) anim("tv") { Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { TvCard(st) } }
                 if (sec == 3) anim("wifi") { WifiCard(st) }
-                // look and permissions live in More; All only nudges when a permission is still missing
-                if (sec == 0 && !(perms.notifications && perms.unrestricted)) anim("perms") { PermissionsCard(perms) { p -> notif.launch(p) } }
+                // look and permissions live in More; All only nudges (above) when a permission is still missing
                 if (sec == 6) anim("look") { AppearanceCard() }
                 if (sec == 4) anim("perms2") { PermissionsCard(perms) { p -> notif.launch(p) } }
                 if (sec == 0) anim("donate") {
