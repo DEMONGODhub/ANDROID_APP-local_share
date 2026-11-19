@@ -106,7 +106,14 @@ const css=`
 /* dock and its settings */
 #wsd{background:var(--dbg,var(--surface2));color:var(--dfg,var(--text))}#wsd svg{color:var(--dic,var(--primary))}
 #wsd.dk-bl{left:14px;bottom:max(14px,env(safe-area-inset-bottom))}#wsd.dk-br{right:14px;bottom:max(14px,env(safe-area-inset-bottom))}#wsd.dk-tl{left:14px;top:max(14px,env(safe-area-inset-top))}#wsd.dk-tr{right:14px;top:max(14px,env(safe-area-inset-top))}
-body.mpOn #wsd.dk-bl,body.mpOn #wsd.dk-br{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 66px)}body.mpOn #fab{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 68px)}body.mpOn #arcfab{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 140px)}body.mpOn #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 66px)}body:has(#wsd:not(.hide)) #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 58px)}body.mpOn:has(#wsd:not(.hide)) #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 124px)}body.mpOn #ups{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 68px)}
+body.mpOn #wsd.dk-bl,body.mpOn #wsd.dk-br{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 66px)}body.mpOn #fab{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 68px)}body.mpOn #arcfab{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 140px)}body.mpOn #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 66px)}body:has(#wsd:not(.hide)) #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 58px)}body.mpOn:has(#wsd:not(.hide)) #totop{bottom:calc(max(20px,env(safe-area-inset-bottom)) + 124px)}#wtabs{overflow:hidden}.wtab{flex:1 1 auto!important;max-width:none!important;pointer-events:none;background:none!important;border:0!important;box-shadow:none!important;color:var(--text)!important;font-weight:600;font-size:15px}.wtab b,.wtab i{display:none!important}
+#wnew,#wcfg,#wmode,#wsd,#hwt,#wcp,.wtl{display:none!important}
+.vnext{background:var(--surface);border:1px solid var(--outline);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;align-self:start;position:sticky;top:12px;max-height:calc(100vh - 130px);padding:0!important}
+.vnext .plh{padding:14px 16px 10px;background:var(--surface2);border-bottom:1px solid var(--outline)}.vnext .plh b{display:block;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vnext .plh small{color:var(--muted);font-size:12px}
+.vnext label{margin:0;padding:10px 16px;border-bottom:1px solid var(--outline)}.vnext .vl{overflow:auto;padding:6px;flex:1;min-height:0;position:relative}
+.vit .num{flex:none;width:22px;align-self:center;text-align:center;color:var(--muted);font-size:12px;font-style:normal}.vit.on .num{color:var(--primary)}
+@media(max-width:1000px){.vnext{position:static;max-height:60vh;margin:0 14px}}
+body.mpOn #ups{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 68px)}
 .win{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg);min-width:0;min-height:0}.win.on{display:flex}
 .win>.wp{position:relative;inset:auto;flex:1;min-height:0}
 .wtl{display:none;align-items:center;gap:4px;height:42px;flex:none;padding:0 6px;background:var(--surface2);border-bottom:1px solid var(--outline);user-select:none}
@@ -159,12 +166,12 @@ function lazy(src,test){return new Promise((ok,no)=>{if(test()){ok();return}cons
 /* ---------- tab model ---------- */
 const tabs=[];let active=null,pushed=false;
 const narrow=()=>innerWidth<760;
-let WM=getStore("ls_wmode")==="1",Z=10,locked=true,restored=false;
+let WM=false,Z=10,locked=true,restored=false;
 const winOn=()=>WM&&!narrow();
 const vis=(t,b)=>{t.pane.classList.toggle("on",b);t.fr.classList.toggle("on",b)};
 const findTab=key=>tabs.find(t=>t.key===key);
 let hwt=null;
-function hdr(){
+function hdr(){return;
   const h=D.querySelector("header");if(!h)return;
   if(!hwt){const sn=h.querySelector("#snb");if(!sn)return;hwt=mk("button","ib");hwt.id="hwt";hwt.onclick=()=>dock.onclick();hwt.addEventListener("contextmenu",ev=>{ev.preventDefault();dockCfg()});sn.parentNode.insertBefore(hwt,sn)}
   const n=tabs.length,on=DK.pos==="hd"&&!locked;hwt.hidden=!on;
@@ -222,11 +229,11 @@ function applyMode(){
 }
 addEventListener("resize",()=>{if(winOn()!==ws.classList.contains("wm")||narrow()!==ws.classList.contains("nr"))applyMode()});
 /* remember the open files and where the windows were */
-function saveLayout(){
+function saveLayout(){return;
   if(!restored||locked)return;
   try{setStore("ls_layout",JSON.stringify(tabs.filter(t=>t.src).slice(0,8).map(t=>({e:t.src,g:t.placed&&winOn()?[t.fr.style.left,t.fr.style.top,t.fr.style.width,t.fr.style.height]:null}))))}catch(x){}
 }
-function restore(){
+function restore(){return;
   let L=[];try{L=JSON.parse(getStore("ls_layout")||"[]")}catch(x){}
   if(!Array.isArray(L)||!L.length)return;
   L.slice(0,8).forEach(x=>{try{if(x&&x.e)open(x.e,{cur:x.e.cur,shown:[x.e],entries:[x.e]},{g:x.g})}catch(e){}});
@@ -287,7 +294,7 @@ addEventListener("beforeunload",saveLayout);
 {let lp=0,fired=false;dock.addEventListener("pointerdown",()=>{fired=false;lp=setTimeout(()=>{fired=true;dockCfg()},600)});["pointerup","pointerleave","pointercancel"].forEach(ev=>dock.addEventListener(ev,()=>clearTimeout(lp)));
  dock.addEventListener("contextmenu",ev=>{ev.preventDefault();dockCfg()});dock.addEventListener("click",ev=>{if(fired){ev.stopImmediatePropagation();fired=false}},true)}
 D.addEventListener("pointerdown",ev=>{if(!cp.classList.contains("hide")&&!ev.target.closest("#wcp")&&!ev.target.closest("#wcfg")&&!ev.target.closest("#wsd"))cp.classList.add("hide")});
-Q("#wmin").onclick=()=>hideWs();Q("#wnew").onclick=()=>{const t=filesTab();showWs();activate(t)};dock.onclick=()=>{if(!tabs.length){const t=filesTab();showWs();activate(t)}else showWs()};
+Q("#wmin").onclick=()=>{if(active)closeTab(active);else hideWs()};Q("#wnew").onclick=()=>{const t=filesTab();showWs();activate(t)};dock.onclick=()=>{if(!tabs.length){const t=filesTab();showWs();activate(t)}else showWs()};
 addEventListener("beforeunload",ev=>{if(tabs.some(t=>t.dirty)){ev.preventDefault();ev.returnValue=""}});
 function addTab(key,k,title,pane){
   if(tabs.length>=8){const v=tabs.find(x=>x!==active&&!x.dirty&&!x.floating&&x.key!=="audio");if(v){closeTab(v);warn("Closed the oldest tab (8 is the most)")}}
@@ -316,22 +323,24 @@ function siblings(kinds,C){
   try{C=C||{cur,shown};return(C.shown||[]).filter(x=>!x.d&&kinds.includes(x.k)).map(x=>({n:x.n,k:x.k,s:x.s||0,p:join(C.cur,x.n)}))}catch(e){return[]}
 }
 /* open(e) is called from the file list. opts.edit opens text files straight in the editor. */
+function swap(t,opts){
+  if(!(opts&&opts.replace&&opts.replace!==t&&tabs.includes(opts.replace)))return;
+  const old=opts.replace,wasActive=active===old;
+  tabs.splice(tabs.indexOf(t),1);const at=tabs.indexOf(old);tabs.splice(at,0,t);
+  if(old.onclose)old.onclose();old.fr.remove();tabs.splice(tabs.indexOf(old),1);if(wasActive)active=null;
+}
 function open(e,C,opts){
   if(locked||!e||e.d||!KINDS.includes(e.k))return false;
   C=C||{cur,shown,entries};
   const p=join(C.cur,e.n);
-  if(e.k==="audio"){playAudio(e.n,p,siblings(["audio"],C));let t=findTab("audio");if(!t)t=musicTab();showWs();activate(t);return true}
+  opts=Object.assign({},opts);if(!opts.replace&&active&&tabs.includes(active))opts.replace=active; // one viewer at a time
+  if(e.k==="audio"){playAudio(e.n,p,siblings(["audio"],C));let t=findTab("audio");if(!t)t=musicTab();swap(t,opts);showWs();activate(t);return true}
   let t=findTab(p);
   if(!t){
     t=e.k==="video"?videoTab(e,p,C):e.k==="text"?textTab(e,p):e.k==="docx"?docxTab(e,p):e.k==="pdf"?pdfTab(e,p):imageTab(e,p,C);
     t.src={n:e.n,k:e.k,s:e.s||0,cur:C.cur};if(opts&&opts.g){t.g=opts.g}
   }
-  if(opts&&opts.replace&&opts.replace!==t&&tabs.includes(opts.replace)){
-    const old=opts.replace,wasActive=active===old;
-    tabs.splice(tabs.indexOf(t),1);const at=tabs.indexOf(old);tabs.splice(at,0,t);
-    if(winOn()&&old.placed){const s=old.fr.style;t.g=[s.left,s.top,s.width,s.height];t.placed=false}
-    if(old.onclose)old.onclose();old.fr.remove();tabs.splice(tabs.indexOf(old),1);if(wasActive)active=null;
-  }
+  swap(t,opts);
   showWs();activate(t);return true;
 }
 
@@ -494,16 +503,18 @@ function videoTab(e,p,C){
   info.querySelector("h2").textContent=base(e.n);info.querySelector(".sz").textContent=(e.s?fmtSize(e.s):"")+" · "+ext(e.n).toUpperCase();
   const dl=info.querySelector(".dl");dl.href=fu(p,1);dl.setAttribute("download",e.n);
   const main=mk("div");main.append(vp,info);
-  const nx=mk("div","vnext");nx.innerHTML='<h3>Up next</h3><label><input type="checkbox"> Play next automatically</label><div class="vl"></div>';
+  const nx=mk("div","vnext");const cn=(C.cur||"").split("/").filter(Boolean).pop()||"Videos",plx=Math.max(0,list.findIndex(x=>x.p===p));
+  nx.innerHTML='<div class="plh"><b></b><small></small></div><label><input type="checkbox"> Play next automatically</label><div class="vl"></div>';
+  nx.querySelector(".plh b").textContent=cn;nx.querySelector(".plh small").textContent="Playlist · "+(plx+1)+" / "+list.length;
   const ap=nx.querySelector("input");ap.checked=getStore("ls_ap")!=="0";ap.onchange=()=>setStore("ls_ap",ap.checked?"1":"0");
   const vl=nx.querySelector(".vl");
-  list.forEach(x=>{
-    const b=mk("button","vit"+(x.p===p?" on":""),'<div class="th2"></div><span></span>');
+  list.forEach((x,xi)=>{
+    const b=mk("button","vit"+(x.p===p?" on":""),'<i class="num">'+(x.p===p?"▶":xi+1)+'</i><div class="th2"></div><span></span>');
     b.querySelector("span").textContent=base(x.n);const sm=mk("small",null,x.s?fmtSize(x.s):"");b.querySelector("span").appendChild(sm);
     const th=b.querySelector(".th2");th.style.backgroundImage='url("/api/thumb?path='+encodeURIComponent(x.p)+'&w=320")';
     b.onclick=()=>{if(x.p===p)return;open({n:x.n,k:"video",s:x.s,d:false},C,{replace:t})};vl.appendChild(b);
   });
-  w.append(main,nx);pane.appendChild(w);
+  w.append(main,nx);pane.appendChild(w);setTimeout(()=>{const on=vl.querySelector(".on");if(on)vl.scrollTop=Math.max(0,on.offsetTop-vl.offsetTop-8)},60);
   const $=s=>vp.querySelector(s),pp=$(".pp"),prog=$(".vprog"),big=$(".vbig i");
   const setPP=()=>{pp.innerHTML=ic(v.paused?I.play:I.pause,26)};setPP();
   const flash=txt=>{big.textContent="";big.innerHTML=txt;big.classList.remove("go");void big.offsetWidth;big.classList.add("go")};

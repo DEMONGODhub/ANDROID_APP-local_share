@@ -255,7 +255,10 @@ header,#bar{transition:box-shadow .3s,background-color .3s}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style id="ux">
-header #lo{display:none}#arcfab{display:none!important}
+header #lo{display:none}
+::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--outline);border-radius:8px;border:3px solid transparent;background-clip:content-box;min-height:48px}::-webkit-scrollbar-thumb:hover{background:var(--primary);background-clip:content-box}::-webkit-scrollbar-corner{background:transparent}
+@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:var(--outline) transparent}}
+#crumbs::-webkit-scrollbar{display:none}#arcfab{display:none!important}
 #snb .lbl,#hwt .lbl{display:none;font-size:14px;font-weight:600;margin-left:6px}
 @media(min-width:720px){#snb,#hwt{width:auto;padding:0 14px;border-radius:22px;display:inline-flex;align-items:center}#snb .lbl,#hwt .lbl{display:inline}}
 #bar #sw{order:-1}#count{flex:0 0 auto;min-width:0;order:0}
@@ -759,6 +762,7 @@ const hashOf=p=>"#/"+p.split("/").filter(Boolean).map(enc).join("/");
 const hashPath=()=>{try{return decodeURIComponent(location.hash.replace(/^#\/?/,""))}catch(e){return""}};
 const cache=new Map();
 let skelT=0,loadId=0;
+let OPEN=new URLSearchParams(location.search).get("open");
 async function go(p,initial){ if(SEL)selMode(false);
   const my=++loadId;
   const hit=cache.get(p);
@@ -780,6 +784,7 @@ function apply(p,rec,fresh){
   firstLoad=false;
   const keep=same?$("#main").scrollTop:0;
   render(!same);$("#main").scrollTop=keep;
+  if(OPEN){const nm=OPEN.split("/").pop();OPEN=null;history.replaceState(null,"",location.pathname+location.hash);const oe=entries.find(x=>x.n===nm&&!x.d&&viewable(x));if(oe)setTimeout(()=>openViewer(oe),60)}
 }
 function skeleton(){const m=$("#main");m.className="";m.innerHTML='<div class="grid">'+'<div class="skel"></div>'.repeat(12)+"</div>"}
 addEventListener("hashchange",()=>{if(ME.name){closeMenu();go(hashPath())}});
@@ -914,11 +919,11 @@ function openMenu(e,p,btn){
   const m=document.createElement("div");m.id="menu";m.setAttribute("role","menu");m.setAttribute("aria-label","Options for "+e.n);
   const t=document.createElement("div");t.className="mt";t.textContent=e.n;m.appendChild(t);
   if(e.d){
-    m.append(item(P.open,"Open",null,"",hashOf(p)),item(P.zip,"Download as ZIP",null,"","/api/zip?path="+enc(p),{download:e.n+".zip"}));
+    m.append(item(P.open,"Open",null,"",hashOf(p)),item(P.open,"Open in new browser tab",null,"",hashOf(p),{target:"_blank",rel:"noopener"}),item(P.zip,"Download as ZIP",null,"","/api/zip?path="+enc(p),{download:e.n+".zip"}));
   }else{
     if(WSK.includes(e.k)){
-      m.appendChild(item(P.open,"Open in a tab",()=>openViewer(e)));
-      if(e.k==="image"||e.k==="pdf")m.appendChild(item(P.open,"Open in new browser tab",null,"",e.k==="pdf"?pdfUrl(p):fileUrl(p),{target:"_blank",rel:"noopener"}));
+      m.appendChild(item(P.open,"Open",()=>openViewer(e)));
+      m.appendChild(item(P.open,"Open in new browser tab",null,"","/?open="+encodeURIComponent(p)+hashOf(p.split("/").slice(0,-1).join("/")),{target:"_blank",rel:"noopener"}));
     }
     m.appendChild(item(P.dl,"Download",null,"",fileUrl(p,1),{download:e.n}));
   }
@@ -1189,7 +1194,7 @@ addEventListener("keydown",e=>{
 <script src="/static/avatar.js?v=6"></script>
 <script src="/static/arena.js?v=13"></script>
 <script src="/static/party.js?v=1"></script>
-<script src="/static/ws.js?v=10"></script>
+<script src="/static/ws.js?v=11"></script>
 <script>boot();</script>
 <script>
 /* one Play button, and your avatar holds your own actions */
