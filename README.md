@@ -16,8 +16,8 @@
 
 <p align="center">
   <img src="store/screenshots/1-files.png" width="220">
-  <img src="store/screenshots/2-games.png" width="220">
-  <img src="store/screenshots/3-host-rules.png.png" width="220">
+  <img src="store/screenshots/2-game.png" width="220">
+  <img src="store/screenshots/3-host-rules.png" width="220">
 </p>
 
 
