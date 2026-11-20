@@ -110,4 +110,5 @@ Android Phone
 LocalShare evolved from a simple local file-sharing app into a complete **local media, communication, streaming, TV and multiplayer platform**.
 
 **Author:** DEMON_GOD
+**comment:** i will be shifting the while projrct to rust soon 
 **License:** See `LICENSE`.
