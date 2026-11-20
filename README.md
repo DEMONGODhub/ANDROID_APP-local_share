@@ -109,7 +109,5 @@ Android Phone
 
 LocalShare evolved from a simple local file-sharing app into a complete **local media, communication, streaming, TV and multiplayer platform**.
 
-**Author:** DEMON_GOD  
-**Repository:** [DEMONGODhub/ANDROID_APP-local_share](https://github.com/DEMONGODhub/ANDROID_APP-local_share?utm_source=chatgpt.com)
-
+**Author:** DEMON_GOD
 **License:** See `LICENSE`.
