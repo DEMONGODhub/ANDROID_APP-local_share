@@ -1,7 +1,7 @@
 # LocalShare
 
 <p align="center">
-  <img src="branding/logo.png" width="120" alt="LocalShare Logo">
+  <img src="branding/logo.svg" width="120" alt="LocalShare Logo">
 </p>
 
 <h3 align="center">Turn your Android phone into a local sharing platform.</h3>
@@ -15,13 +15,11 @@
 ## 📱 Screenshots
 
 <p align="center">
-  <img src="store/screenshots/home.png" width="220">
-  <img src="store/screenshots/files.png" width="220">
-  <img src="store/screenshots/player.png" width="220">
-  <img src="store/screenshots/game.png" width="220">
+  <img src="store/screenshots/1-files.png" width="220">
+  <img src="store/screenshots/2-games.png" width="220">
+  <img src="store/screenshots/3-host-rules.png.png" width="220">
 </p>
 
-> Replace the filenames above with the exact screenshot filenames in `store/`.
 
 ---
 
