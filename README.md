@@ -23,7 +23,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 ### 📁 File Sharing
 Share multiple folders from your Android phone through a browser. Users can browse, upload, download, rename, move and delete files and folders.
