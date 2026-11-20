@@ -12,7 +12,7 @@
 
 ---
 
-## 📱 Screenshots
+## Screenshots
 
 <p align="center">
   <img src="store/screenshots/1-files.png" width="220">
