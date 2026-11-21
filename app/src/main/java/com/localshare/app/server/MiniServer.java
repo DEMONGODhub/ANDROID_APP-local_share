@@ -1550,7 +1550,7 @@ public final class MiniServer {
             e = null;
         }
         String kind = e == null ? "" : Util.kind(e.name);
-        if (e == null || e.dir || !(kind.equals("image") || kind.equals("video") || kind.equals("pdf"))) {
+        if (e == null || e.dir || !(kind.equals("image") || kind.equals("video") || kind.equals("pdf") || kind.equals("audio") || kind.equals("docx"))) {
             json(out, isHead, 404, err("no thumbnail"));
             return true;
         }

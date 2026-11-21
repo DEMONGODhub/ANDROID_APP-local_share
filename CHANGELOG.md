@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.46.0** — workspaces are now full copies of the app (own folder, own open file; a file opens only in the workspace you are in). Video and music keep playing in the background when you switch. Audio and document cards show their cover / preview image. A background video moving to its next clip no longer pulls you back.
 - **v2.45.0** — workspaces replace the single viewer: Workspace 1 is Files, 2–6 hold videos, code, PDFs, docs and pictures (Settings gear sets the count, Alt+1..6 jumps). Music is now a pill at the top with a tools panel. Pictures use Viewer.js (MIT).
 - **2.44.2** – The tab system is gone for real: no tab bar, dock, floating windows, saved layouts, "Files" tab or tab buttons. One viewer at a time; ⋮ → "Open in new browser tab" for another tab.
 - **v2.44.1** — fix for the black, empty file list in the in-app browser: file cards are no longer skipped by the browser to save work (that left them blank), and the fade-in can no longer leave the list invisible

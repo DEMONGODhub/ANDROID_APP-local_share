@@ -32,11 +32,12 @@ const css=`
 #wst{display:flex;align-items:stretch;gap:4px;padding:6px 8px 0;padding-top:max(6px,env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--outline)}
 #wst>button{flex:none;width:40px;height:40px;margin-bottom:6px;border:0;border-radius:20px;background:none;color:var(--text);display:grid;place-items:center;cursor:pointer}#wst>button:hover{background:var(--surface2)}
 #wtabs{flex:1;min-width:0;display:flex;align-items:center;overflow:hidden}.wtt{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:40px;margin-bottom:6px;font-weight:600;font-size:15px}.wtt svg{flex:none;color:var(--primary)}.wtt span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wtt i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--primary)}
-#wtabs{gap:4px}.wn{flex:none;min-width:36px;height:36px;margin:0 0 6px;padding:0 8px;border-radius:18px;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font:inherit;font-weight:700;display:grid;place-items:center;cursor:pointer;position:relative}.wn.on{background:var(--primary);color:var(--onprimary);border-color:var(--primary)}.wn.has:not(.on)::after{content:"";position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:var(--primary)}.wn.home svg{display:block}
+#wtabs{gap:4px}.wn{flex:none;min-width:36px;height:36px;margin:0 0 6px;padding:0 8px;border-radius:18px;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font:inherit;font-weight:700;display:grid;place-items:center;cursor:pointer;position:relative}.wn.on{background:var(--primary);color:var(--onprimary);border-color:var(--primary)}.wn.has::after{content:"";position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:var(--primary)}.wn.home svg{display:block}
 .wtt{margin-left:6px}@media(max-width:520px){.wtt span{display:none}}
 #wst>button[hidden]{display:none}
 #wemp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;color:var(--muted)}#wemp.hide{display:none}#wemp b{color:var(--text);font-size:20px}#wemp p{margin:0;max-width:340px}#wemp button,#wset .ca{height:40px;padding:0 18px;border-radius:20px;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
-#wset{position:absolute;top:56px;right:8px;z-index:40;width:min(320px,calc(100vw - 16px));padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}#wset.hide{display:none}#wset h3{margin:0;display:flex;align-items:center;justify-content:space-between;font-size:16px}#wset h3 .cx{border:0;background:none;color:var(--text);cursor:pointer}#wset p{margin:0;font-size:13px;color:var(--muted)}#wset .st{display:flex;align-items:center;justify-content:center;gap:16px}#wset .st b{min-width:130px;text-align:center}#wset .st button{width:40px;height:40px;border-radius:50%;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font-size:20px;cursor:pointer}
+#wset{position:fixed;top:calc(max(8px,env(safe-area-inset-top)) + 54px);right:8px;z-index:62;max-height:calc(100dvh - 70px);overflow:auto;width:min(320px,calc(100vw - 16px));padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}#wset.hide{display:none}#wset h3{margin:0;display:flex;align-items:center;justify-content:space-between;font-size:16px}#wset h3 .cx{border:0;background:none;color:var(--text);cursor:pointer}#wset p{margin:0;font-size:13px;color:var(--muted)}#wset .st{display:flex;align-items:center;justify-content:center;gap:16px}#wset .st b{min-width:130px;text-align:center}#wset .st button{width:40px;height:40px;border-radius:50%;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font-size:20px;cursor:pointer}
+.wl{display:flex;flex-direction:column;gap:6px}.wr{display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-radius:12px;border:1px solid var(--outline);background:var(--surface2);color:var(--text);font:inherit;cursor:pointer;text-align:left}.wr i{flex:none;width:24px;height:24px;border-radius:12px;display:grid;place-items:center;background:var(--bg);font-style:normal;font-weight:700;font-size:13px}.wr span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wr.on{border-color:var(--primary)}.wr.on i{background:var(--primary);color:var(--onprimary)}
 #wsw{position:relative}#wsw .lbl{display:none;font-size:14px;font-weight:600;margin-left:6px}#wsw b{position:absolute;top:2px;right:0;min-width:18px;height:18px;border-radius:9px;background:var(--primary);color:var(--onprimary);font-size:11px;display:grid;place-items:center}@media(min-width:900px){#wsw{width:auto;padding:0 14px;border-radius:22px;display:inline-flex;align-items:center}#wsw .lbl{display:inline}#wsw b{position:static;margin-left:6px}}
 #mp{position:fixed;top:calc(max(8px,env(safe-area-inset-top)) + 60px);right:10px;z-index:60;height:44px;width:min(250px,calc(100vw - 20px));display:flex;align-items:center;gap:4px;padding:0 4px 0 5px;border-radius:22px;background:var(--surface2);border:1px solid var(--outline);box-shadow:var(--shadow);overflow:hidden}#mp.hide{display:none}
 #mp .art{flex:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#333);display:grid;place-items:center;color:var(--onprimary);overflow:hidden;cursor:pointer}#mp .art img{width:100%;height:100%;object-fit:cover}
@@ -136,7 +137,7 @@ const css=`
 @media print{body>*:not(#prt){display:none!important}#prt{display:block!important}}
 `;
 const st=D.createElement("style");st.textContent=css;D.head.appendChild(st);
-D.body.insertAdjacentHTML("beforeend",'<div id="ws" class="hide" role="dialog" aria-label="Open file"><div id="wst"><button id="wmin" aria-label="Back to files" title="Back to files (Esc)">'+ic(I.back)+'</button><div id="wtabs"></div><button id="wx" aria-label="Close this file" title="Close this file (Alt+W)" hidden>'+ic(I.x,20)+'</button><button id="wcfg" aria-label="Workspace settings" title="Workspace settings">'+ic(I.gear,20)+'</button></div><div id="wsb"><div id="wemp" class="hide"><b></b><p>Videos, code, PDFs, documents and pictures you open from Files land here.</p><button>Back to Files</button></div></div><div id="wset" class="hide" role="dialog" aria-label="Workspace settings"></div></div><div id="mp" class="hide" role="region" aria-label="Music player"></div><div id="mpan" class="hide" role="dialog" aria-label="Music tools"></div>');
+D.body.insertAdjacentHTML("beforeend",'<div id="ws" class="hide" role="dialog" aria-label="Open file"><div id="wst"><button id="wmin" aria-label="Back to files" title="Back to files (Esc)">'+ic(I.back)+'</button><div id="wtabs"></div><button id="wx" aria-label="Close this file" title="Close this file (Alt+W)" hidden>'+ic(I.x,20)+'</button><button id="wcfg" aria-label="Workspace settings" title="Workspace settings">'+ic(I.gear,20)+'</button></div><div id="wsb"></div></div><div id="wset" class="hide" role="dialog" aria-label="Workspaces"></div><div id="mp" class="hide" role="region" aria-label="Music player"></div><div id="mpan" class="hide" role="dialog" aria-label="Music tools"></div>');
 const ws=Q("#ws"),tabsEl=Q("#wtabs"),body=Q("#wsb"),mp=Q("#mp");
 const kicon={files:I.folder,video:I.film,audio:I.music,text:I.code,docx:I.doc,pdf:I.doc,image:I.img};
 const fu=(p,dl)=>"/api/file?path="+encodeURIComponent(p)+(dl?"&dl=1":"");
@@ -148,41 +149,44 @@ const warn=t=>{try{toast(t)}catch(e){}};
 const getStore=k=>{try{return localStorage.getItem(k)}catch(e){return null}},setStore=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 function lazy(src,test){return new Promise((ok,no)=>{if(test()){ok();return}const s=D.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("Could not load "+src));D.head.appendChild(s)})}
 
-/* ---------- workspaces: 1 = Files, 2..N hold what you open ---------- */
-let active=null,pushed=false,locked=true,wsi=1;
-const slots=[];let NS=Math.min(6,Math.max(2,+getStore("ls_ns")||3));
+/* ---------- workspaces: each one is a full copy of the app (its own folder and its own open file) ---------- */
+let active=null,pushed=false,locked=true,wsi=0;
+const slots=[],homes=[];let NS=Math.min(6,Math.max(1,+getStore("ls_ns")||3));
 const narrow=()=>innerWidth<760;
 const vis=(t,b)=>{t.pane.classList.toggle("on",b);t.fr.classList.toggle("on",b)};
 const isOpen=()=>!ws.classList.contains("hide");
 const slotOf=t=>slots.indexOf(t);
 const css1=h=>new Promise(ok=>{if(D.querySelector('link[href="'+h+'"]')){ok();return}const l=D.createElement("link");l.rel="stylesheet";l.href=h;l.onload=l.onerror=ok;D.head.appendChild(l)});
-const emp=Q("#wemp"),setEl=Q("#wset"),mpan=Q("#mpan");let wsw=null;
+const setEl=Q("#wset"),mpan=Q("#mpan");let wsw=null;
+const where=i=>{let h=(i===wsi?location.hash:homes[i])||"";try{h=decodeURIComponent(h.replace(/^#\/?/,""))}catch(e){h=""}if(/^ht=/.test(h))h="";return h.split("/").filter(Boolean).pop()||"Home"};
 function renderTabs(){
   const bar=tabsEl;bar.innerHTML="";
   for(let i=0;i<NS;i++){
-    const t=i?slots[i]:null,b=mk("button","wn"+(i===0?" home":"")+(i&&wsi===i&&isOpen()?" on":"")+(t?" has":""),i===0?ic(I.folder,18):String(i+1));
-    b.title=i===0?"Workspace 1: Files (Alt+1)":"Workspace "+(i+1)+(t?": "+t.title:": empty")+" (Alt+"+(i+1)+")";b.setAttribute("aria-label",b.title);
-    b.onclick=()=>{if(i===0)hideWs();else{showSlot(i);showWs()}};bar.appendChild(b);
+    const b=mk("button","wn"+(i===wsi?" on":"")+(slots[i]?" has":""),String(i+1));
+    b.title="Workspace "+(i+1)+" (Alt+"+(i+1)+")";b.setAttribute("aria-label",b.title);b.onclick=()=>switchTo(i);bar.appendChild(b);
   }
   const a=slots[wsi];
   if(a){const b=mk("div","wtt",ic(kicon[a.k]||I.doc,18)+"<span></span>"+(a.dirty?'<i title="Unsaved changes"></i>':""));b.querySelector("span").textContent=a.title;bar.appendChild(b)}
   Q("#wx").hidden=!a;
-  const n=slots.filter(Boolean).length;
-  if(!wsw){const h=D.querySelector("header"),sn=h&&h.querySelector("#snb");if(sn){wsw=mk("button","ib");wsw.id="wsw";wsw.onclick=()=>{const k=slots[wsi]?wsi:(slots.findIndex((x,j)=>j&&x)||1);showSlot(k>0?k:1);showWs()};sn.parentNode.insertBefore(wsw,sn)}}
-  if(wsw){wsw.hidden=locked;wsw.title="Workspaces ("+n+" open)";wsw.setAttribute("aria-label",wsw.title);wsw.innerHTML=ic(I.list,22)+'<span class="lbl">Workspaces</span>'+(n?"<b>"+n+"</b>":"")}
+  if(!wsw){const h=D.querySelector("header"),sn=h&&h.querySelector("#snb");if(sn){wsw=mk("button","ib");wsw.id="wsw";wsw.onclick=()=>{drawSet();setEl.classList.toggle("hide")};sn.parentNode.insertBefore(wsw,sn)}}
+  if(wsw){wsw.hidden=locked;wsw.title="Workspaces: you are in "+(wsi+1)+" of "+NS;wsw.setAttribute("aria-label",wsw.title);wsw.innerHTML=ic(I.list,22)+'<span class="lbl">Workspace</span><b>'+(wsi+1)+"</b>"}
 }
-function showSlot(i){
-  if(i<1||i>=NS)return;
-  const prev=active;wsi=i;active=slots[i]||null;
-  if(prev&&prev!==active){vis(prev,false);if(prev.onhide)prev.onhide()}
-  if(active){vis(active,true);if(active.onshow)active.onshow()}
-  emp.classList.toggle("hide",!!active);if(!active)emp.querySelector("b").textContent="Workspace "+(i+1)+" is empty";
-  renderTabs();syncMini();
+function switchTo(i){
+  if(locked||i<0||i>=NS)return;
+  if(i===wsi){if(slots[i]&&!isOpen())showWs();else if(isOpen())hideWs();return}
+  homes[wsi]=location.hash;
+  if(active){vis(active,false)}   // media keeps playing in the background
+  if(pushed){pushed=false}
+  ws.classList.add("hide");D.body.style.overflow="";
+  wsi=i;active=slots[i]||null;
+  const h=homes[i]||"#/";if(location.hash!==h){try{location.replace(h)}catch(e){location.hash=h}}
+  if(active)showWs();else renderTabs();
+  setEl.classList.add("hide");syncMini();
 }
 function lock(b){
   if(b===locked)return;locked=b;
   if(b){
-    slots.forEach(t=>{if(t){t.dirty=false;closeTab(t,1)}});
+    slots.forEach(t=>{if(t){t.dirty=false;closeTab(t,1)}});slots.length=0;homes.length=0;wsi=0;
     try{A.pause();A.q=[];A.i=-1;A.removeAttribute("src")}catch(x){}
     hideWs();
   }
@@ -192,19 +196,17 @@ function closeTab(t,quiet){
   if(t.dirty&&!confirm("Close "+t.title+" without saving your changes?"))return;
   const i=slotOf(t);if(t.onclose)t.onclose();t.fr.remove();if(i>=0)slots[i]=null;if(active===t)active=null;
   if(quiet)return;
-  const nx=slots.findIndex((x,j)=>j&&x);
-  if(nx>0)showSlot(nx);else{renderTabs();hideWs()}
-  syncMini();
+  hideWs();
 }
 function showWs(){
-  if(locked)return;
+  if(locked||!active)return;
   ws.classList.remove("hide");D.body.style.overflow="hidden";
   if(!pushed){try{history.pushState({ws:1},"");pushed=true}catch(e){}}
-  if(active&&active.onshow&&!active.fr.classList.contains("on")){vis(active,true);active.onshow()}
+  vis(active,true);if(active.onshow)active.onshow();
   renderTabs();syncMini();
 }
 function hideWs(fromPop){
-  ws.classList.add("hide");D.body.style.overflow="";setEl.classList.add("hide");
+  ws.classList.add("hide");D.body.style.overflow="";
   if(active&&active.onhide)active.onhide();
   if(pushed&&!fromPop){pushed=false;try{if(history.state&&history.state.ws)history.back()}catch(e){}}else pushed=false;
   renderTabs();syncMini();
@@ -212,22 +214,24 @@ function hideWs(fromPop){
 addEventListener("popstate",()=>{if(pushed&&isOpen()){pushed=false;hideWs(true)}});
 Q("#wmin").onclick=()=>hideWs();
 Q("#wx").onclick=()=>{if(active)closeTab(active)};
-emp.querySelector("button").onclick=()=>hideWs();
 function setNS(n){
-  n=Math.min(6,Math.max(2,n));
+  n=Math.min(6,Math.max(1,n));
   for(let i=n;i<slots.length;i++){const t=slots[i];if(t&&t.dirty&&!confirm("Close "+t.title+" without saving your changes?"))return}
+  const was=wsi;
+  if(wsi>=n)switchTo(n-1);
   NS=n;setStore("ls_ns",String(n));
   for(let i=n;i<slots.length;i++)if(slots[i]){slots[i].dirty=false;closeTab(slots[i],1)}
-  slots.length=Math.min(slots.length,n);
-  if(wsi>=n)showSlot(n-1);else showSlot(wsi);
-  drawSet();
+  slots.length=Math.min(slots.length,n);homes.length=Math.min(homes.length,n);
+  renderTabs();drawSet();
 }
 function drawSet(){
-  setEl.innerHTML='<h3>Workspaces<button class="cx" aria-label="Close">'+ic(I.x,16)+'</button></h3><p>Workspace 1 is your files. The others hold what you open: videos, code, PDFs, documents and pictures.</p><div class="st"><button class="m" aria-label="Fewer">−</button><b></b><button class="p" aria-label="More">+</button></div><p class="k">Jump with Alt+1 … Alt+'+NS+'. Alt+W closes the file in view.</p><button class="ca">Close all open files</button>';
-  setEl.querySelector("b").textContent=NS+" workspaces";
+  setEl.innerHTML='<h3>Workspaces<button class="cx" aria-label="Close">'+ic(I.x,16)+'</button></h3><p>Every workspace is a full copy of the app. What you open stays in the workspace you opened it in.</p><div class="wl"></div><div class="st"><button class="m" aria-label="Fewer">−</button><b></b><button class="p" aria-label="More">+</button></div><p class="k">Jump with Alt+1 … Alt+'+NS+'. Alt+W closes the file in view.</p><button class="ca">Close all open files</button>';
+  const L=setEl.querySelector(".wl");
+  for(let i=0;i<NS;i++){const b=mk("button","wr"+(i===wsi?" on":""),"<i></i><span></span>");b.firstChild.textContent=i+1;b.lastChild.textContent=where(i)+(slots[i]?" · "+slots[i].title:"");b.onclick=()=>{setEl.classList.add("hide");if(i===wsi){if(slots[i]&&!isOpen())showWs()}else switchTo(i)};L.appendChild(b)}
+  setEl.querySelector("b").textContent=NS+(NS===1?" workspace":" workspaces");
   setEl.querySelector(".m").onclick=()=>setNS(NS-1);setEl.querySelector(".p").onclick=()=>setNS(NS+1);
   setEl.querySelector(".cx").onclick=()=>setEl.classList.add("hide");
-  setEl.querySelector(".ca").onclick=()=>{slots.forEach(t=>{if(t)closeTab(t,1)});hideWs()};
+  setEl.querySelector(".ca").onclick=()=>{slots.forEach(t=>{if(t)closeTab(t,1)});slots.length=0;hideWs();setEl.classList.add("hide")};
 }
 Q("#wcfg").onclick=()=>{drawSet();setEl.classList.toggle("hide")};
 addEventListener("beforeunload",ev=>{if(slots.some(t=>t&&t.dirty)){ev.preventDefault();ev.returnValue=""}});
@@ -245,16 +249,15 @@ function open(e,C,opts){
   C=C||{cur,shown,entries};
   const p=join(C.cur,e.n);
   if(e.k==="audio"){playAudio(e.n,p,siblings(["audio"],C));syncMini();return true}
-  let t=slots.find(x=>x&&x.key===p);
-  if(t){showSlot(slotOf(t));showWs();return true}
-  let to=-1;const rep=opts&&opts.replace;
-  if(rep&&slotOf(rep)>0)to=slotOf(rep);
-  else{for(let i=1;i<NS;i++)if(!slots[i]){to=i;break}if(to<0)to=wsi>=1&&wsi<NS?wsi:1}
-  const old=slots[to];
-  if(old&&old.dirty&&!confirm("Close "+old.title+" without saving your changes?"))return false;
-  t=e.k==="video"?videoTab(e,p,C):e.k==="text"?textTab(e,p):e.k==="docx"?docxTab(e,p):e.k==="pdf"?pdfTab(e,p):imageTab(e,p,C);
-  if(old){if(old.onclose)old.onclose();old.fr.remove();if(active===old)active=null}
-  slots[to]=t;showSlot(to);showWs();return true;
+  const rep=opts&&opts.replace,to=rep&&slotOf(rep)>=0?slotOf(rep):wsi;   // always the workspace you are in
+  let t=slots[to];
+  const bg=!!rep&&!(to===wsi&&isOpen());   // e.g. a background video moving on to the next clip: never pull you away from what you are doing
+  if(t&&t.key===p&&!bg){wsi=to;active=t;showWs();return true}
+  if(t&&t.dirty&&!confirm("Close "+t.title+" without saving your changes?"))return false;
+  const nt=e.k==="video"?videoTab(e,p,C):e.k==="text"?textTab(e,p):e.k==="docx"?docxTab(e,p):e.k==="pdf"?pdfTab(e,p):imageTab(e,p,C);
+  if(t){if(t.onclose)t.onclose();t.fr.remove()}
+  slots[to]=nt;if(bg){if(to===wsi)active=nt;renderTabs();return true}
+  wsi=to;active=nt;showWs();return true;
 }
 
 /* ---------- music engine ---------- */
@@ -467,7 +470,7 @@ function videoTab(e,p,C){
   const pip=async()=>{try{if(D.pictureInPictureElement)await D.exitPictureInPicture();else await v.requestPictureInPicture()}catch(x){warn("Picture in picture is not available here")}};
   // floating player: the same player and controls, in a small window that stays while you browse
   let fl=null;
-  const unfloat=go=>{if(!fl)return;const f=fl;fl=null;t.floating=false;vp.classList.remove("fl");main.insertBefore(vp,main.firstChild);if(f.pw){try{f.pw.close()}catch(x){}}f.remove();if(go){const si=slotOf(t);if(si>0){showSlot(si);showWs()}}};
+  const unfloat=go=>{if(!fl)return;const f=fl;fl=null;t.floating=false;vp.classList.remove("fl");main.insertBefore(vp,main.firstChild);if(f.pw){try{f.pw.close()}catch(x){}}f.remove();if(go){const si=slotOf(t);if(si>=0&&si===wsi){active=t;showWs()}}};
   const float=async pop=>{
     if(fl)return;const f=mk("div","fv");
     f.innerHTML='<div class="fh"><span></span><button class="fo" title="Pop out over other apps" aria-label="Pop out">\u29c9</button><button class="fe" title="Back to the tab" aria-label="Back to the tab">\u2922</button><button class="fc" title="Stop and put back" aria-label="Close floating player">\u2715</button></div>';
@@ -565,7 +568,7 @@ function videoTab(e,p,C){
     else if(/^[0-9]$/.test(k)&&v.duration)v.currentTime=v.duration*(+k/10);else used=false;
     if(used){ev.preventDefault();ev.stopPropagation()}
   };
-  t.onhide=()=>{if(!t.floating&&!D.pictureInPictureElement&&!D.fullscreenElement)v.pause()};
+  t.onhide=()=>{};
   t.onclose=()=>{unfloat(false);save();v.pause();v.removeAttribute("src");v.load();tracks.forEach(x=>URL.revokeObjectURL(x.src))};
   t.onshow=()=>{unfloat(false)};
   return t;
@@ -713,14 +716,14 @@ function imageTab(e,p,C){
 /* ---------- keys, then expose ---------- */
 addEventListener("keydown",ev=>{
   if(locked)return;
-  if(ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&/^[1-6]$/.test(ev.key)&&+ev.key<=NS){ev.preventDefault();if(ev.key==="1")hideWs();else{showSlot(+ev.key-1);showWs()}return}
+  if(ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&/^[1-6]$/.test(ev.key)&&+ev.key<=NS){ev.preventDefault();switchTo(+ev.key-1);return}
   if(!isOpen())return;
   if(ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&active&&(ev.key==="w"||ev.key==="W")){ev.preventDefault();closeTab(active);return}
   if(ev.key==="Escape"&&!(ev.target.closest&&ev.target.closest(".CodeMirror-dialog"))&&!D.fullscreenElement){ev.preventDefault();ev.stopPropagation();if(!setEl.classList.contains("hide"))setEl.classList.add("hide");else hideWs();return}
   if(active&&active.key2)active.key2(ev);
   if((ev.ctrlKey||ev.metaKey)&&ev.key==="w"&&active){ev.preventDefault();closeTab(active)}
 },true);
-D.addEventListener("pointerdown",ev=>{if(!setEl.classList.contains("hide")&&!ev.target.closest("#wset,#wcfg"))setEl.classList.add("hide");if(!mpan.classList.contains("hide")&&!ev.target.closest("#mpan,#mp"))mpan.classList.add("hide")});
+D.addEventListener("pointerdown",ev=>{if(!setEl.classList.contains("hide")&&!ev.target.closest("#wset,#wcfg,#wsw"))setEl.classList.add("hide");if(!mpan.classList.contains("hide")&&!ev.target.closest("#mpan,#mp"))mpan.classList.add("hide")});
 window.WS={lock,open,visible:isOpen,kinds:KINDS};
 renderTabs();syncMini();
 })();

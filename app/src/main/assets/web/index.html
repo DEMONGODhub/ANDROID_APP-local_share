@@ -851,12 +851,13 @@ function card(e){
   if(e.d){th.style.setProperty("--c","var(--primary)");th.innerHTML=svg(P.folder,48)}
   else if(k==="audio"){th.style.setProperty("--c","var(--accent)");th.innerHTML=svg(P.music,44)}
   else{th.style.setProperty("--c",COL[ext]||"var(--muted)");th.innerHTML='<span class="ext"></span>';th.firstChild.textContent=(ext||"FILE").slice(0,4).toUpperCase()}
-  if(!e.d&&(k==="image"||k==="video"||k==="pdf")){
+  if(!e.d&&(k==="image"||k==="video"||k==="pdf"||k==="audio"||k==="docx")){
     const i=new Image();i.alt="";i.loading="lazy";i.decoding="async";let tries=0;
     const src="/api/thumb?path="+enc(p)+"&w=320";
     i.style.opacity=0;i.onload=()=>{i.style.opacity=1};
     i.onerror=()=>{if(tries++<1)setTimeout(()=>{i.src=src+"&r=1"},900);else i.remove()};
     i.src=src;th.appendChild(i);
+    if(k==="audio")th.insertAdjacentHTML("beforeend",'<div class="play">'+svg(P.music,16)+"</div>");
     if(k==="video")th.insertAdjacentHTML("beforeend",'<div class="play">'+svg(P.play,18)+"</div>");
   }
   const meta=document.createElement("div");meta.className="meta";
@@ -1193,7 +1194,7 @@ addEventListener("keydown",e=>{
 <script src="/static/avatar.js?v=6"></script>
 <script src="/static/arena.js?v=13"></script>
 <script src="/static/party.js?v=1"></script>
-<script src="/static/ws.js?v=14"></script>
+<script src="/static/ws.js?v=15"></script>
 <script>boot();</script>
 <script>
 /* one Play button, and your avatar holds your own actions */

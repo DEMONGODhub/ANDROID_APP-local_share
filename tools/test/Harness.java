@@ -726,6 +726,31 @@ public class Harness {
         req("GET", "/api/thumb?path=Main%2Fphoto.jpg&w=200", t, null);
         check("second request served from cache (1 decode)", hold[0].calls == 1);
         check("conditional request -> 304", req("GET", "/api/thumb?path=Main%2Fphoto.jpg&w=200", t, null, "If-None-Match", th.head("ETag")).code == 304);
+        { // covers: album art from ID3v2.3 and the preview inside a .docx
+            byte[] img = new byte[]{(byte) 0xFF, (byte) 0xD8, 1, 2, 3, 4, 5, 6, 7, 8, (byte) 0xFF, (byte) 0xD9};
+            java.io.ByteArrayOutputStream ap = new java.io.ByteArrayOutputStream();
+            ap.write(0); ap.write("image/jpeg".getBytes()); ap.write(0); ap.write(3); ap.write(0); ap.write(img);
+            byte[] a = ap.toByteArray();
+            java.io.ByteArrayOutputStream mp3 = new java.io.ByteArrayOutputStream();
+            int fl = 10 + a.length;
+            mp3.write("ID3".getBytes()); mp3.write(3); mp3.write(0); mp3.write(0);
+            mp3.write((fl >> 21) & 127); mp3.write((fl >> 14) & 127); mp3.write((fl >> 7) & 127); mp3.write(fl & 127);
+            mp3.write("APIC".getBytes()); mp3.write(a.length >> 24); mp3.write(a.length >> 16); mp3.write(a.length >> 8); mp3.write(a.length); mp3.write(0); mp3.write(0); mp3.write(a);
+            mp3.write(new byte[64]);
+            byte[] got = com.localshare.app.server.Covers.audio(new java.io.ByteArrayInputStream(mp3.toByteArray()));
+            check("covers: album art found in ID3v2.3", got != null && java.util.Arrays.equals(got, img));
+            check("covers: mp3 without a tag -> null", com.localshare.app.server.Covers.audio(new java.io.ByteArrayInputStream(new byte[100])) == null);
+            java.io.ByteArrayOutputStream dz = new java.io.ByteArrayOutputStream();
+            try (java.util.zip.ZipOutputStream z = new java.util.zip.ZipOutputStream(dz)) {
+                z.putNextEntry(new java.util.zip.ZipEntry("word/document.xml")); z.write("<x/>".getBytes()); z.closeEntry();
+                z.putNextEntry(new java.util.zip.ZipEntry("docProps/thumbnail.jpeg")); z.write(img); z.closeEntry();
+            }
+            byte[] dg = com.localshare.app.server.Covers.document(new java.io.ByteArrayInputStream(dz.toByteArray()));
+            check("covers: document preview found", dg != null && java.util.Arrays.equals(dg, img));
+            java.io.ByteArrayOutputStream dn = new java.io.ByteArrayOutputStream();
+            try (java.util.zip.ZipOutputStream z = new java.util.zip.ZipOutputStream(dn)) { z.putNextEntry(new java.util.zip.ZipEntry("word/document.xml")); z.write("<x/>".getBytes()); z.closeEntry(); }
+            check("covers: document without preview -> null", com.localshare.app.server.Covers.document(new java.io.ByteArrayInputStream(dn.toByteArray())) == null);
+        }
         check("video also gets a thumbnail", req("GET", "/api/thumb?path=Main%2Fmovie.mp4", t, null).code == 200);
         check("size is clamped", req("GET", "/api/thumb?path=Main%2Fphoto.jpg&w=99999", t, null).body[5] == (byte) 640);
         check("text file has no thumbnail -> 404", req("GET", "/api/thumb?path=Main%2Fdocs%2Fnote.txt", t, null).code == 404);

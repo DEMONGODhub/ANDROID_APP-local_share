@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import android.webkit.MimeTypeMap
+import com.localshare.app.server.Covers
 import com.localshare.app.server.FileSource
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
@@ -175,6 +176,8 @@ class SafFileSource(context: Context, private val tree: Uri) : FileSource {
             ext in IMAGE_EXT -> decodeImage(uri, maxPx)
             ext in VIDEO_EXT -> videoFrame(uri, maxPx)
             ext == "pdf" -> pdfPage(uri, maxPx)
+            ext in AUDIO_EXT -> audioCover(uri, maxPx)
+            ext in DOC_EXT -> docPreview(uri, maxPx)
             else -> null
         } ?: return null
         val out = ByteArrayOutputStream(32 * 1024)
@@ -221,6 +224,29 @@ class SafFileSource(context: Context, private val tree: Uri) : FileSource {
         }
     } catch (e: Exception) { null } catch (e: OutOfMemoryError) { null }
 
+    /** Album art: the phone's own metadata reader first (mp3, m4a, flac, ogg), then our ID3 reader. */
+    private fun audioCover(uri: Uri, maxPx: Int): Bitmap? {
+        val r = MediaMetadataRetriever()
+        try {
+            r.setDataSource(ctx, uri)
+            r.embeddedPicture?.let { decodeBytes(it, maxPx) }?.let { return it }
+        } catch (e: Exception) { } finally {
+            try { r.release() } catch (e: Exception) { }
+        }
+        return try {
+            cr.openInputStream(uri)?.use { Covers.audio(it) }?.let { decodeBytes(it, maxPx) }
+        } catch (e: Exception) { null }
+    }
+
+    /** The preview picture some Office and OpenDocument files carry inside them (not every file has one). */
+    private fun docPreview(uri: Uri, maxPx: Int): Bitmap? = try {
+        cr.openInputStream(uri)?.use { Covers.document(it) }?.let { decodeBytes(it, maxPx) }
+    } catch (e: Exception) { null }
+
+    private fun decodeBytes(b: ByteArray, maxPx: Int): Bitmap? = try {
+        BitmapFactory.decodeByteArray(b, 0, b.size)?.let { fit(it, maxPx) }
+    } catch (e: Exception) { null } catch (e: OutOfMemoryError) { null }
+
     private fun fit(b: Bitmap, maxPx: Int): Bitmap {
         val m = maxOf(b.width, b.height)
         if (m <= maxPx) return b
@@ -232,6 +258,8 @@ class SafFileSource(context: Context, private val tree: Uri) : FileSource {
 
     private companion object {
         val IMAGE_EXT = setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif")
+        val AUDIO_EXT = setOf("mp3", "m4a", "flac", "ogg", "opus", "wav", "aac")
+        val DOC_EXT = setOf("docx", "xlsx", "pptx", "odt", "ods", "odp")
         val VIDEO_EXT = setOf("mp4", "mkv", "webm", "mov", "avi", "3gp", "m4v")
     }
 }

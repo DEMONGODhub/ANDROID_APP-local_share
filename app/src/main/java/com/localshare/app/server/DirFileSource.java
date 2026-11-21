@@ -97,6 +97,15 @@ public final class DirFileSource implements FileSource {
     }
 
     @Override public byte[] thumbnail(List<String> path, int maxPx) {
-        return null;
+        try {
+            File f = resolve(path);
+            if (f == null || !f.isFile()) return null;
+            String k = Util.kind(f.getName());
+            try (java.io.InputStream in = new java.io.BufferedInputStream(new java.io.FileInputStream(f))) {
+                return k.equals("audio") ? Covers.audio(in) : k.equals("docx") ? Covers.document(in) : null;
+            }
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
     }
 }
