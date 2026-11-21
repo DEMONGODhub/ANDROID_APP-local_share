@@ -122,7 +122,7 @@ public final class MiniServer {
     private static final long ACTIVE_MS = 30000L; // a device occupies a slot while it pings within 30s
     private static final String WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-    private final ServerConfig cfg;
+    public final ServerConfig cfg;
     private volatile FileSource fs;
     private final AssetProvider assets;
     private final ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<String, Session>();
@@ -670,7 +670,7 @@ public final class MiniServer {
     }
 
     private boolean canEdit(Session s) {
-        return s != null && (adm(s) || (!gameOnly(s) && (permsOf(s) & ServerConfig.P_EDIT) != 0));
+        return s != null && (adm(s) || (!gameOnly(s) && (cfg.devEdit || (permsOf(s) & ServerConfig.P_EDIT) != 0)));
     }
 
     /** Like auth, but also refuses guests who may only play the game. */

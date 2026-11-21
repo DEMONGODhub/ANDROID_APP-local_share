@@ -6,6 +6,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Live, thread-safe settings and block list. Changes apply immediately to the running server. */
 public final class ServerConfig {
+    /** Development builds: every signed-in device may edit text files (no per-device permission needed). */
+    public volatile boolean devEdit;
+
     public static final class Block {
         public final String id, name, ip, device;
 

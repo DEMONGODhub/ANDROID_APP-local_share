@@ -393,6 +393,7 @@ object ShareController {
     /** @return null on success, otherwise a human-readable error */
     @Synchronized
     fun start(): String? {
+        cfg.devEdit = (app.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (server != null) return null
         if (prefs.folders.isEmpty() && !prefs.gameOnly) return "Add a folder first, or turn on game-only mode"
         return try {

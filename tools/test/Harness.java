@@ -164,7 +164,7 @@ public class Harness {
         webDir = new File(a[1]);
         File[] fx = fixtures();
         if (a[0].equals("serve")) {
-            ServerConfig cfg = new ServerConfig();
+            ServerConfig cfg = new ServerConfig(); cfg.devEdit = true;
             cfg.allowUploads = true;
             cfg.allowDelete = true;
             cfg.maxClients = 10;
@@ -371,6 +371,9 @@ public class Harness {
         System.out.println("== per-device rename / edit / delete");
         check("rename refused by default -> 403", req("POST", "/api/rename", t, note + "&name=memo.txt").code == 403);
         check("save refused by default -> 403", post("/api/save?path=Main%2Fdocs%2Fnote.txt", t, "x".getBytes()).code == 403);
+        s.cfg.devEdit = true;
+        check("dev build: save allowed without a permission", post("/api/save?path=Main%2Fdocs%2Fnote.txt", t, "dev edit".getBytes()).code == 200);
+        s.cfg.devEdit = false;
         s.setPerms(sid(s, "Pat"), ServerConfig.P_RENAME);
         check("info shows canRename only", req("GET", "/api/info", t, null).text().contains("\"canRename\":true,\"canMove\":false,\"canEdit\":false"));
         check("ping reports the new permission", req("GET", "/api/ping", t, null).text().contains("\"ren\":true"));
