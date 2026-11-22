@@ -3,6 +3,8 @@
 <p align="center">
   <img src="branding/logo.svg" width="120" alt="LocalShare Logo">
 </p>
+[![Watch the video](https://img.youtube.com/vi/VIDEO_ID/0.jpg)](https://youtu.be/pKN4d6VoIXg?si=pPMbGjQJum6_s8oe)
+
 
 <h3 align="center">Turn your Android phone into a local sharing platform.</h3>
 
