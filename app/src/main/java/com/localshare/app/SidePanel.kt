@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -40,7 +42,7 @@ internal fun SidePanel(tab: Int, running: Boolean, devices: Int, waiting: Int, p
     val c = MaterialTheme.colorScheme
     Column(
         Modifier.width(300.dp).fillMaxHeight().background(c.surface)
-            .statusBarsPadding().navigationBarsPadding().padding(12.dp),
+            .statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(Modifier.padding(start = 6.dp, top = 4.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -239,7 +239,7 @@ public final class MiniServer {
     }
 
     public void chatDelete(long id) {
-        synchronized (chat) { for (int i = 0; i < chat.size(); i++) if (chat.get(i).id == id) { chat.remove(i); break; } }
+        synchronized (chat) { for (int i = 0; i < chat.size(); i++) if (chat.get(i).id == id) { chat.remove(i); chatGen++; break; } } // pages reload their list when the generation moves
     }
 
     public void hostSay(String text) {
@@ -310,6 +310,7 @@ public final class MiniServer {
     private final java.util.ArrayList<ChatMsg> chat = new java.util.ArrayList<ChatMsg>();
     private long chatSeq;
     private volatile int chatGen;
+    private volatile int filesRev; // moves after every upload, delete, rename, move or save so open pages refresh
     private volatile Runnable onStopStream;
     private volatile boolean running;
     private int port;
@@ -915,7 +916,7 @@ public final class MiniServer {
             Session s = auth(r, out, isHead);
             if (s == null) return true;
             json(out, isHead, 200, "{\"ok\":true,\"up\":" + canUpload(s) + ",\"del\":" + canDelete(s) + ",\"ren\":" + canRename(s)
-                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (canRemote(s) && tvHere()) + ",\"ac\":" + Util.q(cfg.accent) + ",\"hp\":" + (cfg.hostPic == null ? 0 : cfg.hostPicVer) + ",\"hn\":" + Util.q(cfg.hostName) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + "}");
+                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (canRemote(s) && tvHere()) + ",\"ac\":" + Util.q(cfg.accent) + ",\"hp\":" + (cfg.hostPic == null ? 0 : cfg.hostPicVer) + ",\"hn\":" + Util.q(cfg.hostName) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + ",\"fv\":" + filesRev + "}");
             return true;
         }
         if (get && path.equals("/api/list")) {
@@ -1023,27 +1024,27 @@ public final class MiniServer {
         if (post && path.equals("/api/upload")) {
             Session s = authFiles(r, out, false);
             if (s == null) return false;
-            return upload(r, s, in, out, false);
+            try { return upload(r, s, in, out, false); } finally { filesRev++; }
         }
         if (post && path.equals("/api/delete")) {
             Session s = authFiles(r, out, false);
             if (s == null) return true;
-            return delete(r, s, out);
+            try { return delete(r, s, out); } finally { filesRev++; }
         }
         if (post && path.equals("/api/rename")) {
             Session s = authFiles(r, out, false);
             if (s == null) return true;
-            return rename(r, s, out);
+            try { return rename(r, s, out); } finally { filesRev++; }
         }
         if (post && path.equals("/api/move")) {
             Session s = authFiles(r, out, false);
             if (s == null) return true;
-            return move(r, s, out);
+            try { return move(r, s, out); } finally { filesRev++; }
         }
         if (post && path.equals("/api/save")) {
             Session s = authFiles(r, out, false);
             if (s == null) return false;
-            return save(r, s, in, out);
+            try { return save(r, s, in, out); } finally { filesRev++; }
         }
         if (post && path.equals("/api/avatar")) {
             Session s = auth(r, out, false);

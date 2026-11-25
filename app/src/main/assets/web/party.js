@@ -21,7 +21,7 @@ const GAMES=[
 let root,body,title,who;
 function build(){
  if(root)return;
- const st=el("style","",`#arc{position:fixed;inset:0;z-index:90;background:var(--bg);color:var(--text);display:flex;flex-direction:column}#arc.hide{display:none}
+ const st=el("style","",`#arc{position:fixed;top:0;right:0;bottom:0;left:0;z-index:90;background:var(--bg);color:var(--text);display:flex;flex-direction:column}#arc.hide{display:none}
  #arc .top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--outline)}#arc .top b{flex:1;font-size:17px}
  #arc .ib{min-height:40px;min-width:40px;border-radius:20px;border:1px solid var(--outline);background:var(--surface);color:var(--text);font-weight:700;padding:0 12px}
  #arc .bd{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;align-items:center;gap:12px}

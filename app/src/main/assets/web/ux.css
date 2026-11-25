@@ -22,7 +22,7 @@ header #lo{display:none}
 /* ===== side panel (v2.48) ===== */
 #sb{position:fixed;left:0;top:0;bottom:0;width:280px;z-index:70;display:flex;flex-direction:column;gap:6px;padding:12px;padding-top:max(12px,env(safe-area-inset-top));background:var(--surface);border-right:1px solid var(--outline);transform:translateX(-102%);transition:transform .25s var(--ease);overflow:auto}
 #sb.on{transform:none}
-#sbk{position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.55)}
+#sbk{position:fixed;top:0;right:0;bottom:0;left:0;z-index:69;background:rgba(0,0,0,.55)}
 .sbh{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 8px}
 .sbl{display:flex;align-items:center;gap:10px;font-size:18px}.sbl i{width:34px;height:34px;border-radius:11px;background:var(--primary);color:var(--onprimary);display:grid;place-items:center}
 .sbu{justify-content:center;margin:4px 0 8px}
@@ -42,4 +42,16 @@ body.sbp #brand{display:none}
 .pn.hl{padding:24px max(16px,4vw);max-width:820px;margin:0 auto}
 .inws{position:static!important;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;animation:none!important;transform:none!important;z-index:auto!important}
 #snd.inws{max-width:720px!important;margin:0 auto;align-content:start;padding:20px 16px}
-#game.inws{position:absolute!important;inset:0;width:auto!important;height:auto!important}
+#game.inws{position:absolute!important;top:0;right:0;bottom:0;left:0;width:auto!important;height:auto!important}
+
+/* v2.52: chat/send/help live in the side panel; the side panel can shrink to an icon rail */
+header #snb,header #chb,header #help{display:none}
+.sbi{position:relative}.sbi em{margin-left:auto;font-style:normal;font-size:11px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--primary);color:var(--onprimary);display:grid;place-items:center}
+#sb{transition:width .18s ease}
+body.sbm #sb{width:68px;padding-left:8px;padding-right:8px}
+body.sbm .sbh{flex-direction:column;gap:8px;padding-bottom:8px}
+body.sbm .sbl b,body.sbm .sbi span:last-child:not(.sbn),body.sbm .sbt,body.sbm .sbu span{display:none}
+body.sbm .sbi{justify-content:center;padding:0}body.sbm .sbi em{position:absolute;top:2px;right:2px;margin:0}
+body.sbm .sbu{padding:0;justify-content:center}
+body.sbm #app{margin-left:68px}body.sbm #ws{left:68px}
+@media(prefers-reduced-motion:reduce){#sb{transition:none}}

@@ -16,21 +16,23 @@ const hb=D.createElement("button");hb.className="ib";hb.id="sbm";hb.setAttribute
 const hd=Q("#app header");if(hd)hd.insertBefore(hb,hd.firstChild);
 let pinned=false,open=false;
 function wide(){return innerWidth>=1100}
+const CH='<path d="m15 18-6-6 6-6"/>',EX='<path d="M18 6 6 18M6 6l12 12"/>',XP='<path d="m9 18 6-6-6-6"/>';
 function apply(){
-  const want=wide()&&store("ls_sb")!=="0";
-  pinned=want;D.body.classList.toggle("sbp",pinned);
+  const want=wide()&&store("ls_sb")!=="0",mini=want&&store("ls_sbm")==="1";
+  pinned=want;D.body.classList.toggle("sbp",pinned);D.body.classList.toggle("sbm",mini);
+  const x=Q("#sbx");x.innerHTML=ic(!pinned?EX:mini?XP:CH);x.setAttribute("aria-label",!pinned?"Close side panel":mini?"Expand side panel":"Collapse side panel");x.title=x.getAttribute("aria-label");
   sb.classList.toggle("on",pinned||open);bk.classList.toggle("hide",pinned||!open);
   hb.style.display=pinned?"none":"";
 }
 function show(v){open=v;if(wide()){store("ls_sb",v?"1":"0");open=false}apply();if(v)draw()}
-hb.onclick=()=>show(true);Q("#sbx").onclick=()=>{if(wide()){store("ls_sb","0");apply()}else show(false)};
+hb.onclick=()=>show(true);Q("#sbx").onclick=()=>{if(pinned){store("ls_sbm",store("ls_sbm")==="1"?"0":"1");apply()}else show(false)};
 bk.onclick=()=>show(false);
 D.addEventListener("keydown",e=>{if(e.key==="Escape"&&open){show(false)}});
 addEventListener("resize",apply);
 function drawNav(){
   const n=Q("#sbn");n.innerHTML="";
   NAV.forEach(([t,i,sel])=>{const tg=on(sel);if(!tg)return;
-    const b=D.createElement("button");b.className="sbi";b.innerHTML=ic(i)+"<span>"+t+"</span>";
+    const b=D.createElement("button");b.className="sbi";b.title=t;b.innerHTML=ic(i)+"<span>"+t+"</span>";const bd=tg.querySelector("b");if(bd)b.insertAdjacentHTML("beforeend","<em>"+bd.textContent+"</em>");
     b.onclick=()=>{tg.click();if(!pinned)show(false)};n.appendChild(b)});
 }
 function drawWs(){
@@ -38,13 +40,13 @@ function drawWs(){
   if(!S)return;
   for(let i=0;i<S.n;i++){
     const b=D.createElement("button");b.className="sbi"+(i===S.cur?" cur":"");
-    b.innerHTML='<span class="sbn">'+(i+1)+"</span><span>"+(S.titles[i]||(i===S.cur?"Files":"Empty"))+"</span>";
+    b.title=S.titles[i]||"Workspace "+(i+1);b.innerHTML='<span class="sbn">'+(i+1)+"</span><span>"+(S.titles[i]||(i===S.cur?"Files":"Empty"))+"</span>";
     b.onclick=()=>{WS.go(i);if(!pinned)show(false)};w.appendChild(b);
   }
 }
 function draw(){drawNav();drawWs();const u=on("#upb");Q("#sbu").style.display=u?"":"none"}
 Q("#sbu").onclick=()=>{const u=Q("#upb");if(u)u.click();if(!pinned)show(false)};
 addEventListener("wschange",drawWs);
-new MutationObserver(()=>{if(pinned||open)draw()}).observe(app,{attributes:true,subtree:true,attributeFilter:["class","hidden"]});
+new MutationObserver(()=>{if(pinned||open)draw()}).observe(app,{attributes:true,subtree:true,attributeFilter:["class","hidden"],childList:true,characterData:true});
 apply();draw();
 })();

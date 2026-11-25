@@ -357,7 +357,7 @@ $("#rem").addEventListener("click",e=>{const k=e.target.closest("[data-k]");if(k
 $("#remf").addEventListener("submit",async e=>{e.preventDefault();const v=$("#remt").value;if(v&&await rk("text",v))$("#remt").value=""});
 function liveBtn(on){$("#watch").classList.toggle("hide",!on);if(!on&&!$("#scr").classList.contains("hide"))closeScr()}
 function enter(){
-  clearInterval(pinger);pinger=setInterval(ping,10000);liveBtn(!!INFO.live);remBtn(!!INFO.tv);hostChip();
+  clearInterval(pinger);pinger=setInterval(ping,4000);liveBtn(!!INFO.live);remBtn(!!INFO.tv);hostChip();
   if(window.AV&&AV.sync)AV.sync();
   if(INFO.gameOnly){show("gonly");return}
   show("app");chStart();set("#vtog",view==="grid"?P.list:P.grid);
@@ -368,10 +368,12 @@ function hostChip(){ // who is sharing: the host's picture and name, once a gues
   const im=el.querySelector("img");const u="/api/host/pic?v="+INFO.hostPic;if(im.getAttribute("src")!==u)im.src=u;
   im.alt="Hosted by "+INFO.hostName;el.title="Hosted by "+INFO.hostName;el.querySelector("b").textContent=INFO.hostName||"";
 }
+let fvSeen=null;
 async function ping(){
   const r=await J("/api/ping");
   if(r.status===429)return showLogin("The room is full right now. Try again soon.");
   if(r.ok&&r.d.go!==!!INFO.gameOnly){location.reload();return}
+  if(r.ok&&r.d.fv!==undefined){if(fvSeen!==null&&r.d.fv!==fvSeen&&!SEL&&typeof cur==="string")go(cur);fvSeen=r.d.fv} // files changed by someone else: refresh the list
   if(r.ok){liveBtn(!!r.d.live);remBtn(!!r.d.tv);ME.mgr=!!r.d.mgr&&!ME.host;accent(r.d.ac);if(r.d.hp!==INFO.hostPic||r.d.hn!==INFO.hostName){INFO.hostPic=r.d.hp;INFO.hostName=r.d.hn;hostChip()}}
   if(r.ok&&(r.d.up!==INFO.canUpload||r.d.del!==INFO.canDelete||r.d.ren!==INFO.canRename||r.d.edt!==INFO.canEdit||r.d.mov!==INFO.canMove)){INFO.canUpload=r.d.up;INFO.canDelete=r.d.del;INFO.canRename=r.d.ren;INFO.canEdit=r.d.edt;INFO.canMove=r.d.mov;toolbar()}
 }

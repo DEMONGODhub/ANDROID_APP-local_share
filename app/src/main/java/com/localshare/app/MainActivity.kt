@@ -244,12 +244,12 @@ private fun App() {
     val pick: (Int) -> Unit = { t -> tab = t; drawerScope.launch { drawer.close() } }
     if (wide) {
         androidx.compose.material3.PermanentNavigationDrawer(
-            drawerContent = { SidePanel(tab, st.running, st.devices.size, st.waiting.size, pick, { if (st.running) { browser = ""; drawerScope.launch { drawer.close() } } }, { askJoin = true; drawerScope.launch { drawer.close() } }) },
+            drawerContent = { SidePanel(tab, st.running, st.devices.size, st.waiting.size, pick, { if (st.running) { browser = ""; drawerScope.launch { drawer.close() } } else android.widget.Toast.makeText(setupCtx, setupCtx.getString(R.string.nav_host_first), android.widget.Toast.LENGTH_LONG).show() }, { askJoin = true; drawerScope.launch { drawer.close() } }) },
         ) { scaffold() }
     } else {
         androidx.compose.material3.ModalNavigationDrawer(
             drawerState = drawer, gesturesEnabled = tab != 0 || drawer.isOpen,
-            drawerContent = { SidePanel(tab, st.running, st.devices.size, st.waiting.size, pick, { if (st.running) { browser = ""; drawerScope.launch { drawer.close() } } }, { askJoin = true; drawerScope.launch { drawer.close() } }) },
+            drawerContent = { SidePanel(tab, st.running, st.devices.size, st.waiting.size, pick, { if (st.running) { browser = ""; drawerScope.launch { drawer.close() } } else android.widget.Toast.makeText(setupCtx, setupCtx.getString(R.string.nav_host_first), android.widget.Toast.LENGTH_LONG).show() }, { askJoin = true; drawerScope.launch { drawer.close() } }) },
         ) { scaffold() }
     }
 }

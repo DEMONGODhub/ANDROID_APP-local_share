@@ -10,4 +10,5 @@
     <string name="nav_join">दोस्त से जुड़ें</string>
     <string name="join_hint">पता, जैसे 192.168.1.5:8080</string>
     <string name="join_go">जुड़ें</string>
+    <string name="nav_host_first">पहले शेयरिंग चालू करें, फिर होस्ट के रूप में खोलें</string>
 </resources>
