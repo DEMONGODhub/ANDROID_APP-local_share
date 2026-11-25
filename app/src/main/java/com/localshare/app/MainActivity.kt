@@ -37,10 +37,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -48,6 +52,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
@@ -128,6 +133,7 @@ private fun App() {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var browser by rememberSaveable { mutableStateOf<String?>(null) } // null = closed, "" = files and game, "play" / "obs" = straight into the game
 
+    var askJoin by rememberSaveable { mutableStateOf(false) }
     var joinUrl by rememberSaveable { mutableStateOf<String?>(null) } // another phone's share, opened inside this app
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val la = MainActivity.launchAction
@@ -157,6 +163,12 @@ private fun App() {
             dismissButton = { TextButton({ ShareController.answerOffer(o.id, false) }) { Text("Decline") } },
         )
     }
+    if (askJoin) JoinDialog({ askJoin = false }) { l ->
+        val t = l.trim()
+        joinUrl = if (t.startsWith("http://") || t.startsWith("https://")) t else "http://$t"
+        ShareController.rememberFriend((joinUrl ?: t).substringAfter("//").substringBefore("/").substringBefore(":"), joinUrl ?: t)
+        askJoin = false
+    }
     joinUrl?.let { u ->
         HostBrowser(0, "", "", u) { joinUrl = null }
         return
@@ -182,12 +194,16 @@ private fun App() {
     var setup by rememberSaveable { mutableStateOf(setupMode(setupCtx)) } // 1 first launch, 2 a needed setting is off, 0 hidden
     if (setup != 0) SetupFlow(setup) { ShareController.markGuideSeen(); setup = 0 }
     BackHandler(enabled = tab != 0) { tab = 0 } // Back from any other tab goes to Share first
+    val wide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 840 // tablets, foldables, landscape
+    val drawer = androidx.compose.material3.rememberDrawerState(androidx.compose.material3.DrawerValue.Closed)
+    val drawerScope = androidx.compose.runtime.rememberCoroutineScope()
+    val scaffold: @Composable () -> Unit = {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { androidx.compose.material3.SnackbarHost(snackState) },
-        topBar = { if (tab != 0) AppBar(st.running, st.devices.size) }, // the Share tab has its own rail and profile bar
+        topBar = { if (tab != 0) AppBar(st.running, st.devices.size, wide) { drawerScope.launch { drawer.open() } } }, // the Share tab has its own rail and profile bar
         bottomBar = {
-          Column {
+         if (!wide) Column {
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             val nav = NavigationBarItemDefaults.colors(
                 selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -195,18 +211,19 @@ private fun App() {
                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant, unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             NavigationBar(containerColor = MaterialTheme.colorScheme.background, tonalElevation = 0.dp) {
-                NavigationBarItem(tab == 0, { tab = 0 }, { NavIcon(tab == 0) { Icon(Icons.Filled.Home, null) } }, label = { Text("Share") }, colors = nav)
+                NavigationBarItem(tab == 0, { tab = 0 }, { NavIcon(tab == 0) { Icon(Icons.Filled.Home, null) } }, label = { Text(androidx.compose.ui.res.stringResource(R.string.nav_share)) }, colors = nav)
                 NavigationBarItem(tab == 1, { tab = 1 }, { NavIcon(tab == 1) {
                     BadgedBox(badge = { if (st.waiting.isNotEmpty()) Badge { Text("${st.waiting.size}") } else if (st.devices.isNotEmpty()) Badge { Text("${st.devices.size}") } }) { Icon(Icons.Filled.Person, null) }
-                } }, label = { Text("Devices") }, colors = nav)
-                NavigationBarItem(tab == 2, { tab = 2 }, { NavIcon(tab == 2) { Icon(painterResource(R.drawable.ic_gamepad), null) } }, label = { Text("Game") }, colors = nav)
-                NavigationBarItem(tab == 3, { tab = 3 }, { NavIcon(tab == 3) { Icon(Icons.Filled.Info, null) } }, label = { Text("Activity") }, colors = nav)
-                NavigationBarItem(tab == 4, { tab = 4 }, { NavIcon(tab == 4) { Icon(Icons.Filled.Settings, null) } }, label = { Text("Settings") }, colors = nav)
+                } }, label = { Text(androidx.compose.ui.res.stringResource(R.string.nav_devices)) }, colors = nav)
+                NavigationBarItem(tab == 2, { tab = 2 }, { NavIcon(tab == 2) { Icon(painterResource(R.drawable.ic_gamepad), null) } }, label = { Text(androidx.compose.ui.res.stringResource(R.string.nav_game)) }, colors = nav)
+                NavigationBarItem(tab == 3, { tab = 3 }, { NavIcon(tab == 3) { Icon(Icons.Filled.Info, null) } }, label = { Text(androidx.compose.ui.res.stringResource(R.string.nav_activity)) }, colors = nav)
+                NavigationBarItem(tab == 4, { tab = 4 }, { NavIcon(tab == 4) { Icon(Icons.Filled.Settings, null) } }, label = { Text(androidx.compose.ui.res.stringResource(R.string.nav_settings)) }, colors = nav)
             }
           }
         },
     ) { pad ->
         Box(Modifier.padding(pad).consumeWindowInsets(pad).fillMaxSize()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) { Box(Modifier.widthIn(max = if (wide) 840.dp else 4000.dp).fillMaxSize()) {
             Crossfade(tab, animationSpec = tween(220), label = "tab") { t ->
                 when (t) {
                     0 -> HomeScreen(st, { browser = "" }, startCast) { l ->
@@ -220,7 +237,20 @@ private fun App() {
                     else -> SettingsScreen(st)
                 }
             }
+            } }
         }
+    }
+    }
+    val pick: (Int) -> Unit = { t -> tab = t; drawerScope.launch { drawer.close() } }
+    if (wide) {
+        androidx.compose.material3.PermanentNavigationDrawer(
+            drawerContent = { SidePanel(tab, st.running, st.devices.size, st.waiting.size, pick, { if (st.running) { browser = ""; drawerScope.launch { drawer.close() } } }, { askJoin = true; drawerScope.launch { drawer.close() } }) },
+        ) { scaffold() }
+    } else {
+        androidx.compose.material3.ModalNavigationDrawer(
+            drawerState = drawer, gesturesEnabled = tab != 0 || drawer.isOpen,
+            drawerContent = { SidePanel(tab, st.running, st.devices.size, st.waiting.size, pick, { if (st.running) { browser = ""; drawerScope.launch { drawer.close() } } }, { askJoin = true; drawerScope.launch { drawer.close() } }) },
+        ) { scaffold() }
     }
 }
 
@@ -235,12 +265,13 @@ private fun NavIcon(selected: Boolean, content: @Composable () -> Unit) {
 
 /** YouTube-style top bar: logo tile and name on the left, a LIVE pill and settings on the right. */
 @Composable
-private fun AppBar(running: Boolean, devices: Int) {
+private fun AppBar(running: Boolean, devices: Int, wide: Boolean = false, onMenu: () -> Unit = {}) {
     val c = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth().background(c.background).statusBarsPadding().padding(start = 14.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (!wide) IconButton(onClick = onMenu) { Icon(androidx.compose.material.icons.Icons.Filled.Menu, "Open side panel") }
         Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(c.primary), contentAlignment = Alignment.Center) {
             com.localshare.app.ui.LogoMark(22.dp, c.onPrimary, running)
         }

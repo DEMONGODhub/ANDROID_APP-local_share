@@ -163,6 +163,17 @@ private fun AboutCard() {
             Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) { Text("demongod.freedev.app") }
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        Text("Support log (stays on this phone)", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton({
+                val log = DebugLog.read().ifEmpty { "Nothing logged yet." }
+                (ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                    .setPrimaryClip(android.content.ClipData.newPlainText("LocalShare log", log))
+                android.widget.Toast.makeText(ctx, "Log copied. Paste it into a bug report.", android.widget.Toast.LENGTH_SHORT).show()
+            }, Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Copy log") }
+            OutlinedButton({ DebugLog.clear(); android.widget.Toast.makeText(ctx, "Log cleared", android.widget.Toast.LENGTH_SHORT).show() }, Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Clear") }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         Text("Contributors and credits", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
         CREDITS.forEach { (name, role) ->
             Column {

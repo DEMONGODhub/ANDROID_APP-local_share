@@ -1,0 +1,40 @@
+name: Server tests
+# Runs the 397-check server and web-page harness on every push and pull request (no Android SDK needed).
+on:
+  push:
+  pull_request:
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Compile
+        run: |
+          export LC_ALL=C.UTF-8
+          mkdir -p /tmp/hb
+          javac -encoding UTF-8 -d /tmp/hb $(find app/src/main/java/com/localshare/app/server tools/test -name '*.java')
+      - name: Run harness
+        run: |
+          export LC_ALL=C.UTF-8
+          java -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -cp /tmp/hb Harness test app/src/main/assets/web
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew && ./gradlew testDebugUnitTest --no-daemon
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test the optional Rust crate
+        run: cd rust/localshare-core && cargo test

@@ -466,7 +466,13 @@ public final class MiniServer {
             while (running) {
                 Req r = parse(in, ip);
                 if (r == null) break;
+                long t0 = System.nanoTime();
                 boolean keep = route(r, s, in, out);
+                ServerConfig.Sink ps = cfg.perf;
+                if (ps != null && r.path != null && r.path.startsWith("/api/") && !r.path.equals("/api/file") && !r.path.equals("/api/zip") && !r.path.startsWith("/api/stream")) {
+                    long ms = (System.nanoTime() - t0) / 1000000L;
+                    if (ms >= 400) ps.line("slow " + r.method + " " + r.path + " " + ms + " ms");
+                }
                 out.flush();
                 if (!keep) break;
             }

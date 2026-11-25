@@ -1,7 +1,9 @@
 name: Build APK
-# Runs only when you start it by hand (Actions tab -> Build APK -> Run workflow), not on every push.
+# Runs when you start it by hand (Actions tab -> Build APK -> Run workflow) and whenever you push a version tag (v2.50.0 ...).
 on:
   workflow_dispatch:
+  push:
+    tags: ['v*']
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -13,7 +15,7 @@ jobs:
           java-version: 17
       - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
-      - run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - run: chmod +x gradlew && ./gradlew testDebugUnitTest assembleDebug lintDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: LocalShare-debug-apk

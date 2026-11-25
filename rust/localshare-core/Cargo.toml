@@ -1,0 +1,14 @@
+[package]
+name = "localshare-core"
+version = "0.1.0"
+edition = "2021"
+description = "Optional native helpers for LocalShare (off the transfer path). The Java versions stay the default."
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_share">शेयर</string>
+    <string name="nav_devices">डिवाइस</string>
+    <string name="nav_game">गेम</string>
+    <string name="nav_activity">गतिविधि</string>
+    <string name="nav_settings">सेटिंग्स</string>
+    <string name="nav_host">होस्ट के रूप में खोलें</string>
+    <string name="nav_host_off">शेयरिंग बंद है</string>
+    <string name="nav_join">दोस्त से जुड़ें</string>
+    <string name="join_hint">पता, जैसे 192.168.1.5:8080</string>
+    <string name="join_go">जुड़ें</string>
+</resources>

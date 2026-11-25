@@ -1,0 +1,34 @@
+# Template for an F-Droid merge request (fdroiddata/metadata/com.localshare.app.yml).
+# IMPORTANT: F-Droid only accepts apps under a free-software licence (MIT, Apache-2.0, GPL ...).
+# Fill in License once you decide it, and remove every non-free dependency before submitting.
+Categories:
+  - Connectivity
+  - System
+License: TODO-choose-an-open-source-licence
+AuthorName: DEMON GOD
+WebSite: https://demongod.freedev.app
+SourceCode: https://github.com/DEMONGODhub/android_app
+IssueTracker: https://github.com/DEMONGODhub/android_app/issues
+
+AutoName: LocalShare
+Summary: Share phone folders as a website on your Wi-Fi
+Description: |-
+  Turn any folder on your phone into a website that every device on your Wi-Fi can open.
+  No cloud, no account, no internet needed. Photos, music, video, PDFs and text open in the
+  browser; live chat, screen sharing and a multiplayer game are built in.
+
+RepoType: git
+Repo: https://github.com/DEMONGODhub/android_app.git
+
+Builds:
+  - versionName: 2.51.0
+    versionCode: 77
+    commit: v2.51.0
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 2.51.0
+CurrentVersionCode: 76

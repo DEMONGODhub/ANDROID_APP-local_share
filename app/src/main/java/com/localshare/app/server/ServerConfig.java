@@ -255,6 +255,9 @@ public final class ServerConfig {
     public final ActivityLog log = new ActivityLog();
     /** Called from any thread whenever the block list changes. */
     public volatile Runnable onChange;
+    /** Receives one line for each slow request (the app writes them to its support log). */
+    public interface Sink { void line(String s); }
+    public volatile Sink perf;
 
     private final ConcurrentHashMap<String, Block> blocks = new ConcurrentHashMap<String, Block>();
 

@@ -5,4 +5,14 @@
     <string name="shortcut_start">Start sharing</string>
     <string name="shortcut_stop">Stop sharing</string>
     <string name="shortcut_game">Open the game</string>
+    <string name="nav_share">Share</string>
+    <string name="nav_devices">Devices</string>
+    <string name="nav_game">Game</string>
+    <string name="nav_activity">Activity</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_host">Open my share as host</string>
+    <string name="nav_host_off">sharing is off</string>
+    <string name="nav_join">Join a friend</string>
+    <string name="join_hint">Address, e.g. 192.168.1.5:8080</string>
+    <string name="join_go">Join</string>
 </resources>

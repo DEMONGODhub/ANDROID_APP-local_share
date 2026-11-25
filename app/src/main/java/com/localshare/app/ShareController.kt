@@ -2,6 +2,7 @@ package com.localshare.app
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.documentfile.provider.DocumentFile
@@ -117,13 +118,16 @@ object ShareController {
         if (ready) return
         ready = true
         app = ctx.applicationContext
+        DebugLog.install(app)
         prefs = Prefs(app)
+        watchNetwork()
         // when Android is short on memory, give back what can be rebuilt (thumbnails)
         app.registerComponentCallbacks(object : android.content.ComponentCallbacks2 {
             override fun onTrimMemory(level: Int) { if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) server?.trimMemory() }
             override fun onConfigurationChanged(c: android.content.res.Configuration) {}
             @Deprecated("old callback") override fun onLowMemory() { server?.trimMemory() }
         })
+        cfg.perf = com.localshare.app.server.ServerConfig.Sink { line -> DebugLog.add(line) }
         cfg.password = prefs.password
         cfg.maxClients = prefs.maxClients
         cfg.gameEnabled = prefs.gameEnabled
@@ -251,11 +255,29 @@ object ShareController {
         return lastSpeed
     }
 
+    /** Refresh the shown address at once when Wi-Fi or the hotspot changes, instead of waiting for the next tick. */
+    private fun watchNetwork() {
+        try {
+            val cm = app.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            cm.registerDefaultNetworkCallback(object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(n: android.net.Network) { DebugLog.add("network available"); main.post { refresh() } }
+                override fun onLost(n: android.net.Network) { DebugLog.add("network lost"); main.post { refresh() } }
+                override fun onLinkPropertiesChanged(n: android.net.Network, lp: android.net.LinkProperties) { main.post { refresh() } }
+            })
+        } catch (e: Exception) { DebugLog.add("network watch failed: " + e.message) }
+    }
+
     @Suppress("DEPRECATION")
     private fun wifiNote(): String = try {
         val wm = app.applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
         val f = wm.connectionInfo?.frequency ?: 0
-        if (f in 2400..2500) "This phone is on 2.4 GHz Wi-Fi, which is slower. For faster file transfers use a 5 GHz network or this phone's hotspot." else ""
+        val slow = if (f in 2400..2500) "This phone is on 2.4 GHz Wi-Fi, which is slower. For faster file transfers use a 5 GHz network or this phone's hotspot." else ""
+        // LocalShare speaks plain HTTP, so anything on the same network can read it: say so when nothing protects the link
+        val open = if (prefs.password.isEmpty()) "No password is set, and the link is not encrypted. Anyone on this Wi-Fi can open your folders, so avoid cafe, hostel or other public networks." else ""
+        // an open (password-less) Wi-Fi is the typical cafe, hostel or station network: anyone nearby can join it (Android 12+ can tell)
+        val pub = if (Build.VERSION.SDK_INT >= 31 && wm.connectionInfo?.currentSecurityType == android.net.wifi.WifiInfo.SECURITY_TYPE_OPEN)
+            "This Wi-Fi network is open, with no Wi-Fi password. Anyone nearby can join it and reach your shared folders. Use this phone's own hotspot instead." else ""
+        listOf(pub, slow, open).filter { it.isNotEmpty() }.joinToString("\n")
     } catch (e: Exception) { "" }
 
     private fun meter(ctx: Context, s: com.localshare.app.server.StreamHub?): String {

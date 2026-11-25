@@ -181,7 +181,7 @@ function switchTo(i){
   wsi=i;active=slots[i]||null;
   const h=homes[i]||"#/";if(location.hash!==h){try{location.replace(h)}catch(e){location.hash=h}}
   if(active)showWs();else renderTabs();
-  setEl.classList.add("hide");syncMini();
+  setEl.classList.add("hide");syncMini();emit();
 }
 function lock(b){
   if(b===locked)return;locked=b;
@@ -222,7 +222,7 @@ function setNS(n){
   NS=n;setStore("ls_ns",String(n));
   for(let i=n;i<slots.length;i++)if(slots[i]){slots[i].dirty=false;closeTab(slots[i],1)}
   slots.length=Math.min(slots.length,n);homes.length=Math.min(homes.length,n);
-  renderTabs();drawSet();
+  renderTabs();drawSet();emit();
 }
 function drawSet(){
   setEl.innerHTML='<h3>Workspaces<button class="cx" aria-label="Close">'+ic(I.x,16)+'</button></h3><p>Every workspace is a full copy of the app. What you open stays in the workspace you opened it in.</p><div class="wl"></div><div class="st"><button class="m" aria-label="Fewer">−</button><b></b><button class="p" aria-label="More">+</button></div><p class="k">Jump with Alt+1 … Alt+'+NS+'. Alt+W closes the file in view.</p><button class="ca">Close all open files</button>';
@@ -259,6 +259,51 @@ function open(e,C,opts){
   slots[to]=nt;if(bg){if(to===wsi)active=nt;renderTabs();return true}
   wsi=to;active=nt;showWs();return true;
 }
+
+
+/* ---------- Chat, Send, Help and Play open as a workspace too ---------- */
+let bypass=false;
+const PANELS={
+  chat:{sel:"#chat",title:"Chat",btn:"#chb",close:"#chx"},
+  send:{sel:"#snd",title:"Send",btn:"#snb",close:"#sdx"},
+  game:{sel:"#game",title:"Orb Arena",open:()=>window.gameOpen&&window.gameOpen(),shut:()=>window.gameClose&&window.gameClose()},
+  help:{title:"Help"}
+};
+function panelTab(name,P){
+  const pane=mk("div","pn"+(name==="help"?" hl":"")),t=addTab("panel:"+name,"panel",P.title,pane);
+  if(name==="help"){
+    pane.innerHTML=(window.helpHtml?window.helpHtml():"<h3>Help</h3>");
+    t.onclose=()=>{};return t;
+  }
+  const el=Q(P.sel),home=el.parentNode,next=el.nextSibling;
+  el.classList.add("inws");pane.appendChild(el);
+  const obs=new MutationObserver(()=>{if(el.classList.contains("hide")&&slotOf(t)>=0)closeTab(t)});
+  obs.observe(el,{attributes:true,attributeFilter:["class"]});
+  t.onclose=()=>{
+    obs.disconnect();el.classList.remove("inws");home.insertBefore(el,next);
+    if(!el.classList.contains("hide")){if(P.shut)P.shut();else{const c=Q(P.close);if(c)c.click()}}
+  };
+  t.onhide=()=>{};
+  return t;
+}
+function openPanel(name){
+  const P=PANELS[name];if(locked||!P)return false;
+  const to=wsi;let t=slots[to];
+  if(t&&t.key==="panel:"+name){active=t;showWs();return true}
+  if(t&&t.dirty&&!confirm("Close "+t.title+" without saving your changes?"))return false;
+  if(t){if(t.onclose)t.onclose();t.fr.remove();slots[to]=null;if(active===t)active=null}
+  if(P.sel){
+    const el=Q(P.sel);
+    if(el.classList.contains("hide")){bypass=true;try{if(P.open)P.open();else{const f=Q(P.btn).onclick;if(f)f.call(Q(P.btn))}}finally{bypass=false}}
+    if(el.classList.contains("hide"))return false;   // the page refused to open it (for example, not signed in)
+  }
+  const nt=panelTab(name,P);
+  slots[to]=nt;wsi=to;active=nt;showWs();
+  if(name==="game")setTimeout(()=>dispatchEvent(new Event("resize")),60);
+  return true;
+}
+const PB={chb:"chat",snb:"send",help:"help",fab:"game"};
+document.addEventListener("click",e=>{if(bypass||locked)return;const b=e.target.closest&&e.target.closest("#chb,#snb,#help,#fab");if(!b||!PB[b.id])return;e.stopImmediatePropagation();e.preventDefault();openPanel(PB[b.id])},true);
 
 /* ---------- music engine ---------- */
 const A=new Audio();A.preload="metadata";
@@ -724,6 +769,7 @@ addEventListener("keydown",ev=>{
   if((ev.ctrlKey||ev.metaKey)&&ev.key==="w"&&active){ev.preventDefault();closeTab(active)}
 },true);
 D.addEventListener("pointerdown",ev=>{if(!setEl.classList.contains("hide")&&!ev.target.closest("#wset,#wcfg,#wsw"))setEl.classList.add("hide");if(!mpan.classList.contains("hide")&&!ev.target.closest("#mpan,#mp"))mpan.classList.add("hide")});
-window.WS={lock,open,visible:isOpen,kinds:KINDS};
+function emit(){try{dispatchEvent(new Event("wschange"))}catch(e){}}
+window.WS={lock,open,visible:isOpen,kinds:KINDS,go:switchTo,panel:openPanel,state:()=>({n:NS,cur:wsi,titles:Array.from({length:NS},(_,i)=>slots[i]?slots[i].title:"")})};
 renderTabs();syncMini();
 })();
