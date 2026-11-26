@@ -14,8 +14,8 @@ android {
         applicationId = "com.localshare.app"
         minSdk = 21            // Android 5.0+ (covers ~99% of devices)
         targetSdk = 35
-        versionCode = 79
-        versionName = "2.52.1"
+        versionCode = 80
+        versionName = "2.53.0"
     }
 
     // Release signing: your own keystore via keystore.properties (kept out of git), or GitHub-secret env vars. Neither set = unsigned.

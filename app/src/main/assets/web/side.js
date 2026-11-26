@@ -8,7 +8,7 @@ const I={files:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 
 const store=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}return null};
 const on=id=>{const b=Q(id);return b&&!b.hidden&&!b.classList.contains("hide")?b:null};
 // items: [label, icon, target button selector]
-const NAV=[["Files",I.files,"#brand"],["Chat",I.chat,"#chb"],["Send",I.send,"#snb"],["Play games",I.game,"#fab"],["Watch screen",I.scr,"#watch"],["TV remote",I.tv,"#rmt"],["Help",I.help,"#help"]];
+const NAV=[["Browse","Files",I.files,"#brand"],["People","Chat",I.chat,"#chb"],["People","Send",I.send,"#snb"],["Play & watch","Play games",I.game,"#fab"],["Play & watch","Watch screen",I.scr,"#watch"],["Play & watch","TV remote",I.tv,"#rmt"],["More","Help",I.help,"#help"]];
 D.body.insertAdjacentHTML("beforeend",'<div id="sbk" class="hide"></div><aside id="sb" aria-label="Side panel"><div class="sbh"><span class="sbl"><i></i><b>LocalShare</b></span><button class="ib" id="sbx" aria-label="Close side panel">'+ic('<path d="M18 6 6 18M6 6l12 12"/>')+'</button></div><button class="btn pri sbu" id="sbu">'+ic(I.up)+'<span>Upload</span></button><nav id="sbn" aria-label="Sections"></nav><div class="sbt">Workspaces</div><div id="sbw"></div></aside>');
 const sb=Q("#sb"),bk=Q("#sbk");
 const logo=Q("#logo3");if(logo)sb.querySelector(".sbl i").innerHTML=logo.innerHTML;
@@ -31,7 +31,9 @@ D.addEventListener("keydown",e=>{if(e.key==="Escape"&&open){show(false)}});
 addEventListener("resize",apply);
 function drawNav(){
   const n=Q("#sbn");n.innerHTML="";
-  NAV.forEach(([t,i,sel])=>{const tg=on(sel);if(!tg)return;
+  let last="";
+  NAV.forEach(([g,t,i,sel])=>{const tg=on(sel);if(!tg)return;
+    if(g!==last){last=g;n.insertAdjacentHTML("beforeend",'<div class="sbt">'+g+"</div>")}
     const b=D.createElement("button");b.className="sbi";b.title=t;b.innerHTML=ic(i)+"<span>"+t+"</span>";const bd=tg.querySelector("b");if(bd)b.insertAdjacentHTML("beforeend","<em>"+bd.textContent+"</em>");
     b.onclick=()=>{tg.click();if(!pinned)show(false)};n.appendChild(b)});
 }

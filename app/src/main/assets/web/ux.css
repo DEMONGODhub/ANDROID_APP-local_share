@@ -55,3 +55,6 @@ body.sbm .sbi{justify-content:center;padding:0}body.sbm .sbi em{position:absolut
 body.sbm .sbu{padding:0;justify-content:center}
 body.sbm #app{margin-left:68px}body.sbm #ws{left:68px}
 @media(prefers-reduced-motion:reduce){#sb{transition:none}}
+
+#hostchip{display:none!important}
+#sbn .sbt{margin-top:10px}#sbn .sbt:first-child{margin-top:2px}
