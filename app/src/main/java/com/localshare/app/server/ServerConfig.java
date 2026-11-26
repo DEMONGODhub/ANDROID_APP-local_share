@@ -30,6 +30,8 @@ public final class ServerConfig {
         }
     }
 
+    /** When set, the server speaks HTTPS using this context (see SelfSigned); null means plain HTTP. */
+    public volatile javax.net.ssl.SSLContext tls;
     public volatile String password = "";
     public volatile int maxClients = 5;
     public volatile boolean gameEnabled = true;

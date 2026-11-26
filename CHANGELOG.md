@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.54.0** — optional HTTPS (Settings → What guests can do → Encrypt with HTTPS; off by default). The phone makes its own certificate once (`SelfSigned.java`, pure Java, EC P-256, kept in the app's private folder), links and QR codes switch to https://, the login cookie becomes Secure, and the in-app browser trusts the share's certificate only for this phone and local-network addresses. Browsers show a one-time "not trusted" notice. Tested on the PC (9 new checks, plus a real browser: page, range requests, secure cookie); Android parts not compiled here.
 - **v2.53.2** — faster PDFs: the page's scripts and styles are sent gzip-compressed (the PDF engine 1.1 MB → 0.3 MB), the PDF starts downloading while the access check runs, bigger download chunks, and each page first appears at normal resolution then sharpens (about 4x fewer pixels to draw first; sharp resolution capped at 2x).
 - **v2.53.1** — wrong-password lockout now grows each time (1, 2, 4, 8, then 15 minutes) instead of always 1 minute.
 - **v2.53.0** — web side panel grouped into Browse / People / Play & watch / More (Hindi too); the Discord-style host name chip is gone from the header.

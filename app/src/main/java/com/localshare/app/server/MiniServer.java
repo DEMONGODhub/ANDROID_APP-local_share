@@ -133,6 +133,10 @@ public final class MiniServer {
     private final SecureRandom rnd = new SecureRandom();
     private final String hostToken = hex(16);
     private ServerSocket ss;
+    private volatile boolean secure;
+
+    /** True while the server is answering over HTTPS. */
+    public boolean secure() { return secure; }
     private ThreadPoolExecutor pool;
     private GameHub game;
     private PartyHub party;
@@ -327,7 +331,9 @@ public final class MiniServer {
 
     public synchronized void start(int port) throws IOException {
         if (running) return;
-        ServerSocket s = new ServerSocket();
+        javax.net.ssl.SSLContext tls = cfg.tls;
+        ServerSocket s = tls != null ? tls.getServerSocketFactory().createServerSocket() : new ServerSocket();
+        secure = tls != null;
         s.setReuseAddress(true);
         s.bind(new InetSocketAddress(port));
         ss = s;
@@ -857,7 +863,7 @@ public final class MiniServer {
         s.pending = pend;
         sessions.put(token, s);
         json(out, false, 200, "{\"ok\":true,\"name\":" + Util.q(name) + ",\"host\":" + host + ",\"pending\":" + pend + "}",
-                "Set-Cookie: ls_token=" + token + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400");
+                "Set-Cookie: ls_token=" + token + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400" + (secure ? "; Secure" : ""));
     }
 
     /** True when another signed-in person (or the host) is already using this name; compared without case or extra spaces. */

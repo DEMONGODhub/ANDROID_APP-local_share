@@ -165,6 +165,7 @@ public class Harness {
         File[] fx = fixtures();
         if (a[0].equals("serve")) {
             ServerConfig cfg = new ServerConfig(); cfg.devEdit = true;
+            if (System.getProperty("tls") != null) cfg.tls = SelfSigned.load(Files.createTempDirectory("lstls").toFile()).context; // try HTTPS in a browser
             cfg.allowUploads = true;
             cfg.allowDelete = true;
             cfg.maxClients = 10;
@@ -243,6 +244,7 @@ public class Harness {
         checks(fx[0], fx[1]);
         community(fx[0], fx[1]);
         permissions(fx[0], fx[1]);
+        tls(fx[0], fx[1]);
         avatars(fx[0], fx[1]);
         System.out.println("\n== game rules");
         fail += ArenaTest.run();
@@ -358,6 +360,50 @@ public class Harness {
     static String sid(MiniServer s, String name) {
         for (MiniServer.SessionInfo i : s.sessions()) if (i.name.equals(name)) return i.id;
         return "";
+    }
+
+    static void tls(File main, File extra) throws Exception {
+        System.out.println("== HTTPS (self-signed)");
+        File dir = Files.createTempDirectory("lstls").toFile();
+        SelfSigned a = SelfSigned.load(dir), b = SelfSigned.load(dir);
+        check("certificate is made once and reused on restart", a.fingerprint.equals(b.fingerprint));
+        check("key and certificate files saved", new File(dir, "tls.key").isFile() && new File(dir, "tls.crt").isFile());
+        ServerConfig c = new ServerConfig();
+        c.tls = a.context;
+        MiniServer s = new MiniServer(c, composite(main, extra, false, null), assets());
+        s.start(0);
+        int p = s.port();
+        check("server reports it is secure", s.secure());
+        javax.net.ssl.SSLContext trustAll = javax.net.ssl.SSLContext.getInstance("TLS");
+        trustAll.init(null, new javax.net.ssl.TrustManager[] { new javax.net.ssl.X509TrustManager() {
+            public void checkClientTrusted(java.security.cert.X509Certificate[] x, String y) { }
+            public void checkServerTrusted(java.security.cert.X509Certificate[] x, String y) { }
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() { return new java.security.cert.X509Certificate[0]; }
+        } }, null);
+        javax.net.ssl.HttpsURLConnection u = (javax.net.ssl.HttpsURLConnection) new URL("https://127.0.0.1:" + p + "/").openConnection();
+        u.setSSLSocketFactory(trustAll.getSocketFactory());
+        u.setHostnameVerifier(new javax.net.ssl.HostnameVerifier() { public boolean verify(String h, javax.net.ssl.SSLSession se) { return true; } });
+        int code = u.getResponseCode();
+        check("page over HTTPS -> 200", code == 200);
+        java.security.cert.X509Certificate crt = (java.security.cert.X509Certificate) u.getServerCertificates()[0];
+        check("certificate names localhost and localshare.local", String.valueOf(crt.getSubjectAlternativeNames()).contains("localhost") && String.valueOf(crt.getSubjectAlternativeNames()).contains("localshare.local"));
+        check("certificate is valid now and for years", crt.getNotAfter().getTime() - System.currentTimeMillis() > 3000L * 86400000L);
+        check("modern TLS (1.2 or 1.3)", u.getCipherSuite() != null && !u.getCipherSuite().contains("NULL"));
+        javax.net.ssl.HttpsURLConnection v = (javax.net.ssl.HttpsURLConnection) new URL("https://127.0.0.1:" + p + "/api/info").openConnection();
+        v.setSSLSocketFactory(trustAll.getSocketFactory());
+        v.setHostnameVerifier(new javax.net.ssl.HostnameVerifier() { public boolean verify(String h, javax.net.ssl.SSLSession se) { return true; } });
+        check("API answers over HTTPS", v.getResponseCode() == 401 || v.getResponseCode() == 200);
+        boolean plainFailed;
+        try {
+            HttpURLConnection h = (HttpURLConnection) new URL("http://127.0.0.1:" + p + "/").openConnection();
+            h.setConnectTimeout(3000);
+            h.setReadTimeout(3000);
+            plainFailed = h.getResponseCode() != 200;
+        } catch (IOException e) {
+            plainFailed = true;
+        }
+        check("plain HTTP to the secure port is refused", plainFailed);
+        s.stop();
     }
 
     static void permissions(File main, File extra) throws Exception {

@@ -44,6 +44,11 @@ data class UiState(
     /** "http://name.local:port" from the host name; empty unless sharing. Some Android browsers cannot open it, so the IP links stay. */
     val nameUrl: String = "",
     val hostToken: String = "",
+    /** The setting is on, and whether the running server is really encrypted. */
+    val https: Boolean = false,
+    val secure: Boolean = false,
+    /** SHA-256 of the share's certificate, so a guest can compare it. */
+    val tlsFp: String = "",
     /** Guests asking to send files; the host answers Accept or Decline. */
     val offers: List<OfferView> = emptyList(),
     val folders: List<SharedFolder> = emptyList(),
@@ -323,6 +328,8 @@ object ShareController {
     fun setDevicePerms(id: String, perms: Int) { server?.setPerms(id, perms); refresh() }
     fun setPort(v: Int) { prefs.port = v; refresh() }
     fun setRemote(v: Boolean) { prefs.remoteOn = v; cfg.remote = v; refresh() }
+    @Volatile private var tlsFingerprint = ""
+    fun setHttps(v: Boolean) { prefs.https = v; refresh() } // takes effect the next time sharing starts
     fun setUploads(v: Boolean) { prefs.allowUploads = v; cfg.allowUploads = v; refresh() }
     fun setDelete(v: Boolean) { prefs.allowDelete = v; cfg.allowDelete = v; refresh() }
     fun setSessionHours(v: Int) { prefs.sessionHours = v; cfg.sessionMs = v * 3600000L; refresh() }
@@ -418,6 +425,17 @@ object ShareController {
         cfg.devEdit = (app.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (server != null) return null
         if (prefs.folders.isEmpty() && !prefs.gameOnly) return "Add a folder first, or turn on game-only mode"
+        cfg.tls = null
+        tlsFingerprint = ""
+        if (prefs.https) {
+            try {
+                val t = com.localshare.app.server.SelfSigned.load(java.io.File(app.filesDir, "tls"))
+                cfg.tls = t.context
+                tlsFingerprint = t.fingerprint
+            } catch (e: Exception) { // never block sharing over this: fall back to plain HTTP and say so in the log
+                DebugLog.add("https: could not make a certificate (${e.message}); sharing over plain HTTP")
+            }
+        }
         return try {
             val s = MiniServer(cfg, buildSource(), AssetProvider { name ->
                 try { app.assets.open("web/$name").use { it.readBytes() } } catch (e: java.io.IOException) { null }
@@ -474,9 +492,12 @@ object ShareController {
         _state.value = UiState(
             running = s != null,
             port = s?.port() ?: prefs.port,
-            urls = ips.map { "http://$it:${s?.port()}" },
-            nameUrl = if (mdns != null) "http://${mdns!!.host()}:${s?.port()}" else "",
+            urls = ips.map { "${if (s?.secure() == true) "https" else "http"}://$it:${s?.port()}" },
+            nameUrl = if (mdns != null) "${if (s?.secure() == true) "https" else "http"}://${mdns!!.host()}:${s?.port()}" else "",
             hostToken = s?.hostToken() ?: "",
+            https = prefs.https,
+            secure = s?.secure() == true,
+            tlsFp = if (s?.secure() == true) tlsFingerprint else "",
             offers = s?.pendingOffers()?.map { OfferView(it.id, it.from, it.count, it.bytes) } ?: emptyList(),
             folders = prefs.folders.map { SharedFolder(it, folderName(it)) },
             devices = s?.sessions()?.filter { !it.pending }?.map { Device(it.id, it.name, it.ip, it.since, it.perms) } ?: emptyList(),

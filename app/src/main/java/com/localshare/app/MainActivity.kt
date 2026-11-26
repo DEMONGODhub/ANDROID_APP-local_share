@@ -175,7 +175,7 @@ private fun App() {
     }
     val mode = browser
     if (mode != null && st.running) {
-        HostBrowser(st.port, st.hostToken, mode) { browser = null }
+        HostBrowser(st.port, st.hostToken, mode, secure = st.secure) { browser = null }
         return
     }
     val snackState = remember { androidx.compose.material3.SnackbarHostState() }
@@ -302,7 +302,7 @@ private fun AppBar(running: Boolean, devices: Int, wide: Boolean = false, onMenu
 /** The host sees the same page guests see, signed in automatically from this phone. */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun HostBrowser(port: Int, token: String, mode: String, url: String? = null, onClose: () -> Unit) {
+private fun HostBrowser(port: Int, token: String, mode: String, url: String? = null, secure: Boolean = false, onClose: () -> Unit) {
     var web by remember { mutableStateOf<WebView?>(null) }
     // lets the host page's Upload button and profile picture chooser open Android's file picker
     var pending by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
@@ -312,7 +312,7 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
     }
     val ctx0 = androidx.compose.ui.platform.LocalContext.current
     var problem by remember { mutableStateOf<String?>(null) } // shown instead of a blank window when the page cannot load or draw
-    val pageUrl = url ?: ("http://127.0.0.1:$port/#ht=$token" + if (mode.isEmpty()) "" else "&g=$mode")
+    val pageUrl = url ?: ("${if (secure) "https" else "http"}://127.0.0.1:$port/#ht=$token" + if (mode.isEmpty()) "" else "&g=$mode")
     BackHandler {
         // Back first leaves a full-screen video, then closes a minimised tab view, then the page itself
         val w = web
@@ -348,6 +348,12 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
                     if ((ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) WebView.setWebContentsDebuggingEnabled(true) // chrome://inspect on debug builds
                     setBackgroundColor(0xFF0C0C0D.toInt())
                     webViewClient = object : WebViewClient() {
+                        // a share made on a phone has a self-signed certificate: trust it only for this phone and other devices on the local network
+                        override fun onReceivedSslError(v: WebView, h: android.webkit.SslErrorHandler, e: android.net.http.SslError) {
+                            val host = Uri.parse(e.url).host ?: ""
+                            val local = host == "localhost" || host.endsWith(".local") || Regex("(127\\..*|10\\..*|192\\.168\\..*|172\\.(1[6-9]|2[0-9]|3[01])\\..*)").matches(host)
+                            if (local) h.proceed() else h.cancel()
+                        }
                         override fun onReceivedError(v: WebView, r: android.webkit.WebResourceRequest, e: android.webkit.WebResourceError) {
                             if (r.isForMainFrame) problem = "${e.description}. Check that sharing is still on, then try again."
                         }

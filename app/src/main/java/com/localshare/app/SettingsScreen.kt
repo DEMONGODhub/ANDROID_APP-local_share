@@ -103,6 +103,7 @@ fun SettingsScreen(st: UiState) {
             SectionCard {
                 TitleRow("What guests can do", "You can always upload and delete from the page opened here.")
                 SwitchRow("Ask before anyone joins", "New devices wait until you tap Allow in the Devices tab", st.askToJoin) { ShareController.setAskToJoin(it) }
+                SwitchRow("Encrypt with HTTPS", if (st.https) "On from the next time sharing starts. Browsers show a one-time \"not trusted\" notice: choose Advanced, then Continue." + (if (st.tlsFp.isNotEmpty()) "\nCertificate: ${st.tlsFp.take(23)}…" else "") else "Stops others on the Wi-Fi from reading passwords and files in transit", st.https) { ShareController.setHttps(it) }
                 SwitchRow("Upload files", "Guests can add files to a folder", st.allowUploads) { ShareController.setUploads(it) }
                 SwitchRow("Delete files", "Guests can remove files from your phone", st.allowDelete) { ShareController.setDelete(it) }
             }

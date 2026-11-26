@@ -19,6 +19,11 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("uploads", false)
         set(v) = sp.edit().putBoolean("uploads", v).apply()
 
+    /** Encrypt the share (HTTPS with a certificate made on this phone). Off by default: browsers show a one-time notice. */
+    var https: Boolean
+        get() = sp.getBoolean("https", false)
+        set(v) = sp.edit().putBoolean("https", v).apply()
+
     var allowDelete: Boolean
         get() = sp.getBoolean("delete", false)
         set(v) = sp.edit().putBoolean("delete", v).apply()
