@@ -226,7 +226,7 @@ private fun StatusCard(
                 Spacer(Modifier.width(10.dp))
                 Text(if (st.running) "Sharing is ON" else "Sharing is OFF", color = fg, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 if (st.running) Info(
-                    (if (st.nameUrl.isNotEmpty()) "Open the name or the IP address on any device on the same network. If the name does not open (some Android browsers), use the IP." else if (st.urls.size > 1) "${st.urls.size} ways to connect (Wi-Fi and hotspot). Use any one." else "Open this address on any device on the same network.") +
+                    (if (st.nameUrl.isNotEmpty()) "Open this name on any device on the same Wi-Fi or hotspot. If it does not open, check that both are on the same network." else if (st.urls.size > 1) "${st.urls.size} ways to connect (Wi-Fi and hotspot). Use any one." else "Open this address on any device on the same network.") +
                         "\n\nSharing stops when the phone sleeps? Open Settings > Apps > LocalShare > Battery and choose Unrestricted. The wording differs on some phones.",
                 )
             }
@@ -234,7 +234,7 @@ private fun StatusCard(
                 if (st.urls.isEmpty()) Text("No network found. Connect to Wi-Fi or turn on your hotspot.", color = fg)
                 if (st.speedLine.isNotEmpty()) Text(st.speedLine, color = c.primary, fontWeight = FontWeight.SemiBold)
                 if (st.wifiNote.isNotEmpty()) Text(st.wifiNote, color = c.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                (listOfNotNull(st.nameUrl.ifEmpty { null }) + st.urls).forEach { u ->
+                (if (st.nameUrl.isNotEmpty()) listOf(st.nameUrl) else st.urls).forEach { u -> // the name only; the IP links come back only while no name is available
                     Surface(color = c.surfaceContainerHighest, shape = MaterialTheme.shapes.medium) {
                         Column(Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 2.dp)) {
                             Text(u, color = c.onSurface, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)

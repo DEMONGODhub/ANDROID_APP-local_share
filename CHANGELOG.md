@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.55.1** — the Share screen shows only the name link (name.local) with its QR code, Copy and Share; the IP-address links appear only while no name is available.
 - **v2.55.0** — follows the phone between networks: pages learn every address the host can be reached on, and when their own address stops answering (Wi-Fi switched off, hotspot switched on) they show "Connection lost" and move to the first other address that answers. The page's security policy allows only these addresses of the same phone, never another site. Guests must still be on the network the phone is on, and may need to sign in again on the new address. Tested in a browser; Android part not compiled.
 - **v2.54.1** — the `name.local` link now follows the phone's networks: it listens on every network (Wi-Fi and the hotspot's own one) and re-announces itself when the hotspot or Wi-Fi changes while sharing, instead of only knowing the network present at start.
 - **v2.54.0** — optional HTTPS (Settings → What guests can do → Encrypt with HTTPS; off by default). The phone makes its own certificate once (`SelfSigned.java`, pure Java, EC P-256, kept in the app's private folder), links and QR codes switch to https://, the login cookie becomes Secure, and the in-app browser trusts the share's certificate only for this phone and local-network addresses. Browsers show a one-time "not trusted" notice. Tested on the PC (9 new checks, plus a real browser: page, range requests, secure cookie); Android parts not compiled here.
