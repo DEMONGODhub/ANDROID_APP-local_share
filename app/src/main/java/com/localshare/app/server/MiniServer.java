@@ -135,6 +135,25 @@ public final class MiniServer {
     private ServerSocket ss;
     private volatile boolean secure;
 
+    /** The page may also reach this phone's own other addresses (never any other site), so it can follow the phone from Wi-Fi to hotspot. */
+    private String altSrc() {
+        StringBuilder b = new StringBuilder();
+        String[] a = cfg.alts;
+        for (int i = 0; i < a.length; i++) if (a[i].matches("https?://[0-9A-Za-z.:-]+")) b.append(' ').append(a[i]);
+        return b.toString();
+    }
+
+    private String altsJson() {
+        StringBuilder b = new StringBuilder("[");
+        String[] a = cfg.alts;
+        for (int i = 0; i < a.length; i++) {
+            if (!a[i].matches("https?://[0-9A-Za-z.:-]+")) continue; // addresses only, never anything that could break the JSON
+            if (b.length() > 1) b.append(',');
+            b.append('"').append(a[i]).append('"');
+        }
+        return b.append(']').toString();
+    }
+
     /** True while the server is answering over HTTPS. */
     public boolean secure() { return secure; }
     private ThreadPoolExecutor pool;
@@ -923,7 +942,7 @@ public final class MiniServer {
             Session s = auth(r, out, isHead);
             if (s == null) return true;
             json(out, isHead, 200, "{\"ok\":true,\"up\":" + canUpload(s) + ",\"del\":" + canDelete(s) + ",\"ren\":" + canRename(s)
-                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (canRemote(s) && tvHere()) + ",\"ac\":" + Util.q(cfg.accent) + ",\"hp\":" + (cfg.hostPic == null ? 0 : cfg.hostPicVer) + ",\"hn\":" + Util.q(cfg.hostName) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + ",\"fv\":" + filesRev + "}");
+                    + ",\"mov\":" + canMove(s) + ",\"edt\":" + canEdit(s) + ",\"go\":" + gameOnly(s) + ",\"live\":" + (stream.isLive() && !gameOnly(s)) + ",\"tv\":" + (canRemote(s) && tvHere()) + ",\"ac\":" + Util.q(cfg.accent) + ",\"hp\":" + (cfg.hostPic == null ? 0 : cfg.hostPicVer) + ",\"hn\":" + Util.q(cfg.hostName) + ",\"adm\":" + adm(s) + ",\"mgr\":" + mgr(s) + ",\"req\":" + (adm(s) ? pendingCount() : 0) + ",\"fv\":" + filesRev + ",\"alts\":" + altsJson() + "}");
             return true;
         }
         if (get && path.equals("/api/list")) {
@@ -1409,7 +1428,7 @@ public final class MiniServer {
         if (name.equals("index.html")) {
             // the page may only talk to this phone: nothing is loaded from, or sent to, any other site, and it cannot be framed or given a base tag
             send(out, isHead, 200, ctype, d, "Cache-Control: " + cache,
-                "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+                "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'" + altSrc() + "; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
                 "Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()");
             return true;
         }

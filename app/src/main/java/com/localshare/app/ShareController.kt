@@ -492,6 +492,7 @@ object ShareController {
     fun refresh() {
         val s = server
         val ips = if (s != null) localIps() else emptyList()
+        cfg.alts = ips.map { "${if (s?.secure() == true) "https" else "http"}://$it:${s?.port()}" }.toTypedArray()
         // the phone joined or left a network (hotspot switched on, Wi-Fi changed): announce the name on the new one too
         if (s != null && ips != nameIps && !ips.isEmpty()) startName()
         _state.value = UiState(

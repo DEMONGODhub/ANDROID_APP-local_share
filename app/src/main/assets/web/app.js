@@ -368,9 +368,23 @@ function hostChip(){ // who is sharing: the host's picture and name, once a gues
   const im=el.querySelector("img");const u="/api/host/pic?v="+INFO.hostPic;if(im.getAttribute("src")!==u)im.src=u;
   im.alt="Hosted by "+INFO.hostName;el.title="Hosted by "+INFO.hostName;el.querySelector("b").textContent=INFO.hostName||"";
 }
-let fvSeen=null;
+let fvSeen=null,ALT=[],pingFail=0,hopping=false;
+/* the host's address changed (Wi-Fi off, hotspot on): try the other addresses the host told us about and move to the first that answers */
+async function hop(){
+  if(hopping)return;hopping=true;
+  try{for(const a of ALT){if(a.replace(/\/$/,"")===location.origin)continue;
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),2500);
+    try{await fetch(a+"/api/ping",{mode:"no-cors",cache:"no-store",signal:c.signal});clearTimeout(t);
+      toast("Moving to "+a.replace(/^https?:\/\//,"")+"…");location.href=a+"/"+location.hash;return}catch(e){clearTimeout(t)}}}
+  finally{hopping=false}
+}
+function lostBar(on){let b=$("#lostbar");if(!on){if(b)b.remove();return}
+  if(!b){b=document.createElement("div");b.id="lostbar";b.setAttribute("role","status");b.textContent="Connection lost. Trying to reconnect…";document.body.appendChild(b)}}
 async function ping(){
   const r=await J("/api/ping");
+  if(r.status===0){if(++pingFail>=2){lostBar(true);hop()}return}
+  if(pingFail){pingFail=0;lostBar(false)}
+  if(r.ok&&Array.isArray(r.d.alts))ALT=r.d.alts;
   if(r.status===429)return showLogin("The room is full right now. Try again soon.");
   if(r.ok&&r.d.go!==!!INFO.gameOnly){location.reload();return}
   if(r.ok&&r.d.fv!==undefined){if(fvSeen!==null&&r.d.fv!==fvSeen&&!SEL&&typeof cur==="string")go(cur);fvSeen=r.d.fv} // files changed by someone else: refresh the list

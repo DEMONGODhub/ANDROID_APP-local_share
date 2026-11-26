@@ -165,6 +165,7 @@ public class Harness {
         File[] fx = fixtures();
         if (a[0].equals("serve")) {
             ServerConfig cfg = new ServerConfig(); cfg.devEdit = true;
+            if (System.getProperty("alts") != null) cfg.alts = System.getProperty("alts").split(","); // try address hopping in a browser
             if (System.getProperty("tls") != null) cfg.tls = SelfSigned.load(Files.createTempDirectory("lstls").toFile()).context; // try HTTPS in a browser
             cfg.allowUploads = true;
             cfg.allowDelete = true;
