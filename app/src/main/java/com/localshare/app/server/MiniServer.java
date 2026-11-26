@@ -801,7 +801,7 @@ public final class MiniServer {
                     if (fails.size() > 500) for (java.util.Iterator<long[]> it = fails.values().iterator(); it.hasNext(); ) { long[] o = it.next(); if (o[1] != 0 && o[1] <= now) it.remove(); }
                     long[] g = fails.get(r.ip);
                     if (g == null) {
-                        g = new long[2];
+                        g = new long[3]; // tries, locked until, times locked so far
                         fails.put(r.ip, g);
                     }
                     if (g[1] != 0 && g[1] <= now) {
@@ -809,7 +809,8 @@ public final class MiniServer {
                         g[1] = 0;
                     }
                     if (++g[0] >= 5) {
-                        g[1] = now + 60000;
+                        g[2]++;
+                        g[1] = now + Math.min(900000L, 60000L << (int) Math.min(4, g[2] - 1)); // 1, 2, 4, 8, 15 min
                         g[0] = 0;
                     }
                 }

@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.53.1** — wrong-password lockout now grows each time (1, 2, 4, 8, then 15 minutes) instead of always 1 minute.
 - **v2.53.0** — web side panel grouped into Browse / People / Play & watch / More (Hindi too); the Discord-style host name chip is gone from the header.
 - **v2.52.1** — in-app browser: page errors go to the app log (Activity tab, lines starting "web"); debug builds can be inspected from chrome://inspect. For diagnosing the cut-off page in "Open as host". Kotlin not compiled here.
 - **v2.52.0** — files and chat messages the host deletes, renames, moves, uploads or saves now disappear from every open web page within ~4 s (no reload); Chat, Send and Help are only in the side panel (removed from the top bar); the side panel on the web can shrink to an icon rail (with unread badges); older Android browsers: `inset:` replaced by top/right/bottom/left; Android side panel scrolls on short screens and "Open my share as host" says so when sharing is off. Kotlin not compiled here.
