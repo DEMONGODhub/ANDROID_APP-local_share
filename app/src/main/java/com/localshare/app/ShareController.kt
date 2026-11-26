@@ -470,10 +470,13 @@ object ShareController {
     fun addClip(text: String): Boolean { val s = server ?: return false; s.addClip("Host", text); return true }
 
     /** Answers name.local on the Wi-Fi; failure is fine, the IP links still work. */
+    private var nameIps: List<String> = emptyList()
+
     private fun startName() {
         stopName()
         try {
             val ips = localIps()
+            nameIps = ips
             if (ips.isEmpty()) return
             mcLock = (app.applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager).createMulticastLock("ls-mdns").apply { setReferenceCounted(false); acquire() }
             mdns = com.localshare.app.server.MdnsResponder(prefs.hostName, ips).also { it.start() }
@@ -489,6 +492,8 @@ object ShareController {
     fun refresh() {
         val s = server
         val ips = if (s != null) localIps() else emptyList()
+        // the phone joined or left a network (hotspot switched on, Wi-Fi changed): announce the name on the new one too
+        if (s != null && ips != nameIps && !ips.isEmpty()) startName()
         _state.value = UiState(
             running = s != null,
             port = s?.port() ?: prefs.port,

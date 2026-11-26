@@ -41,7 +41,20 @@ public final class MdnsResponder {
         MulticastSocket s = new MulticastSocket(null);
         s.setReuseAddress(true);
         s.bind(new InetSocketAddress(port));
-        try { s.joinGroup(InetAddress.getByName("224.0.0.251")); } catch (java.io.IOException e) { /* unicast queries still work */ }
+        // listen on every network the phone is on (Wi-Fi, and the hotspot's own network, which is a different interface)
+        InetAddress grp = InetAddress.getByName("224.0.0.251");
+        int joined = 0;
+        try {
+            for (java.util.Enumeration<java.net.NetworkInterface> e = java.net.NetworkInterface.getNetworkInterfaces(); e != null && e.hasMoreElements(); ) {
+                java.net.NetworkInterface ni = e.nextElement();
+                try {
+                    if (ni.isUp() && !ni.isLoopback() && ni.supportsMulticast()) { s.joinGroup(new InetSocketAddress(grp, 0), ni); joined++; }
+                } catch (java.io.IOException skip) { /* this one cannot do multicast; try the others */ }
+            }
+        } catch (java.net.SocketException ignored) { }
+        if (joined == 0) {
+            try { s.joinGroup(grp); } catch (java.io.IOException e) { /* unicast queries still work */ }
+        }
         sock = s;
         on = true;
         Thread t = new Thread(new Runnable() { @Override public void run() { loop(s); } }, "mdns");
