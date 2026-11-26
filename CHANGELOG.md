@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.53.2** — faster PDFs: the page's scripts and styles are sent gzip-compressed (the PDF engine 1.1 MB → 0.3 MB), the PDF starts downloading while the access check runs, bigger download chunks, and each page first appears at normal resolution then sharpens (about 4x fewer pixels to draw first; sharp resolution capped at 2x).
 - **v2.53.1** — wrong-password lockout now grows each time (1, 2, 4, 8, then 15 minutes) instead of always 1 minute.
 - **v2.53.0** — web side panel grouped into Browse / People / Play & watch / More (Hindi too); the Discord-style host name chip is gone from the header.
 - **v2.52.1** — in-app browser: page errors go to the app log (Activity tab, lines starting "web"); debug builds can be inspected from chrome://inspect. For diagnosing the cut-off page in "Open as host". Kotlin not compiled here.

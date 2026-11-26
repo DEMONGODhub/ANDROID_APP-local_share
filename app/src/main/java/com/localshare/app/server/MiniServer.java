@@ -882,10 +882,10 @@ public final class MiniServer {
         }
         String path = r.path;
 
-        if (get && (path.equals("/") || path.equals("/index.html"))) return asset(out, isHead, "index.html", "text/html; charset=utf-8", "no-cache");
+        if (get && (path.equals("/") || path.equals("/index.html"))) return asset(out, isHead, "index.html", "text/html; charset=utf-8", "no-cache", false);
         if (get && path.startsWith("/static/")) {
             String n = path.substring(8);
-            return asset(out, isHead, n, staticType(n), n.endsWith(".html") ? "no-cache" : "public, max-age=86400");
+            return asset(out, isHead, n, staticType(n), n.endsWith(".html") ? "no-cache" : "public, max-age=86400", String.valueOf(r.h.get("accept-encoding")).contains("gzip"));
         }
         if (get && path.equals("/api/info")) {
             Session s = sessionOf(r);
@@ -1378,7 +1378,23 @@ public final class MiniServer {
         return "application/octet-stream";
     }
 
-    private boolean asset(OutputStream out, boolean isHead, String name, String ctype, String cache) throws IOException {
+    private final ConcurrentHashMap<String, byte[]> gzAssets = new ConcurrentHashMap<String, byte[]>();
+
+    /** Squeezes the page's own scripts and styles once (the 1 MB PDF engine becomes about 300 KB) so they load faster over Wi-Fi. */
+    private byte[] gz(String name, byte[] d) throws IOException {
+        byte[] z = gzAssets.get(name);
+        if (z == null) {
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream(d.length / 3 + 64);
+            java.util.zip.GZIPOutputStream g = new java.util.zip.GZIPOutputStream(bo);
+            g.write(d);
+            g.close();
+            z = bo.toByteArray();
+            gzAssets.put(name, z);
+        }
+        return z;
+    }
+
+    private boolean asset(OutputStream out, boolean isHead, String name, String ctype, String cache, boolean canGz) throws IOException {
         byte[] d = name.matches("[A-Za-z0-9._-]+") ? assets.get(name) : null;
         if (d == null) {
             json(out, isHead, 404, err("not found"));
@@ -1389,6 +1405,10 @@ public final class MiniServer {
             send(out, isHead, 200, ctype, d, "Cache-Control: " + cache,
                 "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
                 "Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()");
+            return true;
+        }
+        if (canGz && d.length > 1024 && (ctype.startsWith("application/javascript") || ctype.startsWith("text/css") || ctype.startsWith("text/html"))) {
+            send(out, isHead, 200, ctype, gz(name, d), "Cache-Control: " + cache, "Content-Encoding: gzip", "Vary: Accept-Encoding");
             return true;
         }
         send(out, isHead, 200, ctype, d, "Cache-Control: " + cache);

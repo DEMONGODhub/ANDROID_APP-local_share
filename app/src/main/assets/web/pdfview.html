@@ -102,12 +102,14 @@ function schedule(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;renderVisible()
 async function draw(p){
   if(p.busy)return;p.busy=true;const want=p.cw;
   try{
-    const d=dims(p),dpr=Math.min(window.devicePixelRatio||1,2.5),cs=want/d.w,s=cs*dpr;
+    const full=Math.min(window.devicePixelRatio||1,2),quick=!p.scale&&full>1, // first paint at 1x (about 4x fewer pixels), sharpened a moment later
+      d=dims(p),dpr=quick?1:full,cs=want/d.w,s=cs*dpr;
     const pg=await doc.getPage(p.n),vp=pg.getViewport({scale:s,rotation});
     const tmp=document.createElement("canvas");tmp.width=Math.floor(vp.width);tmp.height=Math.floor(vp.height);
     await pg.render({canvasContext:tmp.getContext("2d"),viewport:vp}).promise;
     if(want!==p.cw){p.busy=false;schedule();return}
-    p.c.width=tmp.width;p.c.height=tmp.height;p.c.getContext("2d").drawImage(tmp,0,0);p.scale=s;
+    p.c.width=tmp.width;p.c.height=tmp.height;p.c.getContext("2d").drawImage(tmp,0,0);p.scale=s;p.lo=quick;
+    if(quick){p.busy=false;schedule();return}
     p.tl.innerHTML="";
     try{const tc=await pg.getTextContent();await pdfjsLib.renderTextLayer({textContentSource:tc,container:p.tl,viewport:pg.getViewport({scale:cs,rotation}),textDivs:p.divs=[]}).promise;mark(p)}catch(e){}
   }catch(e){}
@@ -115,7 +117,7 @@ async function draw(p){
 }
 function renderVisible(){
   const r=box.getBoundingClientRect(),top=r.top-900,bot=r.bottom+900;
-  pages.forEach(p=>{const b=p.el.getBoundingClientRect();if(b.bottom>top&&b.top<bot&&!p.scale)draw(p)});
+  pages.forEach(p=>{const b=p.el.getBoundingClientRect();if(b.bottom>top&&b.top<bot&&(!p.scale||p.lo))draw(p)});
 }
 function track(){
   const r=box.getBoundingClientRect(),mid=r.top+Math.min(r.height/3,200);let best=curPage;
@@ -196,12 +198,14 @@ let rw=0;addEventListener("resize",()=>{clearTimeout(rw);rw=setTimeout(layout,15
 (async()=>{
   if(!path){fail("No file was chosen. <a href=\"/\">Go to LocalShare</a>");return}
   try{
+    pdfjsLib.GlobalWorkerOptions.workerSrc="/static/pdf.worker.min.js";
+    const loading=pdfjsLib.getDocument({url:fileUrl,rangeChunkSize:262144}); // starts while the check below runs
+    loading.promise.catch(()=>{});
     const probe=await fetch(fileUrl,{method:"HEAD"});
     if(probe.status===401){fail("Please sign in first. <a href=\"/\">Open LocalShare</a>");return}
     if(probe.status===403){fail("The host has blocked this device.");return}
     if(!probe.ok){fail("This file is no longer available. <a href=\"/\">Back to LocalShare</a>");return}
-    pdfjsLib.GlobalWorkerOptions.workerSrc="/static/pdf.worker.min.js";
-    doc=await pdfjsLib.getDocument({url:fileUrl}).promise;
+    doc=await loading.promise;
     const first=await doc.getPage(1),v=first.getViewport({scale:1});
     box.innerHTML="";$("#count").textContent="/ "+doc.numPages;
     for(let i=1;i<=doc.numPages;i++){const el=document.createElement("div");el.className="pg";el.setAttribute("role","img");el.setAttribute("aria-label","Page "+i);
