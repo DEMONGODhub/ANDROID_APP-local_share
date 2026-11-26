@@ -345,6 +345,7 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.mediaPlaybackRequiresUserGesture = false
+                    if ((ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) WebView.setWebContentsDebuggingEnabled(true) // chrome://inspect on debug builds
                     setBackgroundColor(0xFF0C0C0D.toInt())
                     webViewClient = object : WebViewClient() {
                         override fun onReceivedError(v: WebView, r: android.webkit.WebResourceRequest, e: android.webkit.WebResourceError) {
@@ -366,6 +367,11 @@ private fun HostBrowser(port: Int, token: String, mode: String, url: String? = n
                         }
                     }
                     webChromeClient = object : WebChromeClient() {
+                        // page errors and warnings land in the app log (Activity tab) so a blank or cut-off page can be diagnosed
+                        override fun onConsoleMessage(m: android.webkit.ConsoleMessage): Boolean {
+                            if (m.messageLevel() != android.webkit.ConsoleMessage.MessageLevel.LOG) DebugLog.add("web ${m.messageLevel()}: ${m.message()} (${m.sourceId().substringAfterLast('/')}:${m.lineNumber()})")
+                            return true
+                        }
                         // lets the page's video player go full screen (the page asks the browser, the browser asks us)
                         private var custom: android.view.View? = null
                         private var customDone: CustomViewCallback? = null
