@@ -21,14 +21,14 @@ RepoType: git
 Repo: https://github.com/DEMONGODhub/android_app.git
 
 Builds:
-  - versionName: 2.55.1
-    versionCode: 86
-    commit: v2.55.1
+  - versionName: 2.56.0
+    versionCode: 87
+    commit: v2.56.0
     subdir: app
     gradle:
       - yes
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 2.55.1
+CurrentVersion: 2.56.0
 CurrentVersionCode: 76

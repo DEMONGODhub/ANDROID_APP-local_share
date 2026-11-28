@@ -41,8 +41,6 @@ data class UiState(
     val running: Boolean = false,
     val port: Int = 8080,
     val urls: List<String> = emptyList(),
-    /** "http://name.local:port" from the host name; empty unless sharing. Some Android browsers cannot open it, so the IP links stay. */
-    val nameUrl: String = "",
     val hostToken: String = "",
     /** The setting is on, and whether the running server is really encrypted. */
     val https: Boolean = false,
@@ -100,8 +98,6 @@ object ShareController {
     private lateinit var prefs: Prefs
     private val cfg = ServerConfig()
     private var server: MiniServer? = null
-    private var mdns: com.localshare.app.server.MdnsResponder? = null
-    private var mcLock: android.net.wifi.WifiManager.MulticastLock? = null
     private val main = Handler(Looper.getMainLooper())
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> get() = _state
@@ -442,7 +438,6 @@ object ShareController {
             })
             s.start(prefs.port)
             server = s
-            startName()
             main.post(ticker)
             null
         } catch (e: Exception) {
@@ -457,7 +452,6 @@ object ShareController {
         CastService.stop(app)
         server?.stop()
         server = null
-        stopName()
         main.removeCallbacks(ticker)
         refresh()
     }
@@ -469,37 +463,14 @@ object ShareController {
     /** Text from the share sheet goes onto the shared board. */
     fun addClip(text: String): Boolean { val s = server ?: return false; s.addClip("Host", text); return true }
 
-    /** Answers name.local on the Wi-Fi; failure is fine, the IP links still work. */
-    private var nameIps: List<String> = emptyList()
-
-    private fun startName() {
-        stopName()
-        try {
-            val ips = localIps()
-            nameIps = ips
-            if (ips.isEmpty()) return
-            mcLock = (app.applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager).createMulticastLock("ls-mdns").apply { setReferenceCounted(false); acquire() }
-            mdns = com.localshare.app.server.MdnsResponder(prefs.hostName, ips).also { it.start() }
-        } catch (e: Exception) { stopName() }
-    }
-
-    private fun stopName() {
-        mdns?.stop(); mdns = null
-        try { mcLock?.release() } catch (e: Exception) { }
-        mcLock = null
-    }
-
     fun refresh() {
         val s = server
         val ips = if (s != null) localIps() else emptyList()
         cfg.alts = ips.map { "${if (s?.secure() == true) "https" else "http"}://$it:${s?.port()}" }.toTypedArray()
-        // the phone joined or left a network (hotspot switched on, Wi-Fi changed): announce the name on the new one too
-        if (s != null && ips != nameIps && !ips.isEmpty()) startName()
         _state.value = UiState(
             running = s != null,
             port = s?.port() ?: prefs.port,
             urls = ips.map { "${if (s?.secure() == true) "https" else "http"}://$it:${s?.port()}" },
-            nameUrl = if (mdns != null) "${if (s?.secure() == true) "https" else "http"}://${mdns!!.host()}:${s?.port()}" else "",
             hostToken = s?.hostToken() ?: "",
             https = prefs.https,
             secure = s?.secure() == true,

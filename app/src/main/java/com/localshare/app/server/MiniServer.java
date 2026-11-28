@@ -134,6 +134,40 @@ public final class MiniServer {
     private final String hostToken = hex(16);
     private ServerSocket ss;
     private volatile boolean secure;
+    private volatile javax.net.ssl.SSLSocketFactory tlsFactory; // set when HTTPS and plain HTTP can share the port
+
+    /**
+     * HTTPS port: a TLS handshake starts with byte 0x16. Anything else is someone who typed http://, so send them to the
+     * https:// address instead of an empty reply. Returns the socket to serve, or null when the connection is finished.
+     */
+    private Socket tlsOrRedirect(Socket raw) {
+        try {
+            raw.setSoTimeout(10000);
+            java.io.InputStream in = raw.getInputStream();
+            int b = in.read();
+            if (b < 0) { raw.close(); return null; }
+            if (b == 0x16) {
+                javax.net.ssl.SSLSocket t = (javax.net.ssl.SSLSocket) tlsFactory.createSocket(raw, new java.io.ByteArrayInputStream(new byte[] { (byte) b }), true);
+                t.setUseClientMode(false);
+                return t;
+            }
+            StringBuilder head = new StringBuilder().append((char) b);
+            for (int c; head.length() < 4096 && (c = in.read()) >= 0; ) { // up to the end of the first line
+                if (c == '\n') break;
+                head.append((char) c);
+            }
+            String[] parts = head.toString().trim().split(" ");
+            String path = parts.length > 1 && parts[1].startsWith("/") && parts[1].matches("[\\x21-\\x7E]*") ? parts[1] : "/";
+            String loc = "https://" + raw.getLocalAddress().getHostAddress() + ":" + raw.getLocalPort() + path;
+            byte[] out = ("HTTP/1.1 301 Moved Permanently\r\nLocation: " + loc + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").getBytes("ISO-8859-1");
+            raw.getOutputStream().write(out);
+            raw.getOutputStream().flush();
+            raw.close();
+        } catch (Exception e) {
+            try { raw.close(); } catch (IOException ignored) { }
+        }
+        return null;
+    }
 
     /** The page may also reach this phone's own other addresses (never any other site), so it can follow the phone from Wi-Fi to hotspot. */
     private String altSrc() {
@@ -351,8 +385,15 @@ public final class MiniServer {
     public synchronized void start(int port) throws IOException {
         if (running) return;
         javax.net.ssl.SSLContext tls = cfg.tls;
-        ServerSocket s = tls != null ? tls.getServerSocketFactory().createServerSocket() : new ServerSocket();
         secure = tls != null;
+        tlsFactory = null;
+        if (tls != null) {
+            javax.net.ssl.SSLSocketFactory f = tls.getSocketFactory();
+            try { // can a connection's first byte be read before the handshake? (not on very old Android: then plain HTTP just fails)
+                if (f.getClass().getMethod("createSocket", Socket.class, java.io.InputStream.class, boolean.class).getDeclaringClass() != javax.net.ssl.SSLSocketFactory.class) tlsFactory = f;
+            } catch (Exception e) { tlsFactory = null; }
+        }
+        ServerSocket s = tls != null && tlsFactory == null ? tls.getServerSocketFactory().createServerSocket() : new ServerSocket();
         s.setReuseAddress(true);
         s.bind(new InetSocketAddress(port));
         ss = s;
@@ -463,7 +504,8 @@ public final class MiniServer {
                     pool.execute(new Runnable() {
                         @Override public void run() {
                             try {
-                                handle(s, fip);
+                                Socket t = tlsFactory != null ? tlsOrRedirect(s) : s;
+                                if (t != null) handle(t, fip);
                             } finally {
                                 cnt.decrementAndGet();
                             }

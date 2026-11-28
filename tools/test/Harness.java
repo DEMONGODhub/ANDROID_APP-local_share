@@ -387,23 +387,20 @@ public class Harness {
         int code = u.getResponseCode();
         check("page over HTTPS -> 200", code == 200);
         java.security.cert.X509Certificate crt = (java.security.cert.X509Certificate) u.getServerCertificates()[0];
-        check("certificate names localhost and localshare.local", String.valueOf(crt.getSubjectAlternativeNames()).contains("localhost") && String.valueOf(crt.getSubjectAlternativeNames()).contains("localshare.local"));
+        check("certificate names localhost", String.valueOf(crt.getSubjectAlternativeNames()).contains("localhost"));
         check("certificate is valid now and for years", crt.getNotAfter().getTime() - System.currentTimeMillis() > 3000L * 86400000L);
         check("modern TLS (1.2 or 1.3)", u.getCipherSuite() != null && !u.getCipherSuite().contains("NULL"));
         javax.net.ssl.HttpsURLConnection v = (javax.net.ssl.HttpsURLConnection) new URL("https://127.0.0.1:" + p + "/api/info").openConnection();
         v.setSSLSocketFactory(trustAll.getSocketFactory());
         v.setHostnameVerifier(new javax.net.ssl.HostnameVerifier() { public boolean verify(String h, javax.net.ssl.SSLSession se) { return true; } });
         check("API answers over HTTPS", v.getResponseCode() == 401 || v.getResponseCode() == 200);
-        boolean plainFailed;
-        try {
-            HttpURLConnection h = (HttpURLConnection) new URL("http://127.0.0.1:" + p + "/").openConnection();
-            h.setConnectTimeout(3000);
-            h.setReadTimeout(3000);
-            plainFailed = h.getResponseCode() != 200;
-        } catch (IOException e) {
-            plainFailed = true;
-        }
-        check("plain HTTP to the secure port is refused", plainFailed);
+        HttpURLConnection h = (HttpURLConnection) new URL("http://127.0.0.1:" + p + "/api/info?x=1").openConnection();
+        h.setInstanceFollowRedirects(false);
+        h.setConnectTimeout(3000);
+        h.setReadTimeout(3000);
+        int hc = h.getResponseCode();
+        String loc = h.getHeaderField("Location");
+        check("http:// on the secure port is sent to https://", hc == 301 && loc != null && loc.equals("https://127.0.0.1:" + p + "/api/info?x=1"));
         s.stop();
     }
 

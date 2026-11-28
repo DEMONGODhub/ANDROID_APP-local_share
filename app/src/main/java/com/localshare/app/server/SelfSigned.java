@@ -152,7 +152,7 @@ public final class SelfSigned {
         serial[0] &= 0x7F;
         serial[0] |= 0x40; // positive and not shortened
         byte[] san = tlv(0x30, oid(2, 5, 29, 17), tlv(0x04, tlv(0x30,
-            tlv(0x82, "localshare.local".getBytes()), tlv(0x82, "localhost".getBytes()), tlv(0x87, new byte[] { 127, 0, 0, 1 }))));
+            tlv(0x82, "localhost".getBytes()), tlv(0x87, new byte[] { 127, 0, 0, 1 }))));
         byte[] ku = tlv(0x30, oid(2, 5, 29, 15), tlv(0x01, new byte[] { (byte) 0xFF }), tlv(0x04, tlv(0x03, new byte[] { 7, (byte) 0x80 })));
         byte[] eku = tlv(0x30, oid(2, 5, 29, 37), tlv(0x04, tlv(0x30, oid(1, 3, 6, 1, 5, 5, 7, 3, 1))));
         byte[] bc = tlv(0x30, oid(2, 5, 29, 19), tlv(0x01, new byte[] { (byte) 0xFF }), tlv(0x04, tlv(0x30)));
