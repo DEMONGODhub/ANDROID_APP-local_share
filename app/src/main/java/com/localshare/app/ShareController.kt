@@ -228,7 +228,7 @@ object ShareController {
         if (k.startsWith("logo:")) setHostLogo(k.removePrefix("logo:").toIntOrNull() ?: 0) else refresh()
     }
 
-    fun setHostName(n: String) { prefs.hostName = n.trim().take(24).ifEmpty { "Host" }; cfg.setHostProfile(prefs.hostName, null); if (server != null) startName(); refresh() }
+    fun setHostName(n: String) { prefs.hostName = n.trim().take(24).ifEmpty { "Host" }; cfg.setHostProfile(prefs.hostName, null); refresh() }
     fun setHostLogo(kind: Int) = saveHostPic(HostProfile.logoBitmap(kind), "logo:$kind")
     fun setHostPhoto(uri: android.net.Uri) { HostProfile.photoBitmap(app, uri)?.let { saveHostPic(it, "photo") } }
 

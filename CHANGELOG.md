@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.56.1** — build fix: a leftover call to the removed name service in the host-name setting ("Unresolved reference startName").
 - **v2.56.0** — HTTPS fix: opening an encrypted share with http:// no longer gives an empty reply (ERR_EMPTY_RESPONSE); the server answers with a redirect to the https:// address (very old Android versions that cannot do this just keep the old behaviour). The IP address links, QR codes, Copy and Share are back on the Share screen, and the name.local feature is removed (name service, its test and its link). Tested on the PC; Android parts not compiled.
 - **v2.55.1** — the Share screen shows only the name link (name.local) with its QR code, Copy and Share; the IP-address links appear only while no name is available.
 - **v2.55.0** — follows the phone between networks: pages learn every address the host can be reached on, and when their own address stops answering (Wi-Fi switched off, hotspot switched on) they show "Connection lost" and move to the first other address that answers. The page's security policy allows only these addresses of the same phone, never another site. Guests must still be on the network the phone is on, and may need to sign in again on the new address. Tested in a browser; Android part not compiled.
