@@ -111,7 +111,7 @@ object ShareController {
     private val ticker = object : Runnable {
         override fun run() {
             refresh()
-            if (server != null) main.postDelayed(this, if (visible) 2000L else 15000L)
+            if (server != null) main.postDelayed(this, if (visible) 2000L else if (Widgets.any(app)) 4000L else 15000L)
         }
     }
 
@@ -464,6 +464,11 @@ object ShareController {
     fun addClip(text: String): Boolean { val s = server ?: return false; s.addClip("Host", text); return true }
 
     fun refresh() {
+        refreshState()
+        Widgets.update(app)
+    }
+
+    private fun refreshState() {
         val s = server
         val ips = if (s != null) localIps() else emptyList()
         cfg.alts = ips.map { "${if (s?.secure() == true) "https" else "http"}://$it:${s?.port()}" }.toTypedArray()

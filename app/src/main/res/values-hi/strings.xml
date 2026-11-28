@@ -11,4 +11,18 @@
     <string name="join_hint">पता, जैसे 192.168.1.5:8080</string>
     <string name="join_go">जुड़ें</string>
     <string name="nav_host_first">पहले शेयरिंग चालू करें, फिर होस्ट के रूप में खोलें</string>
+    <string name="widget_share_desc">शेयरिंग शुरू या बंद करें और फ़ाइलें कितनी तेज़ जा रही हैं देखें</string>
+    <string name="widget_tv_desc">टीवी पर दिखे कोड को स्कैन करके यह शेयर टीवी पर भेजें</string>
+    <string name="widget_mini_desc">शेयरिंग शुरू या बंद करने का एक टैप</string>
+    <string name="widget_tv_title">टीवी पर भेजें</string>
+    <string name="widget_tv_hint">टैप करें, फिर टीवी पर दिखा कोड स्कैन करें</string>
+    <string name="widget_tv_first">पहले शेयरिंग शुरू करें</string>
+    <string name="widget_sharing">शेयरिंग चालू</string>
+    <string name="widget_off">शेयरिंग बंद है</string>
+    <string name="widget_start">शुरू</string>
+    <string name="widget_stop">बंद</string>
+    <string name="widget_idle">खाली</string>
+    <string name="widget_mini_on">चालू</string>
+    <string name="widget_mini_off">बंद</string>
+    <string name="widget_devices">%1$d जुड़े हैं</string>
 </resources>

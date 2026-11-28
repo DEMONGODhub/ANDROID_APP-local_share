@@ -16,4 +16,18 @@
     <string name="join_hint">Address, e.g. 192.168.1.5:8080</string>
     <string name="join_go">Join</string>
     <string name="nav_host_first">Turn sharing on first, then open it as host</string>
+    <string name="widget_share_desc">Start or stop sharing and see how fast files are going out</string>
+    <string name="widget_tv_desc">Send this share to LocalShare TV by scanning the code on the TV</string>
+    <string name="widget_mini_desc">One-tap start or stop for sharing</string>
+    <string name="widget_tv_title">Send to TV</string>
+    <string name="widget_tv_hint">Tap, then scan the code shown on your TV</string>
+    <string name="widget_tv_first">Start sharing first</string>
+    <string name="widget_sharing">Sharing</string>
+    <string name="widget_off">Sharing is off</string>
+    <string name="widget_start">Start</string>
+    <string name="widget_stop">Stop</string>
+    <string name="widget_idle">Idle</string>
+    <string name="widget_mini_on">ON</string>
+    <string name="widget_mini_off">OFF</string>
+    <string name="widget_devices">%1$d connected</string>
 </resources>
