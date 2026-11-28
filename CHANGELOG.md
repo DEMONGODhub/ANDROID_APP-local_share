@@ -2,6 +2,7 @@
 
 Every release is a git tag (vX.Y.Z). Newest first.
 
+- **v2.56.2** — build fix: the http-to-https redirect called a TLS method that Android's SDK does not list ("no suitable method found for createSocket"); it is now looked up by name at run time, with the old behaviour as the fallback.
 - **v2.56.1** — build fix: a leftover call to the removed name service in the host-name setting ("Unresolved reference startName").
 - **v2.56.0** — HTTPS fix: opening an encrypted share with http:// no longer gives an empty reply (ERR_EMPTY_RESPONSE); the server answers with a redirect to the https:// address (very old Android versions that cannot do this just keep the old behaviour). The IP address links, QR codes, Copy and Share are back on the Share screen, and the name.local feature is removed (name service, its test and its link). Tested on the PC; Android parts not compiled.
 - **v2.55.1** — the Share screen shows only the name link (name.local) with its QR code, Copy and Share; the IP-address links appear only while no name is available.

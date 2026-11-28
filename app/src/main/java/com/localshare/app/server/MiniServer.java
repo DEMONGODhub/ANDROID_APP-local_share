@@ -134,6 +134,7 @@ public final class MiniServer {
     private final String hostToken = hex(16);
     private ServerSocket ss;
     private volatile boolean secure;
+    private volatile java.lang.reflect.Method tlsWrap;
     private volatile javax.net.ssl.SSLSocketFactory tlsFactory; // set when HTTPS and plain HTTP can share the port
 
     /**
@@ -147,7 +148,7 @@ public final class MiniServer {
             int b = in.read();
             if (b < 0) { raw.close(); return null; }
             if (b == 0x16) {
-                javax.net.ssl.SSLSocket t = (javax.net.ssl.SSLSocket) tlsFactory.createSocket(raw, new java.io.ByteArrayInputStream(new byte[] { (byte) b }), true);
+                javax.net.ssl.SSLSocket t = (javax.net.ssl.SSLSocket) tlsWrap.invoke(tlsFactory, raw, new java.io.ByteArrayInputStream(new byte[] { (byte) b }), Boolean.TRUE);
                 t.setUseClientMode(false);
                 return t;
             }
@@ -387,11 +388,17 @@ public final class MiniServer {
         javax.net.ssl.SSLContext tls = cfg.tls;
         secure = tls != null;
         tlsFactory = null;
+        tlsWrap = null;
         if (tls != null) {
             javax.net.ssl.SSLSocketFactory f = tls.getSocketFactory();
-            try { // can a connection's first byte be read before the handshake? (not on very old Android: then plain HTTP just fails)
-                if (f.getClass().getMethod("createSocket", Socket.class, java.io.InputStream.class, boolean.class).getDeclaringClass() != javax.net.ssl.SSLSocketFactory.class) tlsFactory = f;
-            } catch (Exception e) { tlsFactory = null; }
+            try { // can a connection's first byte be read before the handshake? Looked up by name: Android's SDK does not list it, the phone's TLS library may still have it
+                java.lang.reflect.Method m = f.getClass().getMethod("createSocket", Socket.class, java.io.InputStream.class, boolean.class);
+                if (m.getDeclaringClass() != javax.net.ssl.SSLSocketFactory.class) { // the library really implements it
+                    try { m = javax.net.ssl.SSLSocketFactory.class.getMethod("createSocket", Socket.class, java.io.InputStream.class, boolean.class); } catch (NoSuchMethodException e) { m.setAccessible(true); }
+                    tlsWrap = m;
+                    tlsFactory = f;
+                }
+            } catch (Exception e) { tlsFactory = null; tlsWrap = null; }
         }
         ServerSocket s = tls != null && tlsFactory == null ? tls.getServerSocketFactory().createServerSocket() : new ServerSocket();
         s.setReuseAddress(true);
